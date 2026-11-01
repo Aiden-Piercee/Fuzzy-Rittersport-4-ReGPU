@@ -105,7 +105,7 @@ public static class Import
     public static string Game(string path, Action<string>? status = null)
     {
         var settings = GameSettings.Load();
-        var dest = settings.GameFolder is { Length: > 0 } g ? g : Paths.GameDirDefault;
+        var dest = Paths.GameDir;
         if (File.Exists(path))
         {
             if (!XIso.Looks(path)) throw new InvalidDataException($"{Path.GetFileName(path)} isn't a game disc image (.iso).");
