@@ -268,7 +268,7 @@ public sealed class Bridge
         {
             settings,
             version = Updater.InstalledVersion(),
-            paths = new { root = Paths.Root, user = Paths.User, gameDefault = Paths.GameDirDefault, updateDefault = Paths.TitleUpdateDirDefault },
+            paths = new { root = Paths.Root, user = Paths.User, gameDefault = Paths.GameDirDefault, gameDir = Paths.GameDir, updateDefault = Paths.TitleUpdateDirDefault },
             checks = new
             {
                 exe = File.Exists(Paths.Exe),

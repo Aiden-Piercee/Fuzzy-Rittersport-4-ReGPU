@@ -13,7 +13,7 @@ const pending = new Map()
 if (host) host.addEventListener("message", (e) => {
   const m = e.data
   if (m.event === "progress") return onProgress(m.data)
-  if (m.event === "status") return toast(m.data, true)
+  if (m.event === "status") return tileProgress(m.data)
   const p = pending.get(m.id)
   if (!p) return
   pending.delete(m.id)
@@ -195,8 +195,6 @@ function render() {
     f.classList.toggle("off", fsrAa)
     f.dataset.tip = fsrAa ? "Off while FSR 3 or FSR 4 is on: they handle anti-aliasing themselves." : f.dataset.tip0
   }
-  $("gameFolder").value = set.gameFolder
-  $("gameFolder").placeholder = s.paths.gameDefault + " (default)"
   fill($("upscale"), o.upscale, set.upscale)
   fill($("sharpening"), o.sharpening, set.sharpening)
   fill($("optimizeLevel"), o.optimizeLevels, set.optimizeLevel)
@@ -244,9 +242,8 @@ function render() {
   $("shaders-delete").disabled = !s.shaders.exists || s.checks.running
   $("shaders-rebuild").disabled = s.checks.running || !s.checks.exe
 
-  $("dlc-summary").textContent = s.dlc.length
-    ? `${s.dlc.filter((d) => d.enabled).length} of ${s.dlc.length} car packs on.`
-    : "No car packs installed."
+  $("gameFolder").value = set.gameFolder
+  renderTiles()
   const dl = $("dlc")
   dl.replaceChildren()
   if (!s.dlc.length) dl.append(el("div", "empty", "No DLC installed. Add DLC to bring in the car packs."))
@@ -382,13 +379,6 @@ $("shaders-rebuild").onclick = () => guarded(async () => {
   render()
   toast("Game started: compiling shaders.", true)
 })
-async function addPackages(cmd, what) {
-  const r = await call(cmd)
-  state = r.state
-  render()
-  if (r.errors && r.errors.length) toast(r.errors.join(" "))
-  else if (r.added) toast(`${r.added} ${what}${r.added > 1 ? "s" : ""} installed. ${r.added > 1 ? "They appear" : "It appears"} in the game next time it starts.`, true)
-}
 // ---- files given to the launcher: picked (the Browse buttons) or dropped on a [data-drop] area.
 // A dropped file's path isn't given to the page, so each file goes over in 1 MB pieces to a staging folder and is
 // used from there (a disc image is as big as the disc: it takes a while, and the Disc image… button skips the copy).
@@ -421,69 +411,140 @@ function b64(blob) {
     r.readAsDataURL(blob)
   })
 }
-let dropping = false
-async function dropOn(kind, items) {
-  if (dropping) return toast("Still copying the last drop.")
-  dropping = true
-  let id = null
-  try {
-    const files = []
-    for (const it of items) files.push(...await entriesOf(it))
-    if (!files.length) return toast("Nothing to take from that.")
-    const total = files.reduce((n, f) => n + f.file.size, 0)
-    id = await call("drop.begin")
-    let sent = 0
-    for (const { file, rel } of files) {
-      let off = 0
-      do {
-        const data = await b64(file.slice(off, off + CHUNK))
-        await call("drop.write", { id, rel, first: off === 0, data })
-        off += CHUNK
-        sent = Math.min(total, sent + CHUNK)
-        toast(`Copying: ${size(sent)} of ${size(total)}`, true)
-      } while (off < file.size)
-    }
-    toast("Working on it…", true)
-    const r = await call("drop.finish", { id, kind })
-    id = null
-    state = r.state
-    render()
-    if (r.errors && r.errors.length) toast(r.errors.join(" "))
-    else if (kind === "dlc") toast(`${r.added} package${r.added > 1 ? "s" : ""} installed. They appear in the game next time it starts.`, true)
-    else toast(r.message, true)
-  } catch (e) {
-    toast(e.message)
-    if (id) call("drop.finish", { id, kind: "none" }).catch(() => {})
-  } finally { dropping = false }
+// ---- the Game and DLC tiles: what they show, and the busy / done / error states of an import
+const tileEl = (kind) => $("tile-" + kind)
+const tileState = { game: null, dlc: null } // null: showing what is installed; else "busy" | "done" | "err"
+const tileTimer = {}
+let active = null
+
+function tileSet(kind, cls, text, frac) {
+  const t = tileEl(kind)
+  tileState[kind] = cls
+  t.classList.remove("busy", "done", "err", "indet")
+  t.classList.add(cls)
+  if (cls === "busy" && frac == null) t.classList.add("indet")
+  t.querySelector(".tile-bar i").style.width = frac == null ? "" : Math.round(frac * 100) + "%"
+  const s = $("tile-" + kind + "-status")
+  s.textContent = text
+  s.className = "tile-status " + (cls === "done" ? "ok" : cls === "err" ? "err" : "")
 }
-let dragDepth = 0
+function tileReset(kind) {
+  clearTimeout(tileTimer[kind])
+  tileState[kind] = null
+  tileEl(kind).classList.remove("busy", "done", "err", "indet")
+  renderTiles()
+}
+function tileDone(kind, text, good) {
+  tileSet(kind, good ? "done" : "err", (good ? "✓ " : "✕ ") + text)
+  clearTimeout(tileTimer[kind])
+  tileTimer[kind] = setTimeout(() => tileReset(kind), good ? 7000 : 12000)
+}
+function tileProgress(msg) {
+  if (!active) return toast(msg, true)
+  const m = /(\d+)%/.exec(msg)
+  tileSet(active, "busy", msg, m ? +m[1] / 100 : null)
+}
+function renderTiles() {
+  const s = state
+  const set = (kind, ok, text) => {
+    if (tileState[kind]) return
+    const e = $("tile-" + kind + "-status")
+    e.textContent = text
+    e.className = "tile-status " + (ok ? "ok" : "bad")
+  }
+  set("game", s.checks.game, s.checks.game ? "✓ Game files found (default.xex)" : "No game files yet: drop the disc or its files here")
+  const n = s.dlc.length, on = s.dlc.filter((d) => d.enabled).length
+  set("dlc", n > 0, n ? `✓ ${n} package${n > 1 ? "s" : ""} installed (${on} on)` : "None installed")
+}
+// Runs one import (a drop or a picker) on a tile, with its progress and its outcome shown there.
+async function runTile(kind, fn) {
+  if (active) return toast("Still working on the last one.")
+  active = kind
+  tileSet(kind, "busy", "Working…", null)
+  try { await fn() } catch (e) { tileDone(kind, e.message, false) } finally { active = null }
+}
+function outcome(kind, r) {
+  if (r.errors && r.errors.length) return tileDone(kind, r.errors.join(" "), false)
+  if (kind === "dlc") return r.added ? tileDone(kind, `${r.added} package${r.added > 1 ? "s" : ""} installed. They appear in the game next time it starts.`, true) : tileReset(kind)
+  tileDone(kind, r.message, true)
+}
+
+// ---- files given to the launcher: picked (the tiles, the links in them) or dropped on a tile.
+async function dropOn(kind, items) {
+  await runTile(kind, async () => {
+    let id = null
+    try {
+      const files = []
+      for (const it of items) files.push(...await entriesOf(it))
+      if (!files.length) throw new Error("Nothing to take from that.")
+      const total = files.reduce((n, f) => n + f.file.size, 0)
+      id = await call("drop.begin")
+      let sent = 0
+      for (const { file, rel } of files) {
+        let off = 0
+        do {
+          const data = await b64(file.slice(off, off + CHUNK))
+          await call("drop.write", { id, rel, first: off === 0, data })
+          off += CHUNK
+          sent = Math.min(total, sent + CHUNK)
+          tileSet(kind, "busy", `Copying: ${size(sent)} of ${size(total)}`, total ? sent / total : null)
+        } while (off < file.size)
+      }
+      tileSet(kind, "busy", "Working on it…", null)
+      const r = await call("drop.finish", { id, kind })
+      id = null
+      state = r.state
+      render()
+      outcome(kind, r)
+    } catch (e) {
+      if (id) call("drop.finish", { id, kind: "none" }).catch(() => {})
+      throw e
+    }
+  })
+}
+const veil = $("drop")
+const setHot = (kind) => { for (const k of ["game", "dlc"]) tileEl(k).classList.toggle("hot", k === kind) }
 function dropTarget(e) { return e.target.closest && e.target.closest("[data-drop]") }
+const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes("Files")
 document.addEventListener("dragover", (e) => {
-  if (!e.dataTransfer || ![...e.dataTransfer.types].includes("Files")) return
+  if (!hasFiles(e)) return
   e.preventDefault() // otherwise the window opens the file
-  for (const d of document.querySelectorAll("[data-drop]")) d.classList.toggle("dropping", d === dropTarget(e))
-})
-document.addEventListener("dragleave", (e) => { if (!e.relatedTarget) for (const d of document.querySelectorAll("[data-drop]")) d.classList.remove("dropping") })
-document.addEventListener("drop", (e) => {
-  if (!e.dataTransfer || ![...e.dataTransfer.types].includes("Files")) return
-  e.preventDefault()
-  for (const d of document.querySelectorAll("[data-drop]")) d.classList.remove("dropping")
+  veil.hidden = false
   const t = dropTarget(e)
-  if (!t) return toast("Drop it on the Game folder or the DLC packs.")
+  setHot(t ? t.dataset.drop : null)
+})
+document.addEventListener("dragleave", (e) => { if (!e.relatedTarget) { veil.hidden = true; setHot(null) } })
+document.addEventListener("drop", (e) => {
+  if (!hasFiles(e)) return
+  e.preventDefault()
+  veil.hidden = true
+  setHot(null)
+  const t = dropTarget(e)
+  if (!t) return toast("Drop it on a tile: Game or DLC.")
   const items = [...e.dataTransfer.items].filter((i) => i.kind === "file")
   // The entries are only readable during the event, so take them now.
-  const taken = items.map((i) => ({ webkitGetAsEntry: () => i.webkitGetAsEntry(), getAsFile: () => i.getAsFile(), _e: i.webkitGetAsEntry && i.webkitGetAsEntry(), _f: i.getAsFile() }))
+  const taken = items.map((i) => ({ _e: i.webkitGetAsEntry && i.webkitGetAsEntry(), _f: i.getAsFile() }))
   dropOn(t.dataset.drop, taken.map((i) => ({ webkitGetAsEntry: () => i._e, getAsFile: () => i._f })))
 })
-for (const [id, kind] of [["gameIso", "game"]])
-  $(id).onclick = () => guarded(async () => {
-    const r = await call("import.pick", { kind })
-    if (!r) return
-    state = r.state
-    render()
-    toast(r.message, true)
-  })
-$("dlc-add").onclick = () => guarded(() => addPackages("dlc.add", "package"))
+$("gameIso").onclick = () => runTile("game", async () => {
+  const r = await call("import.pick")
+  if (!r) return tileReset("game")
+  state = r.state
+  render()
+  outcome("game", r)
+})
+$("dlc-add").onclick = () => runTile("dlc", async () => {
+  const r = await call("dlc.add")
+  state = r.state
+  render()
+  outcome("dlc", r)
+})
+// Clicking a tile (not one of its links) opens its picker.
+for (const [kind, btn] of [["game", "gameIso"], ["dlc", "dlc-add"]]) {
+  const t = tileEl(kind)
+  t.addEventListener("click", (e) => { if (!e.target.closest(".link") && !active) $(btn).click() })
+  t.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target === t) { e.preventDefault(); $(btn).click() } })
+}
 for (const b of document.querySelectorAll("[data-open]")) b.onclick = () => guarded(() => call("open", b.dataset.open))
 // Settings changed elsewhere (the game's own window, an edited settings.ini): picked up when coming back here.
 // Not while a dropdown is open or a change is still being saved: on Linux closing a dropdown's pop-up focuses the

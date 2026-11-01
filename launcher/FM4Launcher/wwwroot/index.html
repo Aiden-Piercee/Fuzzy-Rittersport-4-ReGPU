@@ -26,6 +26,38 @@
 
   <!-- PLAY -->
   <main class="page grid2" id="page-play">
+    <section class="panel tiles-panel">
+      <div class="panel-head"><h2>Game files</h2></div>
+      <p class="hint">Needs the Game of the Year edition (the European disc). It already includes the title updates, so none is needed. Drop things on a tile, or click it to choose.</p>
+      <div class="tiles">
+        <div class="tile" id="tile-game" data-drop="game" role="button" tabindex="0" data-tip="Drop the game disc image (.iso) or the extracted game folder here. Click to choose a disc image.">
+          <svg class="tile-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3a9 9 0 0 1 7.8 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></svg>
+          <span class="tile-title">Game</span>
+          <span class="tile-hint">Drop the ISO or the extracted game folder</span>
+          <div class="tile-bar"><i></i></div>
+          <span class="tile-status" id="tile-game-status"></span>
+          <input id="gameFolder" class="tile-path" readonly placeholder="Game folder next to the launcher (default)" data-tip="The game folder you chose. Reset goes back to the one next to the launcher.">
+          <div class="tile-links">
+            <button class="link" id="gameBrowse" data-tip="Pick the folder with the extracted disc.">Folder…</button>
+            <button class="link" id="gameIso" data-tip="Pick the game disc image (.iso): it is unpacked into the game folder.">Disc image…</button>
+            <button class="link" id="gameReset" data-tip="Go back to the default folder.">Reset</button>
+          </div>
+        </div>
+        <div class="tile" id="tile-dlc" data-drop="dlc" role="button" tabindex="0" data-tip="Drop DLC here: Xbox Live packages, or zip / 7z archives of them. Click to choose files.">
+          <svg class="tile-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-5 9 5v8l-9 5-9-5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 9l9 5 9-5M12 14v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" opacity=".5"/></svg>
+          <span class="tile-title">DLC</span>
+          <span class="tile-hint">Drop packages or a zip / 7z of them</span>
+          <div class="tile-bar"><i></i></div>
+          <span class="tile-status" id="tile-dlc-status"></span>
+          <div class="tile-links">
+            <button class="link" id="dlc-add" data-tip="Choose DLC packages or zip / 7z archives of them. They appear in the game next time it starts.">Add DLC…</button>
+            <button class="link" id="dlc-manage" data-tip="Every installed pack, each with a switch to keep it out of the game without deleting it.">Manage packs…</button>
+            <button class="link" data-open="dlc" data-tip="Opens Documentsm4dlc.">Open folder</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="panel-head"><h2>Game</h2></div>
       <label class="field" data-tip="The language of the game's menus and text, from the string tables on your disc.">
@@ -35,14 +67,6 @@
       <div class="hint" id="lang-note"></div>
     </section>
 
-    <section class="panel">
-      <div class="panel-head"><h2>Files</h2></div>
-      <p class="hint">Needs the Game of the Year edition (the European disc). It already includes the title updates, so none is needed.</p>
-      <div class="field" data-drop="game" data-tip="Drop the game disc image (.iso) or the extracted files here. The folder with your extracted game disc (it holds default.xex). Empty uses the game folder next to the launcher.">
-        <span>Game folder</span>
-        <div class="pathrow"><input id="gameFolder" readonly><button class="ghost" id="gameBrowse" data-tip="Pick the folder with the extracted disc.">Folder…</button><button class="ghost" id="gameIso" data-tip="Pick the game disc image (.iso): it is unpacked into the game folder.">Disc image…</button><button class="ghost" id="gameReset" data-tip="Go back to the default folder.">Reset</button></div>
-      </div>
-    </section>
 
     <section class="panel launch-panel">
       <div class="panel-head"><h2>Ready</h2></div>
@@ -223,20 +247,6 @@
 
     </div>
 
-    <div class="stack">
-    <section class="panel" data-drop="dlc">
-      <div class="panel-head">
-        <h2>DLC packs</h2>
-        <button class="primary small" id="dlc-add" data-tip="Installs DLC packages (the files as downloaded from Xbox Live, or zip / 7z archives of them; you can also drop them on this panel) into the game's DLC folder. They appear in the game next time it starts.">Add DLC</button>
-      </div>
-      <p class="hint" id="dlc-summary"></p>
-      <div class="buttons-row">
-        <button class="ghost small" id="dlc-manage" data-tip="Every installed pack, each with a switch to keep it out of the game without deleting it.">Manage packs…</button>
-        <button class="ghost small" data-open="dlc" data-tip="Opens Documents\fm4\dlc.">Open DLC folder</button>
-      </div>
-    </section>
-
-    </div>
 
   </main>
 
@@ -304,6 +314,7 @@
   </div>
   <div class="tooltip" id="tooltip" hidden></div>
   <div class="toast" id="toast" hidden></div>
+  <div id="drop" hidden><div>Drop it on a tile: Game or DLC</div></div>
   <script src="host.js"></script>
   <script src="app.js"></script>
 </body>

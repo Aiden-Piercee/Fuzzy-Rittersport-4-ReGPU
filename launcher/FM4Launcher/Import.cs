@@ -111,21 +111,21 @@ public static class Import
             if (!XIso.Looks(path)) throw new InvalidDataException($"{Path.GetFileName(path)} isn't a game disc image (.iso).");
             var n = XIso.Extract(path, dest, (i, done, total) => status?.Invoke($"Unpacking the disc: {done * 100 / Math.Max(1, total)}%"));
             if (!File.Exists(Path.Combine(dest, "default.xex"))) throw new InvalidDataException("The disc unpacked, but has no default.xex: is it Forza Motorsport 4?");
-            return $"Disc unpacked: {n} files in {dest}.";
+            return $"Disc unpacked: {n} files.";
         }
         var root = FindUp(path, "default.xex") ?? throw new InvalidDataException("That folder has no default.xex: pick the extracted disc.");
         if (string.Equals(Path.GetFullPath(root).TrimEnd('\\', '/'), Path.GetFullPath(dest).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase))
-            return $"The game is already in {dest}.";
+            return "The game is already in the game folder.";
         if (path.StartsWith(Incoming, StringComparison.OrdinalIgnoreCase))
         {
             status?.Invoke("Moving the game files into place…");
             CopyTree(root, dest);
-            return $"Game files are in {dest}.";
+            return "Game files are in place.";
         }
         // A folder picked in place: use it where it is, nothing copied.
         settings.GameFolder = root;
         settings.Save();
-        return $"Using {root} as the game folder.";
+        return "Using the chosen game folder.";
     }
 
     static string? FindUp(string dir, string file, int depth = 3)

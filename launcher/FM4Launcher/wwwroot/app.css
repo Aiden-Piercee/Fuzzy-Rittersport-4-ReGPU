@@ -237,4 +237,37 @@ textarea { resize: vertical; min-height: 120px; }
 #musicVolume { width: 84px; flex: none; }
 
 /* Drop targets: lit while files are dragged over them. */
-[data-drop].dropping { outline: 2px dashed var(--accent, #6aa9ff); outline-offset: 4px; border-radius: 6px; }
+
+/* drop tiles (Game, DLC) */
+.tiles-panel { grid-column: 1 / -1; overflow: visible; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 4px; }
+.tile { position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 172px; padding: 18px 20px; background: var(--panel-2); border: 2px dashed #3a404c; border-radius: 12px; cursor: pointer; outline: none; transition: border-color .12s, background .12s; }
+.tile:hover, .tile:focus-visible { border-color: var(--accent); }
+.tile.hot { border-style: solid; border-color: var(--accent); background: #2a1a1e; box-shadow: 0 0 0 4px rgba(227, 38, 47, .18); }
+.tile.busy { border-style: solid; border-color: var(--accent-2); cursor: progress; }
+.tile.done { border-style: solid; border-color: var(--ok); }
+.tile.err { border-style: solid; border-color: var(--accent); }
+.tile-icon { width: 30px; height: 30px; color: var(--muted); }
+.tile.hot .tile-icon, .tile:hover .tile-icon { color: var(--accent); }
+.tile-title { font-size: 18px; font-weight: 700; }
+.tile-hint { color: var(--muted); font-size: 12.5px; }
+.tile-bar { height: 8px; border-radius: 99px; background: var(--panel); overflow: hidden; margin-top: auto; visibility: hidden; }
+.tile.busy .tile-bar { visibility: visible; }
+.tile-bar i { display: block; height: 100%; width: 0; background: var(--accent-2); transition: width .15s; }
+.tile.indet .tile-bar i { width: 35%; animation: tile-slide 1.1s ease-in-out infinite alternate; }
+@keyframes tile-slide { from { margin-left: 0; } to { margin-left: 65%; } }
+.tile-status { font-size: 12.5px; font-weight: 600; min-height: 18px; word-break: break-word; }
+.tile-status.ok { color: var(--ok); }
+.tile-status.bad { color: var(--muted); }
+.tile-status.err { color: #ff9d96; }
+.tile-links { display: flex; gap: 14px; flex-wrap: wrap; }
+.link { background: none; padding: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; }
+.link:hover:not(:disabled) { color: var(--text); }
+#drop { position: fixed; inset: 0; z-index: 20; border: 3px dashed var(--accent); pointer-events: none; }
+#drop > div { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); background: rgba(11, 13, 17, .92); border: 1px solid var(--accent); border-radius: 99px; padding: 8px 18px; font-weight: 700; white-space: nowrap; }
+#drop[hidden] { display: none; }
+@media (max-width: 760px) { .tiles { grid-template-columns: 1fr; } }
+
+.tile-path { width: 100%; min-width: 0; text-overflow: ellipsis; font-size: 12px; padding: 5px 8px; }
+#page-play { grid-template-rows: auto minmax(0, 1fr); }
+.tiles-panel { min-height: min-content; }
