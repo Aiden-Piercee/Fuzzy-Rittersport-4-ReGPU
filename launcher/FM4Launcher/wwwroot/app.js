@@ -13,6 +13,7 @@ const pending = new Map()
 if (host) host.addEventListener("message", (e) => {
   const m = e.data
   if (m.event === "progress") return onProgress(m.data)
+  if (m.event === "status") return toast(m.data, true)
   const p = pending.get(m.id)
   if (!p) return
   pending.delete(m.id)
@@ -196,8 +197,6 @@ function render() {
   }
   $("gameFolder").value = set.gameFolder
   $("gameFolder").placeholder = s.paths.gameDefault + " (default)"
-  $("updateFolder").value = set.titleUpdateFolder
-  $("updateFolder").placeholder = s.paths.updateDefault + " (default)"
   fill($("upscale"), o.upscale, set.upscale)
   fill($("sharpening"), o.sharpening, set.sharpening)
   fill($("optimizeLevel"), o.optimizeLevels, set.optimizeLevel)
@@ -342,9 +341,7 @@ $("customFps").onchange = (e) => {
 $("msaa").onchange = (e) => change({ msaa: +e.target.value })
 $("smaa").onchange = (e) => change({ smaa: +e.target.value })
 $("gameBrowse").onclick = () => guarded(async () => { state = await call("folder.browse", "game"); render() })
-$("updateBrowse").onclick = () => guarded(async () => { state = await call("folder.browse", "update"); render() })
 $("gameReset").onclick = () => change({ gameFolder: "" })
-$("updateReset").onclick = () => change({ titleUpdateFolder: "" })
 $("upscaler").onchange = (e) => change({ upscaler: e.target.value })
 $("upscale").onchange = (e) => change({ upscale: +e.target.value })
 $("optimizeLevel").onchange = (e) => change({ optimizeLevel: +e.target.value })
@@ -392,6 +389,100 @@ async function addPackages(cmd, what) {
   if (r.errors && r.errors.length) toast(r.errors.join(" "))
   else if (r.added) toast(`${r.added} ${what}${r.added > 1 ? "s" : ""} installed. ${r.added > 1 ? "They appear" : "It appears"} in the game next time it starts.`, true)
 }
+// ---- files given to the launcher: picked (the Browse buttons) or dropped on a [data-drop] area.
+// A dropped file's path isn't given to the page, so each file goes over in 1 MB pieces to a staging folder and is
+// used from there (a disc image is as big as the disc: it takes a while, and the Disc image… button skips the copy).
+
+const CHUNK = 1 << 20
+async function entriesOf(item) {
+  const entry = item.webkitGetAsEntry && item.webkitGetAsEntry()
+  const out = []
+  async function walk(en, prefix) {
+    if (en.isFile) {
+      out.push({ file: await new Promise((ok, no) => en.file(ok, no)), rel: prefix + en.name })
+    } else {
+      const reader = en.createReader()
+      for (;;) {
+        const batch = await new Promise((ok, no) => reader.readEntries(ok, no))
+        if (!batch.length) break
+        for (const c of batch) await walk(c, prefix + en.name + "/")
+      }
+    }
+  }
+  if (entry) await walk(entry, "")
+  else { const f = item.getAsFile(); if (f) out.push({ file: f, rel: f.name }) }
+  return out
+}
+function b64(blob) {
+  return new Promise((ok, no) => {
+    const r = new FileReader()
+    r.onload = () => ok(r.result.slice(r.result.indexOf(",") + 1))
+    r.onerror = () => no(r.error)
+    r.readAsDataURL(blob)
+  })
+}
+let dropping = false
+async function dropOn(kind, items) {
+  if (dropping) return toast("Still copying the last drop.")
+  dropping = true
+  let id = null
+  try {
+    const files = []
+    for (const it of items) files.push(...await entriesOf(it))
+    if (!files.length) return toast("Nothing to take from that.")
+    const total = files.reduce((n, f) => n + f.file.size, 0)
+    id = await call("drop.begin")
+    let sent = 0
+    for (const { file, rel } of files) {
+      let off = 0
+      do {
+        const data = await b64(file.slice(off, off + CHUNK))
+        await call("drop.write", { id, rel, first: off === 0, data })
+        off += CHUNK
+        sent = Math.min(total, sent + CHUNK)
+        toast(`Copying: ${size(sent)} of ${size(total)}`, true)
+      } while (off < file.size)
+    }
+    toast("Working on it…", true)
+    const r = await call("drop.finish", { id, kind })
+    id = null
+    state = r.state
+    render()
+    if (r.errors && r.errors.length) toast(r.errors.join(" "))
+    else if (kind === "dlc") toast(`${r.added} package${r.added > 1 ? "s" : ""} installed. They appear in the game next time it starts.`, true)
+    else toast(r.message, true)
+  } catch (e) {
+    toast(e.message)
+    if (id) call("drop.finish", { id, kind: "none" }).catch(() => {})
+  } finally { dropping = false }
+}
+let dragDepth = 0
+function dropTarget(e) { return e.target.closest && e.target.closest("[data-drop]") }
+document.addEventListener("dragover", (e) => {
+  if (!e.dataTransfer || ![...e.dataTransfer.types].includes("Files")) return
+  e.preventDefault() // otherwise the window opens the file
+  for (const d of document.querySelectorAll("[data-drop]")) d.classList.toggle("dropping", d === dropTarget(e))
+})
+document.addEventListener("dragleave", (e) => { if (!e.relatedTarget) for (const d of document.querySelectorAll("[data-drop]")) d.classList.remove("dropping") })
+document.addEventListener("drop", (e) => {
+  if (!e.dataTransfer || ![...e.dataTransfer.types].includes("Files")) return
+  e.preventDefault()
+  for (const d of document.querySelectorAll("[data-drop]")) d.classList.remove("dropping")
+  const t = dropTarget(e)
+  if (!t) return toast("Drop it on Game folder, Title update or DLC packs.")
+  const items = [...e.dataTransfer.items].filter((i) => i.kind === "file")
+  // The entries are only readable during the event, so take them now.
+  const taken = items.map((i) => ({ webkitGetAsEntry: () => i.webkitGetAsEntry(), getAsFile: () => i.getAsFile(), _e: i.webkitGetAsEntry && i.webkitGetAsEntry(), _f: i.getAsFile() }))
+  dropOn(t.dataset.drop, taken.map((i) => ({ webkitGetAsEntry: () => i._e, getAsFile: () => i._f })))
+})
+for (const [id, kind] of [["gameIso", "game"]])
+  $(id).onclick = () => guarded(async () => {
+    const r = await call("import.pick", { kind })
+    if (!r) return
+    state = r.state
+    render()
+    toast(r.message, true)
+  })
 $("dlc-add").onclick = () => guarded(() => addPackages("dlc.add", "package"))
 for (const b of document.querySelectorAll("[data-open]")) b.onclick = () => guarded(() => call("open", b.dataset.open))
 // Settings changed elsewhere (the game's own window, an edited settings.ini): picked up when coming back here.

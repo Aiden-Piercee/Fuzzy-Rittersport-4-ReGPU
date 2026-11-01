@@ -235,3 +235,6 @@ textarea { resize: vertical; min-height: 120px; }
 .item .ghost.small { flex: none; }
 #mods { flex: 0 0 auto; }
 #musicVolume { width: 84px; flex: none; }
+
+/* Drop targets: lit while files are dragged over them. */
+[data-drop].dropping { outline: 2px dashed var(--accent, #6aa9ff); outline-offset: 4px; border-radius: 6px; }

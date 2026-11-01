@@ -70,10 +70,45 @@ public sealed class Bridge
                 return State();
             case "dlc.add":
                 {
-                    var files = await _window.ShowOpenFileAsync("Choose DLC packages", null, true, AnyFile);
+                    var files = await _window.ShowOpenFileAsync("Choose DLC packages or archives (zip, 7z)", null, true, AnyFile);
                     if (files is not { Length: > 0 }) return new { added = 0, errors = Array.Empty<string>(), state = State() };
-                    var (added, errors) = Dlc.Add(files);
+                    var (added, errors) = await Task.Run(() => Import.Dlc(files));
                     return new { added, errors, state = State() };
+                }
+            // A drop: the page sends each file in pieces (the window can't give a dropped file's path), then asks for it
+            // to be used. begin -> write (many) -> finish.
+            case "drop.begin": return Import.Begin();
+            case "drop.write":
+                Import.Write(Str(a, "id"), Str(a, "rel"), a!["first"]!.GetValue<bool>(), Convert.FromBase64String(Str(a, "data")));
+                return null;
+            case "drop.finish":
+                {
+                    var id = Str(a, "id");
+                    var kind = Str(a, "kind");
+                    try
+                    {
+                        if (kind == "none") return null; // the page gave up: just clear the staging folder
+                        var items = Import.StagedItems(id);
+                        if (items.Count == 0) throw new InvalidOperationException("Nothing was dropped.");
+                        if (kind == "dlc")
+                        {
+                            var (added, errors) = await Task.Run(() => Import.Dlc(items));
+                            return new { added, errors, state = State() };
+                        }
+                        // One thing: a file, or a folder. A folder dropped with its files beside others: the staging folder itself.
+                        var one = items.Count == 1 ? items[0] : Path.GetDirectoryName(items[0])!;
+                        var msg = await Task.Run(() => Import.Game(one, s => Push("status", s)));
+                        return new { message = msg, state = State() };
+                    }
+                    finally { Import.Discard(id); }
+                }
+            case "import.pick":
+                {
+                    // The Disc image… button: the game disc (.iso), read where it is.
+                    var files = await _window.ShowOpenFileAsync("Choose the game disc image (.iso)", null, false, [("Disc image", ["*.iso"])]);
+                    if (files is not { Length: > 0 }) return null;
+                    var msg = await Task.Run(() => Import.Game(files[0], s => Push("status", s)));
+                    return new { message = msg, state = State() };
                 }
             case "folder.browse":
                 {

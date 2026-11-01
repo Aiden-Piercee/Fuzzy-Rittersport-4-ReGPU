@@ -37,13 +37,10 @@
 
     <section class="panel">
       <div class="panel-head"><h2>Files</h2></div>
-      <div class="field" data-tip="The folder with your extracted game disc (it holds default.xex). Empty uses the game folder next to the launcher.">
+      <p class="hint">Needs the Game of the Year edition (the European disc). It already includes the title updates, so none is needed.</p>
+      <div class="field" data-drop="game" data-tip="Drop the game disc image (.iso) or the extracted files here. The folder with your extracted game disc (it holds default.xex). Empty uses the game folder next to the launcher.">
         <span>Game folder</span>
-        <div class="pathrow"><input id="gameFolder" readonly><button class="ghost" id="gameBrowse">Browse…</button><button class="ghost" id="gameReset" data-tip="Go back to the default folder.">Reset</button></div>
-      </div>
-      <div class="field" data-tip="The folder with the game's title update (it holds default.xexp). Empty uses Documents\fm4\update.">
-        <span>Title update</span>
-        <div class="pathrow"><input id="updateFolder" readonly><button class="ghost" id="updateBrowse">Browse…</button><button class="ghost" id="updateReset" data-tip="Go back to the default folder.">Reset</button></div>
+        <div class="pathrow"><input id="gameFolder" readonly><button class="ghost" id="gameBrowse" data-tip="Pick the folder with the extracted disc.">Folder…</button><button class="ghost" id="gameIso" data-tip="Pick the game disc image (.iso): it is unpacked into the game folder.">Disc image…</button><button class="ghost" id="gameReset" data-tip="Go back to the default folder.">Reset</button></div>
       </div>
     </section>
 
@@ -227,10 +224,10 @@
     </div>
 
     <div class="stack">
-    <section class="panel">
+    <section class="panel" data-drop="dlc">
       <div class="panel-head">
         <h2>DLC packs</h2>
-        <button class="primary small" id="dlc-add" data-tip="Installs DLC packages (the files as downloaded from Xbox Live) into the game's DLC folder. They appear in the game next time it starts.">Add DLC</button>
+        <button class="primary small" id="dlc-add" data-tip="Installs DLC packages (the files as downloaded from Xbox Live, or zip / 7z archives of them; you can also drop them on this panel) into the game's DLC folder. They appear in the game next time it starts.">Add DLC</button>
       </div>
       <p class="hint" id="dlc-summary"></p>
       <div class="buttons-row">

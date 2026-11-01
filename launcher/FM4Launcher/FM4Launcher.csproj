@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Photino.NET" Version="4.0.16" />
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
   </ItemGroup>
 
   <ItemGroup>
