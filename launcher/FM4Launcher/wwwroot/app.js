@@ -469,7 +469,7 @@ document.addEventListener("drop", (e) => {
   e.preventDefault()
   for (const d of document.querySelectorAll("[data-drop]")) d.classList.remove("dropping")
   const t = dropTarget(e)
-  if (!t) return toast("Drop it on Game folder, Title update or DLC packs.")
+  if (!t) return toast("Drop it on the Game folder or the DLC packs.")
   const items = [...e.dataTransfer.items].filter((i) => i.kind === "file")
   // The entries are only readable during the event, so take them now.
   const taken = items.map((i) => ({ webkitGetAsEntry: () => i.webkitGetAsEntry(), getAsFile: () => i.getAsFile(), _e: i.webkitGetAsEntry && i.webkitGetAsEntry(), _f: i.getAsFile() }))
