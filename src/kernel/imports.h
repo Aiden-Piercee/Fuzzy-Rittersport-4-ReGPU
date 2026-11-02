@@ -19,6 +19,7 @@ void TraceImportReturn(const char* name, PPCContext& ctx);
 extern bool g_traceXam;
 // FM2_ONLINE=1: the network link is up and the profile reports as signed in to Live (imports_net.cpp).
 bool NetOnline();
+uint32_t NetServerAddr(); // the title server, in network byte order
 void TraceXamBegin(const char* name, PPCContext& ctx);
 void TraceXamEnd(const char* name, PPCContext& ctx);
 #define GUEST_EXPORT(name)                                          \

@@ -55,7 +55,9 @@ uint64_t Xuid()
 // The profile is signed in on the controller that last pressed Start or A when the sign-in guide
 // opens (user 0 until then).
 std::atomic<uint32_t> g_signedInUser{ 0 }, g_lastActiveUser{ 0 };
-bool IsSignedIn(uint32_t u) { return u == g_signedInUser.load(); }
+// XUSER_INDEX_ANY (0xFF) means the signed-in user when online.
+uint32_t ResolveUser(uint32_t u) { return NetOnline() && u == 0xFF ? g_signedInUser.load() : u; }
+bool IsSignedIn(uint32_t u) { return ResolveUser(u) == g_signedInUser.load(); }
 uint32_t SignInMask() { return 1u << g_signedInUser.load(); }
 
 constexpr uint32_t kContentDataSize = 0x134;
@@ -90,6 +92,9 @@ struct EnumeratorObject : KernelObject
     EnumeratorObject() : KernelObject(Kind::Other) {}
     std::vector<ContentItem> items;
     size_t next = 0;
+    // XamCreateEnumeratorHandle enumerators (Live): the app's open message and the item layout.
+    uint32_t app = 0, openMsg = 0, closeMsg = 0, itemSize = 0, maxItems = 0;
+    bool served = false;
 };
 
 std::mutex g_listenerMutex;
@@ -134,8 +139,8 @@ GUEST_EXPORT(XamUserGetName)
 
 GUEST_EXPORT(XamUserCheckPrivilege)
 {
-    // (user, mask, result*); 0xFF is "any user" and asks about the signed-in one
-    if (!IsSignedIn(ctx.r3.u32) && !(NetOnline() && ctx.r3.u32 == 0xFF))
+    // (user, mask, result*)
+    if (!IsSignedIn(ctx.r3.u32))
     {
         StoreIfNonNull(ctx.r5.u32, 0);
         Return(ctx, X_ERROR_NO_SUCH_USER);
@@ -943,9 +948,17 @@ GUEST_EXPORT(XamContentCreateEnumerator)
 
 GUEST_EXPORT(XamCreateEnumeratorHandle)
 {
-    // (user, app, openMessage, closeMessage, extraSize, itemCount, flags, handle*): the handle goes out
-    // through the eighth argument, r10.
-    StoreIfNonNull(ctx.r10.u32, CreateHandle(std::make_shared<EnumeratorObject>()));
+    // (user, app, openMessage, closeMessage, itemSize, itemCount, flags, handle*); the handle pointer is the
+    // eighth argument, r10 (the ninth, on the stack, if r10 is empty).
+    auto e = std::make_shared<EnumeratorObject>();
+    e->app = ctx.r4.u32;
+    e->openMsg = ctx.r5.u32;
+    e->closeMsg = ctx.r6.u32;
+    e->itemSize = ctx.r7.u32;
+    e->maxItems = ctx.r8.u32;
+    const uint32_t handle = CreateHandle(e);
+    Log("enumerator: app %08X open %08X close %08X itemSize %u count %u -> handle %08X", e->app, e->openMsg, e->closeMsg, e->itemSize, e->maxItems, handle);
+    StoreIfNonNull(ctx.r10.u32 ? ctx.r10.u32 : StackArg(ctx, 8), handle);
     Return(ctx, X_ERROR_SUCCESS);
 }
 
@@ -954,7 +967,26 @@ GUEST_EXPORT(XamEnumerate)
     // (handle, flags, buffer, size, itemsReturned*, overlapped)
     auto e = std::dynamic_pointer_cast<EnumeratorObject>(GetHandle(ctx.r3.u32));
     uint32_t count = 0;
-    if (e)
+    if (e && e->openMsg == 0x58039 && NetOnline() && !e->served)
+    {
+        // XTITLE_SERVER_INFO { in_addr (network order), u32 flags, char info[32] }: the title server.
+        const uint32_t buffer = ctx.r5.u32, size = std::min(e->itemSize, ctx.r6.u32);
+        memset(GuestPtr(buffer), 0, size);
+        if (size >= 8)
+        {
+            const uint32_t addr = NetServerAddr();
+            memcpy(GuestPtr(buffer), &addr, 4);
+            StoreBE32(buffer + 4, 0);
+        }
+        std::string hex;
+        char b[4];
+        for (uint32_t i = 0; i < std::min(size, 48u); i++)
+            hex += (snprintf(b, sizeof b, "%02X", *GuestPtr<uint8_t>(buffer + i)), b);
+        Log("enumerator: title server entry (%u bytes): %s", size, hex.c_str());
+        e->served = true;
+        count = 1;
+    }
+    else if (e)
     {
         const uint32_t buffer = ctx.r5.u32, capacity = ctx.r6.u32 / kContentDataSize;
         for (; count < capacity && e->next < e->items.size(); count++, e->next++)

@@ -25,7 +25,7 @@ thread_local std::vector<Call> t_calls; // nested imports (a UI call that comple
 
 bool Traced(const char* name)
 {
-    for (const char* prefix : { "Xam", "XNotify", "XUser", "XMsg", "XGet", "Nui" })
+    for (const char* prefix : { "Xam", "NetDll_", "XNotify", "XUser", "XMsg", "XGet", "Nui" })
         if (strncmp(name, prefix, strlen(prefix)) == 0)
             return true;
     return false;

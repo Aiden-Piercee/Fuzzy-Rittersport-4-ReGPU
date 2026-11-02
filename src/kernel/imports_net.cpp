@@ -152,6 +152,11 @@ bool NetOnline()
     return g_online;
 }
 
+uint32_t NetServerAddr()
+{
+    return ServerAddr();
+}
+
 // Startup and status -----------------------------------------------------------------------
 
 GUEST_EXPORT(NetDll_XNetStartup)
@@ -192,6 +197,19 @@ GUEST_EXPORT(NetDll_XNetGetTitleXnAddr)
     x[10] = 0x00; x[11] = 0x22; x[12] = 0x48;
     memcpy(x + 13, reinterpret_cast<const uint8_t*>(&a) + 1, 3);
     Return(ctx, 0x02 | 0x04); // XNET_GET_XNADDR_ETHERNET | STATIC
+}
+
+GUEST_EXPORT(NetDll_XNetXnAddrToMachineId)
+{
+    // (caller, XNADDR*, uint64* machineId): a stable id built from the address.
+    if (!g_online)
+    {
+        Return(ctx, 10050); // WSAENETDOWN
+        return;
+    }
+    const uint32_t address = LoadBE32(ctx.r4.u32);
+    StoreBE64(ctx.r5.u32, 0x00FA000000000000ull | address);
+    Return(ctx, 0);
 }
 
 GUEST_EXPORT(NetDll_XNetGetConnectStatus)
