@@ -70,6 +70,8 @@ def _scalar(t, v):
         return struct.pack(_FIXED[t], v)
     if t == "bool":
         return b"\1" if v else b"\0"
+    if t == "blob8":
+        return bytes(v).rjust(8, b"\0")[:8]
     if t == "guid":
         g = bytes.fromhex(v) if isinstance(v, str) else bytes(v)
         return g.rjust(16, b"\0")[:16]
@@ -105,7 +107,7 @@ def _default(t):
         return {}
     if isinstance(t, tuple):
         return []
-    return {"bool": False, "guid": "", "str": "", "time": iso(0), "bytes": b""}.get(t, 0)
+    return {"bool": False, "guid": "", "blob8": b"", "str": "", "time": iso(0), "bytes": b""}.get(t, 0)
 
 
 def iso(ts):

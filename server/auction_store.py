@@ -22,6 +22,7 @@ DEFAULT_CONFIG = {
     "durations_hours": [24, 72, 168],
     "starting_credits": 1_000_000,
     "max_active_per_seller": 20,
+    "fees": {24: 2000, 72: 5000, 168: 10000},   # listing fee in credits, by duration in hours
 }
 
 
@@ -56,7 +57,21 @@ class Store:
         CREATE TABLE IF NOT EXISTS payments(
           id INTEGER PRIMARY KEY AUTOINCREMENT, xuid TEXT, auction INTEGER,
           kind TEXT, amount INTEGER, collected INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS textures(id INTEGER PRIMARY KEY AUTOINCREMENT,
+          owner TEXT, livery BLOB, thumb BLOB);
         """)
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(auctions)")}
+        if "texture_id" not in cols:
+            self.db.execute("ALTER TABLE auctions ADD COLUMN texture_id INTEGER DEFAULT 0")
+
+    def put_textures(self, owner, livery, thumb):
+        with self.lock:
+            return self.db.execute("INSERT INTO textures(owner,livery,thumb) VALUES(?,?,?)",
+                                   (owner, livery, thumb)).lastrowid
+
+    def get_textures(self, tid):
+        r = self.db.execute("SELECT livery, thumb FROM textures WHERE id=?", (tid,)).fetchone()
+        return (r["livery"], r["thumb"]) if r else (b"", b"")
 
     # -- users ---------------------------------------------------------------
     def user(self, xuid, gamertag=None):
@@ -111,15 +126,19 @@ class Store:
             if n >= c["max_active_per_seller"]:
                 raise AuctionError(13, "too many active auctions")
             now = self.clock()
+            fee = c["fees"].get(hours, 0)
+            if self.credits(seller) < fee:
+                raise AuctionError(14, "not enough credits for the listing fee")
+            self._add_credits(seller, -fee)
             cur = self.db.execute(
                 "INSERT INTO auctions(seller,seller_tag,title,car_ordinal,class,pi,year,make,"
-                "country,drive,power,car_blob,textures,start_price,buyout,created,ends,status,top_bid)"
-                " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)",
+                "country,drive,power,car_blob,textures,start_price,buyout,created,ends,status,top_bid,"
+                "texture_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?)",
                 (seller, gamertag, car.get("title", ""), car.get("car_ordinal", 0),
                  car.get("class", 0), car.get("pi", 0), car.get("year", 0), car.get("make", ""),
                  car.get("country", 0), car.get("drive", 0), car.get("power", 0),
                  car.get("car_blob", b""), car.get("textures", b""), start_price,
-                 buyout or 0, now, now + hours * 3600, ACTIVE))
+                 buyout or 0, now, now + hours * 3600, ACTIVE, car.get("texture_id", 0)))
             return cur.lastrowid
 
     def get(self, auction_id):
@@ -174,7 +193,7 @@ class Store:
                 raise AuctionError(31, "cannot cancel after a bid")
             self.db.execute("UPDATE auctions SET status=? WHERE id=?", (CANCELLED, a["id"]))
 
-    def restart(self, auction_id, seller, hours):
+    def restart(self, auction_id, seller, hours, start_price=None, buyout=None):
         """Relist an unsold (expired or cancelled) auction."""
         with self.lock:
             a = self.get(auction_id)
@@ -185,8 +204,17 @@ class Store:
             if hours not in self.cfg["durations_hours"]:
                 raise AuctionError(12, "duration not allowed")
             now = self.clock()
-            self.db.execute("UPDATE auctions SET status=?, created=?, ends=?, car_collected=0 WHERE id=?",
-                            (ACTIVE, now, now + hours * 3600, a["id"]))
+            sp = start_price or a["start_price"]
+            bo = a["buyout"] if buyout is None else buyout
+            if bo and bo < sp:
+                raise AuctionError(11, "buyout below start price")
+            fee = self.cfg["fees"].get(hours, 0)
+            if self.credits(seller) < fee:
+                raise AuctionError(14, "not enough credits for the listing fee")
+            self._add_credits(seller, -fee)
+            self.db.execute("UPDATE auctions SET status=?, created=?, ends=?, car_collected=0,"
+                            " start_price=?, buyout=? WHERE id=?",
+                            (ACTIVE, now, now + hours * 3600, sp, bo, a["id"]))
 
     def ban(self, auction_id):
         """Moderation: pulls an auction. Bidder is refunded, car returns to seller."""
@@ -237,6 +265,13 @@ class Store:
             if f.get(col):
                 q += f" AND COALESCE(NULLIF(top_bid,0),start_price){op}?"
                 args.append(f[col])
+        if f.get("seller"):
+            q += " AND seller=?"
+            args.append(f["seller"])
+        for col, op in (("year_min", ">="), ("year_max", "<=")):
+            if f.get(col):
+                q += f" AND year{op}?"
+                args.append(f[col])
         for col in ("class", "country", "drive", "make", "car_ordinal", "year"):
             if f.get(col):
                 q += f" AND {col}=?"
@@ -248,6 +283,18 @@ class Store:
         q += " ORDER BY ends ASC LIMIT ? OFFSET ?"
         args += [f.get("limit", 50), f.get("offset", 0)]
         return [dict(r) for r in self.db.execute(q, args).fetchall()]
+
+    def get_many(self, ids):
+        self.settle()
+        out = []
+        for i in ids:
+            r = self.db.execute("SELECT * FROM auctions WHERE id=?", (i,)).fetchone()
+            if r:
+                out.append(dict(r))
+        return out
+
+    def bid_count(self, auction_id):
+        return self.db.execute("SELECT COUNT(*) FROM bids WHERE auction=?", (auction_id,)).fetchone()[0]
 
     def mine(self, xuid):
         self.settle()

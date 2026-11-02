@@ -9,6 +9,7 @@ Licence: AGPL-3.0-or-later.
 """
 import argparse, http.client, struct, sys
 import xtsw
+import layouts
 import services
 
 
@@ -32,28 +33,31 @@ class Client:
         return status, code, msg, data[12 + (mlen if status else 0):]
 
     def call(self, cls, method, req=None):
-        """Encode `req` with the schema table, return (status, code, message, decoded)."""
+        """Encode `req` with the game's layout, return (status, code, message, decoded reply)."""
         sch = services.SCHEMAS
-        body = xtsw.encode(sch[(cls, method, "req")], req or {}) if (cls, method, "req") in sch else b""
+        qs = sch.get((cls, method, "req")) or layouts.request(cls, method)
+        rs = sch.get((cls, method, "res")) or layouts.result(cls, method)
+        body = xtsw.encode(qs, layouts.fill(qs, req or {}))
         status, code, msg, tail = self.raw(cls, method, body)
-        res = None
-        if status == 0 and (cls, method, "res") in sch:
-            res = xtsw.decode(sch[(cls, method, "res")], tail)
+        res = xtsw.decode(rs, tail) if status == 0 and rs else None
         return status, code, msg, res
+
+
+CAR = {"make": 1, "carId": 1234, "carClass": 3, "perfIndex": 640.0, "year": 1999, "peakPower": 300.0}
 
 
 def demo(host, port):
     seller, buyer = Client(host, port, 1001), Client(host, port, 2002)
-    print("logon", seller.call("User", "Logon2", {"loginData": {"xuid": 1001, "gamertag": "Seller"}})[3]["responseData"]["userData"])
-    print("logon", buyer.call("User", "Logon2", {"loginData": {"xuid": 2002, "gamertag": "Buyer"}})[3]["responseData"]["userData"])
-    st, code, msg, r = seller.call("Auction", "Create", {
-        "title": "Demo car", "car_ordinal": 1234, "class": 3, "pi": 640, "year": 1999,
-        "power": 300, "start_price": 20000, "buyout": 60000, "hours": 24, "car_blob": b"car-data"})
-    aid = r["id"]
-    print("created", aid)
-    print("bid", buyer.call("Auction", "PlaceBid", {"id": aid, "amount": 21000})[3])
-    print("list", [a["id"] for a in buyer.call("Auction", "GetAuctions", {"limit": 10})[3]["auctions"]])
-    print("self-bid refused", seller.call("Auction", "PlaceBid", {"id": aid, "amount": 30000})[:3])
+    for c, tag in ((seller, "Seller"), (buyer, "Buyer")):
+        c.call("User", "Logon2", {"loginData": {"xuid": c.xuid, "gamertag": tag}})
+    r = seller.call("Auction", "Create", {"openingPrice": 20000, "buyoutPrice": 60000,
+                                          "durationMs": 24 * 3600_000, "car": CAR})
+    aid = r[3]["auctionId"]
+    print("created", aid, r[:3])
+    print("bid", buyer.call("Auction", "PlaceBid", {"auctionId": aid, "amount": 21000})[:3])
+    s = buyer.call("Auction", "SearchForAuction", {"maxResultIds": 10, "maxResults": 10})[3]
+    print("search ids", s["auctionIds"], [a["base"]["status"] for a in s["auctionResults"]])
+    print("self-bid refused", seller.call("Auction", "PlaceBid", {"auctionId": aid, "amount": 30000})[:3])
 
 
 def main(argv=None):

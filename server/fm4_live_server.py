@@ -58,6 +58,14 @@ class State:
         self.store = store
 
 
+def default_reply(ctx):
+    """Unhandled call: an empty record in the method's own reply layout when the game's
+    descriptors know it (empty lists, zeros), otherwise a run of zeros."""
+    import layouts, xtsw
+    sch = layouts.result_for(short_class(ctx.class_name), ctx.method)
+    return xtsw.encode(sch, {}) if sch is not None else EMPTY_TAIL
+
+
 def make_app(log_path, state=None):
     state = state or State()
 
@@ -78,7 +86,7 @@ def make_app(log_path, state=None):
             handled = fn is not None
             note = ""
             try:
-                out = envelope(fn(ctx, body) if fn else EMPTY_TAIL)
+                out = envelope(fn(ctx, body) if fn else default_reply(ctx))
             except ServiceError as e:
                 out, note = envelope(status=2, code=e.code, message=e.message), e.message
             except Exception as e:  # report to the game as a service failure

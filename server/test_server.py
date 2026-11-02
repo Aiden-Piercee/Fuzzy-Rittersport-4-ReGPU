@@ -1,6 +1,6 @@
 import json, os, struct, tempfile, threading, unittest
 import fm4_live_server as s
-import services, xtsw
+import services, xtsw, layouts, auction_service
 from auction_store import Store, AuctionError
 from client import Client
 
@@ -75,6 +75,7 @@ class Logon(Base):
         self.assertTrue(all(p["enabled"] and p["access"] == 0 for p in r["permissions"]))
 
 
+CARW = {"make": 1, "carId": 1234, "carClass": 3, "perfIndex": 640.0, "year": 1999, "peakPower": 300.0}
 CAR = {"title": "T", "car_ordinal": 9, "class": 2, "pi": 500, "power": 250, "car_blob": b"blob"}
 
 
@@ -144,32 +145,67 @@ class Rules(unittest.TestCase):
 
 
 class Wire(Base):
+    def logon(self, c, tag):
+        return c.call("User", "Logon2", {"loginData": {"xuid": c.xuid, "gamertag": tag}})
+
     def test_full_walk_over_http(self):
         sel, buy = self.cl(1001), self.cl(2002)
-        sel.call("User", "Logon2", {"loginData": {"xuid": 1001, "gamertag": "Seller"}})
-        buy.call("User", "Logon2", {"loginData": {"xuid": 2002, "gamertag": "Buyer"}})
-        st, _, _, r = sel.call("Auction", "Create", dict(CAR, start_price=20000, buyout=0, hours=24))
-        self.assertEqual(st, 0); aid = r["id"]
-        st, code, msg, _ = sel.call("Auction", "PlaceBid", {"id": aid, "amount": 30000})
+        self.logon(sel, "Seller"); self.logon(buy, "Buyer")
+        st, _, _, r = sel.call("Auction", "Create", {"openingPrice": 20000, "buyoutPrice": 0,
+                               "durationMs": 24 * 3600_000, "car": CARW, "tuning": b"tune",
+                               "partsInstalled": b"parts"})
+        self.assertEqual(st, 0); aid = r["auctionId"]
+        self.assertEqual(self.store.credits("1001"), 1_000_000 - 2000)  # listing fee
+        st, code, msg, _ = sel.call("Auction", "PlaceBid", {"auctionId": aid, "amount": 30000})
         self.assertEqual((st, code), (2, 21))
-        st, _, _, r = buy.call("Auction", "PlaceBid", {"id": aid, "amount": 20000})
-        self.assertEqual(r["top_bid"], 20000)
-        lst = buy.call("Auction", "GetAuctions", {"limit": 10})[3]["auctions"]
-        self.assertEqual(lst[0]["viewer_status"], 4)  # top bidder
-        det = buy.call("Auction", "GetDetails", {"id": aid})[3]
-        self.assertEqual(det["car_blob"], b"blob"); self.assertEqual(det["min_next_bid"], 21000)
-        self.assertEqual(len(buy.call("Auction", "GetMyBids")[3]["auctions"]), 1)
+        self.assertEqual(buy.call("Auction", "PlaceBid", {"auctionId": aid, "amount": 20000})[0], 0)
+        s = buy.call("Auction", "SearchForAuction", {"maxResultIds": 10, "maxResults": 10})[3]
+        self.assertEqual(s["auctionIds"], [aid]); self.assertEqual(s["totalAvailable"], 1)
+        b = s["auctionResults"][0]["base"]
+        self.assertEqual((b["status"], b["topBidAmount"], b["nextBidAmount"], b["numBids"]), (4, 20000, 21000, 1))
+        self.assertEqual(s["auctionResults"][0]["carModelId"], 1234)
+        d = buy.call("Auction", "GetDetails", {"auctionId": aid})[3]["auctionDetails"]
+        self.assertEqual(d["car"]["carId"], 1234); self.assertEqual(d["tuning"], b"tune")
+        self.assertEqual(d["seller"]["wzGamerTag"], "Seller")
+        g = buy.call("Auction", "GetAuctions", {"auctionIds": [aid], "maxAuctionResults": 5})[3]
+        self.assertEqual(g["auctions"][0]["id"], aid)
+        self.assertEqual(len(buy.call("Auction", "GetMyBids", {"maxResultIds": 5, "maxResults": 5})[3]["auctionIds"]), 1)
         self.clock.t += 24 * 3600 + 1
-        won = buy.call("Auction", "GetMyBids")[3]["auctions"][0]
-        self.assertEqual(won["viewer_status"], 5)
-        self.assertTrue(won["allowed_actions"] & services.COLLECT_WON)
-        self.assertEqual(buy.call("Auction", "RetrieveCarForAuction", {"id": aid})[3]["car_blob"], b"blob")
-        paid = sel.call("Auction", "RetrievePaymentForAuctionSold", {"id": aid})[3]
-        self.assertEqual(paid["amount"], 19000)
+        won = buy.call("Auction", "GetMyBids", {"maxResultIds": 5, "maxResults": 5})[3]["auctionResults"][0]["base"]
+        self.assertEqual(won["status"], 5)
+        self.assertTrue(won["allowedActions"] & auction_service.COLLECT_WON)
+        car = buy.call("Auction", "RetrieveCarForAuction", {"auctionId": aid})[3]
+        self.assertEqual((car["car"]["carId"], car["partsInstalled"], car["isOwner"]), (1234, b"parts", False))
+        paid = sel.call("Auction", "RetrievePaymentForAuctionSold", {"auctionId": aid})[3]
+        self.assertEqual(paid["bidAmount"], 19000)
 
-    def test_config(self):
-        r = self.cl(1).call("Auction", "GetGlobalConfig")[3]
-        self.assertEqual(r["fee_pct"], 5); self.assertIn(24, r["durations_hours"])
+    def test_textures_and_lost_payment(self):
+        sel, a, b = self.cl(1), self.cl(2), self.cl(3)
+        tid = sel.call("Auction", "UploadAuctionTextures", {"liveryTexture": b"L", "LiveryThumbnail": b"T"})[3]["texturesId"]
+        aid = sel.call("Auction", "Create", {"openingPrice": 10000, "durationMs": 24 * 3600_000,
+                                             "car": CARW, "texturesId": tid})[3]["auctionId"]
+        a.call("Auction", "PlaceBid", {"auctionId": aid, "amount": 10000})
+        b.call("Auction", "PlaceBid", {"auctionId": aid, "amount": 10500})
+        s = a.call("Auction", "SearchForAuction", {"maxResults": 5})[3]["auctionResults"][0]
+        self.assertEqual(s["LiveryThumbnail"], b"T"); self.assertEqual(s["base"]["status"], 6)  # outbid
+        self.assertTrue(s["base"]["allowedActions"] & auction_service.RECV_REFUND)
+        self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[3]["bidAmount"], 10000)
+        self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[1], 42)
+
+    def test_config_matches_game_layout(self):
+        r = self.cl(1).call("Auction", "GetGlobalConfig", {"maxFeeResults": 10})[3]
+        self.assertEqual(r["feeData"][0], {"hours": 24, "credits": 2000})
+        self.assertTrue(r["searchPriceThresholds"]); self.assertEqual(r["refreshParams"]["auctionsRefreshSeconds"], 30)
+
+    def test_defaults_and_acks(self):
+        c = self.cl(1)
+        self.assertEqual(c.raw("OnlineProfile", "UpdateAll", b"junk")[:3], (0, 0, ""))
+        self.assertEqual(c.call("DailyCreditBonus", "GetPayout")[3], {"amount": 0})
+        # unhandled call with a known reply record: empty lists in the right layout, not bare zeros
+        st, _, _, tail = c.raw("Scoreboard", "GetRollupRows")
+        self.assertEqual(st, 0)
+        self.assertEqual(xtsw.decode(layouts.result_for("Scoreboard", "GetRollupRows"), tail) is not None, True)
+        self.assertEqual(c.call("DLCMetadata", "GetStringTableInfo", {"language": "EN"})[0], 0)
 
 
 if __name__ == "__main__": unittest.main()
