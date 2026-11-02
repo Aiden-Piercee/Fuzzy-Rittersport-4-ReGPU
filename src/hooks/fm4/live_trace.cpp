@@ -49,3 +49,24 @@ PPC_FUNC(sub_8294DD08) // permission lookup (mgr, user, feature id) -> 0 allowed
     if (g_traceXam)
         Log("live gate: permission lookup feature %u -> %u (lr %08llX)", feature, ctx.r3.u32, (unsigned long long)ctx.lr);
 }
+
+// The other builders of the "cannot access / connect to Live" dialogs and the upload result popups.
+#define LIVE_TRACE_ENTRY(addr, what)                                                                     \
+    PPC_FUNC_IMPL(__imp__sub_##addr);                                                                    \
+    PPC_FUNC(sub_##addr)                                                                                 \
+    {                                                                                                    \
+        if (g_traceXam)                                                                                  \
+            Log("live gate: " what " (r3 %08X r4 %08X lr %08llX)", ctx.r3.u32, ctx.r4.u32, (unsigned long long)ctx.lr); \
+        __imp__sub_##addr(ctx, base);                                                                    \
+    }
+
+LIVE_TRACE_ENTRY(825EC5A0, "Cannot_Access_Live popup sub_825EC5A0")
+LIVE_TRACE_ENTRY(82520CE0, "parental/locked-privilege popup sub_82520CE0")
+LIVE_TRACE_ENTRY(82520DC0, "Not_Connected_To_Live popup sub_82520DC0")
+LIVE_TRACE_ENTRY(825F1E38, "tuning upload confirm sub_825F1E38")
+LIVE_TRACE_ENTRY(825F1F18, "tuning upload result sub_825F1F18")
+LIVE_TRACE_ENTRY(825F20A8, "tuning upload sub_825F20A8")
+LIVE_TRACE_ENTRY(82622C08, "tuning upload sub_82622C08")
+LIVE_TRACE_ENTRY(825BEFC0, "upload row handler sub_825BEFC0")
+LIVE_TRACE_ENTRY(826B50D8, "storefront upload manager sub_826B50D8")
+LIVE_TRACE_ENTRY(825A8A98, "multiplayer join-failure popup sub_825A8A98")
