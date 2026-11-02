@@ -129,7 +129,20 @@ for _m in ("UpdateAll", "UpdateAllTables", "UpdateCareerCalendar"):
 
 @handler("DailyCreditBonus", "GetPayout")
 def get_payout(ctx, body):
-    return enc("DailyCreditBonus", "GetPayout", {"amount": 0})  # no daily bonus
+    # No daily bonus, except a one-off grant per profile for testing: FM4_GRANT_CREDITS=<amount> pays that
+    # amount through the next GetPayout of each XUID, once (recorded in the database, so polling cannot repeat it).
+    amount = 0
+    try:
+        grant = int(os.environ.get("FM4_GRANT_CREDITS", "0") or 0)
+    except ValueError:
+        grant = 0
+    if grant > 0:
+        db = ctx.state.store.db
+        db.execute("CREATE TABLE IF NOT EXISTS grants(xuid TEXT PRIMARY KEY, amount INTEGER)")
+        xuid = str(int(ctx.xuid, 0)) if ctx.xuid else ""
+        if xuid and db.execute("INSERT OR IGNORE INTO grants VALUES(?,?)", (xuid, grant)).rowcount:
+            amount = grant
+    return enc("DailyCreditBonus", "GetPayout", {"amount": amount})
 
 
 @handler("DLCMetadata", "GetStringTableInfo")
