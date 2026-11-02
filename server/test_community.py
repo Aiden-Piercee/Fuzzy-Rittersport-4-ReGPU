@@ -161,6 +161,8 @@ class Scores(Base):
         rv = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 1})[3]["rival"]["scoreData"]
         self.assertEqual((rv["score"], rv["ghostFileId"]), (95.5, gid))
         self.assertEqual(b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 9})[1], 67)
+        r1 = a.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "startAt": 1, "maxResults": 50})[3]
+        self.assertEqual(len(r1["rows"]), 2)   # startAt is 1-based: position 1 is the first row
         self.assertEqual(a.call("Scoreboard", "GetBestScores", {"gameScoreboardId": 3, "trackId": 0})[3]["timeScore"]["score"], 95.5)
         self.assertEqual(a.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 4, "maxTimeTrialResults": 10})[3]["timeTrials"], [])
 
@@ -181,6 +183,9 @@ class Scores(Base):
         tt = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 4, "maxTimeTrialResults": 10})[3]
         self.assertEqual([t["trackName"] for t in tt["timeTrials"]], ["LagunaSeca", "Tsukuba"])
         self.assertTrue(tt["timeTrials"][0]["active"])
+        rv = c.call("Scoreboard", "GetRival", {"gameScoreboardId": 7, "rivalXuid": 0})
+        self.assertEqual((rv[0], rv[3]["rival"]["scoreData"]["ghostFileId"]), (0, 0))
+        self.assertTrue(rv[3]["rival"]["scoreData"]["score"] > 0)
 
 
 class SeededAuctions(unittest.TestCase):

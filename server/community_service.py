@@ -778,7 +778,7 @@ def get_rows(ctx, body):
     r = dec("Scoreboard", "GetRows", body)
     track = unset(r["trackId"])
     _seed_board(ctx, r["gameScoreboardId"], track or 0)
-    rows, mine, n = _rows(ctx, r["gameScoreboardId"], track, max(0, r["startAt"]), r["maxResults"], r["isClubBoard"])
+    rows, mine, n = _rows(ctx, r["gameScoreboardId"], track, max(0, r["startAt"] - 1), r["maxResults"], r["isClubBoard"])
     return enc("Scoreboard", "GetRows", {"rows": rows, "userRow": mine, "available": n})
 
 
@@ -788,7 +788,7 @@ def get_rollup(ctx, body):
     r = dec("Scoreboard", "GetRollupRows", body)
     board = r["pivotId"]
     _seed_board(ctx, board, 0)
-    rows, mine, n = _rows(ctx, board, None, max(0, r["startAt"]), r["maxResults"], r["isClubBoard"])
+    rows, mine, n = _rows(ctx, board, None, max(0, r["startAt"] - 1), r["maxResults"], r["isClubBoard"])
     return enc("Scoreboard", "GetRollupRows", {"rows": rows, "userRow": mine, "available": n})
 
 
@@ -811,11 +811,19 @@ def best_scores(ctx, body):
 @handler("Scoreboard", "GetRival")
 @guarded
 def get_rival(ctx, body):
+    """The named player's best score on the board. The game also asks with rival xuid 0 (no one chosen
+    yet); then, if leaderboards are seeded, the best invented row stands in as the rival (no ghost)."""
     r = dec("Scoreboard", "GetRival", body)
-    db = _db(ctx)
-    s = db.execute("SELECT * FROM scores WHERE board=? AND owner=? ORDER BY score ASC LIMIT 1",
-                   (r["gameScoreboardId"], str(r["rivalXuid"]))).fetchone()
-    if not s:
+    db, x = _db(ctx), xuid_of(ctx)
+    s = None
+    if r["rivalXuid"]:
+        s = db.execute("SELECT * FROM scores WHERE board=? AND owner=? ORDER BY score ASC LIMIT 1",
+                       (r["gameScoreboardId"], str(r["rivalXuid"]))).fetchone()
+    if s is None and ctx.state.seed_scores and ctx.state.gamedb:
+        _seed_board(ctx, r["gameScoreboardId"], 0)
+        s = db.execute("SELECT * FROM scores WHERE board=? AND owner<>? ORDER BY score ASC LIMIT 1",
+                       (r["gameScoreboardId"], x)).fetchone()
+    if s is None:
         raise ServiceError(67, "no score from that rival")
     return enc("Scoreboard", "GetRival", {"rival": {"scoreData": score_row(ctx, s, 1, 1), "bounty": 0}})
 
