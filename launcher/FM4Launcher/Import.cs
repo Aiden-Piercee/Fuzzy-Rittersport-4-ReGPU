@@ -115,38 +115,47 @@ public static class Import
         return Convert.ToHexString(SHA256.HashData(f));
     }
 
-    // What the Game tile shows for the game folder: "ok" / "mismatch" / "missing" (no default.xex), or null while the
-    // hash is still being worked out on a worker thread. Kept per file (path, size, date), so it re-checks when the
-    // folder changes and costs nothing otherwise. XexChecked fires when a new answer is ready.
-    static readonly ConcurrentDictionary<string, string> XexCache = new();
-    static readonly ConcurrentDictionary<string, bool> XexBusy = new();
-    public static event Action? XexChecked;
+    // What the Game tile shows about the game folder's default.xex. Nothing is hashed unless the user drops or picks
+    // something, or clicks "Check game files": the answer is remembered here, per file (path, size, date), so it goes
+    // stale by itself when the file changes. "unchecked" = no answer yet; "missing" = no default.xex.
+    static readonly ConcurrentDictionary<string, string> XexAnswers = new();
 
-    public static string? XexStatus(string gameDir)
+    static string? XexKey(string xex)
+    {
+        try { var fi = new FileInfo(xex); return fi.Exists ? $"{fi.FullName}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}" : null; }
+        catch { return null; }
+    }
+
+    static void Record(string xex, bool ok)
+    {
+        if (XexKey(xex) is { } key) XexAnswers[key] = ok ? "ok" : "mismatch";
+    }
+
+    /// <summary>The remembered answer for the game folder's default.xex: "ok", "mismatch", "unchecked" or "missing". Reads nothing but file info.</summary>
+    public static string XexStatus(string gameDir)
+    {
+        var key = XexKey(Path.Combine(gameDir, "default.xex"));
+        if (key is null) return "missing";
+        return XexAnswers.TryGetValue(key, out var r) ? r : "unchecked";
+    }
+
+    /// <summary>Hashes the game folder's default.xex now (the "Check game files" click) and remembers the answer.</summary>
+    public static string CheckNow(string gameDir)
     {
         var xex = Path.Combine(gameDir, "default.xex");
-        FileInfo fi;
-        try { fi = new FileInfo(xex); } catch { return "missing"; }
-        if (!fi.Exists) return "missing";
-        var key = $"{fi.FullName}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}";
-        if (XexCache.TryGetValue(key, out var done)) return done;
-        if (XexBusy.TryAdd(key, true))
-            _ = Task.Run(() =>
-            {
-                string r;
-                try { r = IsGoty(HashFile(xex)) ? "ok" : "mismatch"; } catch { r = "mismatch"; }
-                XexCache[key] = r;
-                XexBusy.TryRemove(key, out _);
-                XexChecked?.Invoke();
-            });
-        return null;
+        if (!File.Exists(xex)) return "missing";
+        Record(xex, IsGoty(HashFile(xex)));
+        return XexStatus(gameDir);
     }
 
     /// <summary>Throws unless the default.xex in that folder (when there is one) is the supported one.</summary>
     public static void RequireGoty(string folder)
     {
         var xex = Path.Combine(folder, "default.xex");
-        if (File.Exists(xex) && !IsGoty(HashFile(xex))) throw new InvalidDataException(FolderNotGoty);
+        if (!File.Exists(xex)) return;
+        var ok = IsGoty(HashFile(xex));
+        Record(xex, ok);
+        if (!ok) throw new InvalidDataException(FolderNotGoty);
     }
 
     /// <summary>A disc image or a folder with the extracted disc (default.xex at its top, or one level inside). Goes into
@@ -163,6 +172,7 @@ public static class Import
             if (!IsGoty(disc)) throw new InvalidDataException(NotGoty);
             var n = XIso.Extract(path, dest, (i, done, total) => status?.Invoke($"Unpacking the disc: {done * 100 / Math.Max(1, total)}%"));
             if (!File.Exists(Path.Combine(dest, "default.xex"))) throw new InvalidDataException("The disc unpacked, but has no default.xex: is it Forza Motorsport 4?");
+            Record(Path.Combine(dest, "default.xex"), true); // checked against the image before unpacking
             return $"Disc unpacked: {n} files.";
         }
         var root = FindUp(path, "default.xex") ?? throw new InvalidDataException("That folder has no default.xex: pick the extracted disc.");

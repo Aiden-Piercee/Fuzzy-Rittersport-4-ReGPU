@@ -14,7 +14,6 @@ if (host) host.addEventListener("message", (e) => {
   const m = e.data
   if (m.event === "progress") return onProgress(m.data)
   if (m.event === "status") return tileProgress(m.data)
-  if (m.event === "recheck") { guarded(async () => { state = await call("state"); render() }); return }
   if (m.event === "dragging") { veil.hidden = !m.data; if (!m.data) setHot(null); return }
   if (m.event === "over") return setHot(tileAt(m.data.x, m.data.y))
   if (m.event === "dropped-at") return droppedAt(m.data)
@@ -342,7 +341,8 @@ $("customFps").onchange = (e) => {
 $("msaa").onchange = (e) => change({ msaa: +e.target.value })
 $("smaa").onchange = (e) => change({ smaa: +e.target.value })
 $("gameBrowse").onclick = () => guarded(async () => { state = await call("folder.browse", "game"); render() })
-$("gameReset").onclick = () => change({ gameFolder: "" })
+$("gameReset").onclick = () => guarded(async () => { state = await call("game.reset"); render() })
+$("gameCheck").onclick = () => runTile("game", async () => { state = await call("xex.check"); render(); tileReset("game") })
 $("upscaler").onchange = (e) => change({ upscaler: e.target.value })
 $("upscale").onchange = (e) => change({ upscale: +e.target.value })
 $("optimizeLevel").onchange = (e) => change({ optimizeLevel: +e.target.value })
@@ -457,10 +457,10 @@ function renderTiles() {
     e.className = "tile-status " + (ok ? "ok" : "bad")
   }
   const x = s.checks.xex
-  set("game", s.checks.game && x === "ok", !s.checks.game ? "No game files yet: drop the disc or its files here"
+  set("game", s.checks.game && x !== "mismatch", !s.checks.game ? "No game files yet: drop the disc or its files here"
     : x === "ok" ? "✓ Game of the Year ✓"
     : x === "mismatch" ? "⚠ default.xex doesn't match the Game of the Year disc"
-    : "Checking default.xex…")
+    : "✓ Game files found")
   if (!tileState.game && s.checks.game && x === "mismatch") $("tile-game-status").className = "tile-status err"
   const n = s.dlc.length, on = s.dlc.filter((d) => d.enabled).length
   set("dlc", n > 0, n ? `✓ ${n} package${n > 1 ? "s" : ""} installed (${on} on)` : "None installed")

@@ -20,7 +20,6 @@ public sealed class Bridge
     {
         _window = window;
         window.RegisterWebMessageReceivedHandler((_, text) => OnMessage(text));
-        Import.XexChecked += () => Push("recheck", true);
         // Windows: drops from Explorer give the real paths (DropTarget.cs). The window's child windows exist a moment
         // after the page loads, so the drop target is taken over a few times. Elsewhere the page's own drop is used.
         if (OperatingSystem.IsWindows())
@@ -86,10 +85,22 @@ public sealed class Bridge
         {
             case "state": return State();
             case "save":
-                a.Deserialize<GameSettings>(Json)!.Save();
+                SaveFromPage(a.Deserialize<GameSettings>(Json)!);
+                return State();
+            // The folders are changed only by a drop, a pick or Reset, never by the page's copy of the settings.
+            case "game.reset":
+                {
+                    var s = GameSettings.Load();
+                    s.GameFolder = "";
+                    s.Save();
+                    return State();
+                }
+            // "Check game files": the only way the game folder's default.xex is hashed besides a drop or pick.
+            case "xex.check":
+                await Task.Run(() => Import.CheckNow(Paths.GameDir));
                 return State();
             case "launch":
-                a?["settings"].Deserialize<GameSettings>(Json)?.Save();
+                if (a?["settings"].Deserialize<GameSettings>(Json) is { } toSave) SaveFromPage(toSave);
                 if (Game.Running) throw new InvalidOperationException("The game is already running.");
                 Game.Launch();
                 return null;
@@ -310,6 +321,16 @@ public sealed class Bridge
         };
     }
 
+    // The page's copy of the settings, with the folders kept as the backend has them (a drop or pick may have changed
+    // them after the page last looked).
+    static void SaveFromPage(GameSettings fromPage)
+    {
+        var now = GameSettings.Load();
+        fromPage.GameFolder = now.GameFolder;
+        fromPage.TitleUpdateFolder = now.TitleUpdateFolder;
+        fromPage.Save();
+    }
+
     static object State()
     {
         var settings = GameSettings.Load();
@@ -323,7 +344,7 @@ public sealed class Bridge
             {
                 exe = File.Exists(Paths.Exe),
                 game = File.Exists(Path.Combine(Paths.GameDir, "default.xex")),
-                xex = Import.XexStatus(Paths.GameDir) ?? "checking",
+                xex = Import.XexStatus(Paths.GameDir),
                 running = Game.Running,
             },
             options = new
