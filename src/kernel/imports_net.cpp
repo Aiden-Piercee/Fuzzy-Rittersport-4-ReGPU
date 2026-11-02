@@ -147,6 +147,11 @@ uint32_t LoadRaw32(uint32_t guest)
 }
 } // namespace
 
+bool NetOnline()
+{
+    return g_online;
+}
+
 // Startup and status -----------------------------------------------------------------------
 
 GUEST_EXPORT(NetDll_XNetStartup)

@@ -99,7 +99,7 @@ std::mutex g_listenerMutex;
 
 GUEST_EXPORT(XamUserGetSigninState)
 {
-    Return(ctx, IsSignedIn(ctx.r3.u32) ? 1 : 0); // signed in locally
+    Return(ctx, IsSignedIn(ctx.r3.u32) ? (NetOnline() ? 2 : 1) : 0); // 1 locally, 2 to Live (FM2_ONLINE)
 }
 
 GUEST_EXPORT(XamUserGetXUID)
@@ -160,8 +160,8 @@ GUEST_EXPORT(XamUserGetSigninInfo)
     if (info)
     {
         StoreBE64(info, Xuid());
-        StoreBE32(info + 8, 0);
-        StoreBE32(info + 12, 1); // signed in locally
+        StoreBE32(info + 8, NetOnline() ? 1 : 0); // XUSER_INFO_FLAG_LIVE_ENABLED
+        StoreBE32(info + 12, NetOnline() ? 2 : 1); // signed in to Live (FM2_ONLINE) or locally
         strncpy(GuestPtr<char>(info + 16), GetSettings().profile.c_str(), 15);
     }
     Return(ctx, X_ERROR_SUCCESS);

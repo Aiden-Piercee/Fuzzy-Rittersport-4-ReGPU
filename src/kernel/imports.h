@@ -17,6 +17,8 @@ void TraceImportReturn(const char* name, PPCContext& ctx);
 // FM4_TRACE_XAM=1 logs every XAM/XNotify/XUser/XMsg import with its arguments and result
 // (FM4_TRACE_XAM_LIMIT calls per name, default 300; trace_xam.cpp).
 extern bool g_traceXam;
+// FM2_ONLINE=1: the network link is up and the profile reports as signed in to Live (imports_net.cpp).
+bool NetOnline();
 void TraceXamBegin(const char* name, PPCContext& ctx);
 void TraceXamEnd(const char* name, PPCContext& ctx);
 #define GUEST_EXPORT(name)                                          \
