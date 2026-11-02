@@ -906,6 +906,10 @@ GUEST_EXPORT(XamContentGetDeviceData)
     StoreBE32(data + 4, 1);                 // device type: HDD
     StoreBE64(data + 8, 20ull << 30);        // total bytes
     StoreBE64(data + 16, 16ull << 30);       // free bytes
+    // XDEVICE_DATA.wszFriendlyName[27] (UTF-16 BE) at +0x18: the device's name in the storage screens.
+    static const char16_t kName[] = u"Hard Drive";
+    for (uint32_t i = 0; kName[i]; i++)
+        *GuestPtr<uint16_t>(data + 0x18 + i * 2) = __builtin_bswap16(uint16_t(kName[i]));
     Return(ctx, X_ERROR_SUCCESS);
 }
 
