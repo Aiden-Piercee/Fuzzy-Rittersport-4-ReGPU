@@ -176,7 +176,7 @@ class Scores(Base):
         self.assertEqual(b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 9})[1], 67)
         gr = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 0})[3]["rival"]["scoreData"]
         self.assertEqual(gr["ghostFileId"], gid)          # rival 0 races the stored ghost
-        self.assertEqual(b.call("Scoreboard", "DownloadFile", {"id": 0, "maxSize": 100})[3]["data"], b"GHOST")
+        self.assertEqual(b.call("Scoreboard", "DownloadFile", {"id": 0, "maxSize": 100})[1], 6)   # unknown id: an error
         r0 = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 44, "rivalXuid": 0})   # no seeding, empty board
         self.assertEqual(r0[1], 0)
         self.assertTrue(r0[3]["rival"]["scoreData"]["score"] > 0)
@@ -210,8 +210,13 @@ class Scores(Base):
         tt7 = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 7, "maxTimeTrialResults": 150})[3]
         self.assertEqual(len(tt7["timeTrialCategories"]), 7)
         rv = c.call("Scoreboard", "GetRival", {"gameScoreboardId": 7, "rivalXuid": 0})
-        self.assertEqual((rv[0], rv[3]["rival"]["scoreData"]["ghostFileId"]), (0, 0))
+        self.assertEqual((rv[0], rv[3]["rival"]["scoreData"]["ghostFileId"]), (0, -1))
         self.assertTrue(rv[3]["rival"]["scoreData"]["score"] > 0)
+        self.assertEqual(rv[3]["rival"]["scoreData"]["ghostFileId"], -1)    # no ghost = -1
+        tt1 = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 1, "maxTimeTrialResults": 5})[3]["timeTrials"][0]
+        go = c.call("Hopper", "GetGameOptions", {"hopperId": tt1["hopperId"], "roundNum": 0, "cchOptionXmlMax": 0x8000})[3]["gameOptionsXml"]
+        self.assertIn(b'TrackId="%d"' % tt1["trackId"], go)
+        self.assertIn(b'NumLaps="3"', go)
 
 
 class SeededAuctions(unittest.TestCase):

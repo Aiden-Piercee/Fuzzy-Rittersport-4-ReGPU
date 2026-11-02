@@ -708,12 +708,12 @@ def upload_ghost(ctx, body):
 @handler("Scoreboard", "DownloadFile")
 @guarded
 def download_ghost(ctx, body):
+    """Exactly the bytes that were uploaded (the game checks their inner lengths); an unknown id is an error."""
     r = dec("Scoreboard", "DownloadFile", body)
     f = _db(ctx).execute("SELECT payload FROM files WHERE id=? AND kind='Ghost'", (r["id"],)).fetchone()
-    if not f:                                          # id 0 / unknown: the caller's newest ghost
-        f = _db(ctx).execute("SELECT payload FROM files WHERE kind='Ghost' ORDER BY (owner=?) DESC, id DESC LIMIT 1",
-                             (xuid_of(ctx),)).fetchone()
-    return enc("Scoreboard", "DownloadFile", {"data": bytes(f["payload"])[:r["maxSize"] or None] if f else b""})
+    if not f:
+        raise ServiceError(6, "no such ghost file")
+    return enc("Scoreboard", "DownloadFile", {"data": bytes(f["payload"])})
 
 
 def _stored_ghost(ctx, board, track=None):
@@ -742,7 +742,7 @@ def score_row(ctx, s, position, rank):
             "carPerformanceIndex": s["pi"], "usedSTM": bool(s["flags"] & 1), "usedABS": bool(s["flags"] & 2),
             "usedTCS": bool(s["flags"] & 4), "usedAutoBrake": bool(s["flags"] & 8),
             "usedAutoShifting": bool(s["flags"] & 16), "usedClutch": bool(s["flags"] & 32),
-            "isClean": bool(s["clean"]), "ghostFileId": s["ghost"],
+            "isClean": bool(s["clean"]), "ghostFileId": s["ghost"] or -1,
             "clanData": {"clanId": cl["clanId"], "clanTag": cl["clanTag"], "clanName": name["name"] if name else ""},
             "bounty": 0}
 
@@ -899,19 +899,42 @@ def time_trials(ctx, body):
         return enc("Scoreboard", "GetTimeTrials", {})
     # What categories 1-6 mean is not in the descriptors or the database: every requested category gets
     # its own run of active trials (different tracks per category), sorted by category as the game expects.
-    tracks = sorted((t for t in st.gamedb.tracks.values() if t["Active"]), key=lambda t: t["id"])
     ncat = max(1, min(r["maxTimeTrialCategories"] or 1, 7))
     per = max(1, min(5, (r["maxTimeTrialResults"] or 5) // ncat))
+    cats, entries = _trials(ctx, ncat, per)
+    return enc("Scoreboard", "GetTimeTrials", {"timeTrialCategories": cats, "timeTrials": entries})
+
+
+def _trials(ctx, ncat, per):
+    st = ctx.state
+    tracks = sorted((t for t in st.gamedb.tracks.values() if t["Active"]), key=lambda t: t["id"])
     now = st.store.clock()
     cats, entries = [], []
     for c in range(ncat):
         cats.append({"category": c, "startIndex": len(entries)})
         for i in range(per):
             t = tracks[(c * 7 + i) % len(tracks)]
+            tid = c * 100 + i + 1
             entries.append({
-                "id": c * 100 + i + 1, "scoreType": 0, "name": t["MediaName"],
+                "id": tid, "scoreType": 0, "name": t["MediaName"],
                 "description": f"Fastest lap at {t['MediaName']}", "notRegisteredMessage": "",
-                "trackId": t["id"], "trackName": t["MediaName"], "hopperId": 0, "gameOptionsIndex": 0,
+                "trackId": t["id"], "trackName": t["MediaName"], "hopperId": tid, "gameOptionsIndex": 0,
                 "startDate": xtsw.iso(now - 86400), "endDate": xtsw.iso(now + 86400 * 365),
                 "userRegistered": True, "featured": i == 0, "active": True})
-    return enc("Scoreboard", "GetTimeTrials", {"timeTrialCategories": cats, "timeTrials": entries})
+    return cats, entries
+
+
+@handler("Hopper", "GetGameOptions")
+@guarded
+def game_options(ctx, body):
+    """The race set-up for a time trial: its track, 3 laps, lower time wins. The hopperId the game sends is the
+    id the trial was listed with; an unknown id gets the first trial's track."""
+    r = dec("Hopper", "GetGameOptions", body)
+    track = 0
+    if ctx.state.gamedb:
+        _, entries = _trials(ctx, 7, 5)
+        e = next((x for x in entries if x["id"] == r["hopperId"]), entries[0] if entries else None)
+        track = e["trackId"] if e else 0
+    xml = ('<GameOptions GameTypePreset="0" TrackId="%d"><EndConditionOptions Type="NumLaps" NumLaps="3"/>'
+           '<ScoringOptions Type="TimeBased" BiggerIsBetter="0"/></GameOptions>' % track).encode()
+    return enc("Hopper", "GetGameOptions", {"gameOptionsXml": xml[:r["cchOptionXmlMax"] or 0x8000]})
