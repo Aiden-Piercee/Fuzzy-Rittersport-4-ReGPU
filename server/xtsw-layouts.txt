@@ -3179,3 +3179,237 @@
   members: first=0x8208a420 count=2
     scoreId kind=guid(13) off=0 cntOff=- size=16 flags=0
     data kind=bytes(15) off=20 cntOff=16 size=0 flags=3
+=== ClanAcceptClanInvite_Params @8207CA68 kind=9
+  members: first=0x8207ca20 count=2
+    clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    invitationId kind=i64(5) off=8 cntOff=- size=8 flags=0
+=== ClanApproveRequestToJoin_Params @8207CAB0 kind=9
+  members: first=0x8207ca8c count=1
+    approvedUser kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ClanChangeClanDetails_Params @8207CAD4 kind=9
+  members: first=0x8207caf8 count=3
+    newClanName kind=string(8) off=0 cntOff=- size=0 flags=3
+    newClanDescription kind=string(8) off=4 cntOff=- size=0 flags=3
+    isOpenForMembership kind=bool(12) off=8 cntOff=- size=1 flags=0
+=== ClanChangeMemberRole_Params @8207CB64 kind=9
+  members: first=0x8207cb88 count=2
+    userToChange kind=u64(6) off=0 cntOff=- size=8 flags=0
+    newRole kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ClanCreateClan_Params @8207CC18 kind=9
+  members: first=0x8207cbd0 count=2
+    clanTag kind=string(8) off=0 cntOff=- size=0 flags=3
+    clanName kind=string(8) off=4 cntOff=- size=0 flags=3
+=== ClanCreateClan_Results @8207CC60 kind=9
+  members: first=0x8207cc3c count=1
+    clanId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ClanGetClanHistory_Params @8207CC84 kind=9
+  members: first=0x8207cca8 count=2
+    userXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    maxEntries kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ClanGetClanHistory_Results @8207CD14 kind=9
+  members: first=0x8207ccf0 count=1
+    userClanHistory kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ClanHistoryEntryData kind=struct(9) off=0 cntOff=- size=144 flags=0
+        clanName kind=string(8) off=0 cntOff=- size=42 flags=0
+        date kind=systemtime(11) off=42 cntOff=- size=16 flags=0
+        user kind=struct(9) off=64 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        role kind=i32(3) off=136 cntOff=- size=4 flags=0
+        action kind=i32(3) off=140 cntOff=- size=4 flags=0
+=== ClanGetClanMembers_Params @8207CD80 kind=9
+  members: first=0x8207cd38 count=2
+    clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxMembers kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ClanGetClanMembers_Results @8207CDA4 kind=9
+  members: first=0x8207cdc8 count=2
+    clanMembers kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ClanMemberData kind=struct(9) off=0 cntOff=- size=80 flags=0
+        user kind=struct(9) off=0 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        recentClanStatusChange kind=bool(12) off=72 cntOff=- size=1 flags=0
+    totalMembers kind=u32(4) off=12 cntOff=- size=4 flags=1
+=== ClanGetClanStatus_Params @8207CE34 kind=9
+  members: first=0x8207ce10 count=1
+    xuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ClanGetClanStatus_Results @8207CE7C kind=9
+  members: first=0x8207ce58 count=1
+    clanStatus kind=struct(9) off=0 cntOff=- size=8 flags=1
+      acceptsClanInvites kind=bool(12) off=0 cntOff=- size=1 flags=0
+      clanId kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ClanGetUsersToInvite_Params @8207CEE8 kind=9
+  members: first=0x8207cea0 count=2
+    userFilter kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxResults kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ClanGetUsersToInvite_Results @8207CF30 kind=9
+  members: first=0x8207cf0c count=1
+    candidatesForInvite kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ClanCandidateData kind=struct(9) off=0 cntOff=- size=120 flags=0
+        user kind=struct(9) off=0 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        acceptsClanInvites kind=bool(12) off=72 cntOff=- size=1 flags=0
+        hasEverLoggedIn kind=bool(12) off=73 cntOff=- size=1 flags=0
+        clanName kind=string(8) off=74 cntOff=- size=42 flags=0
+=== ClanGetUsersToJoin_Params @8207CF54 kind=9
+  members: first=0x8207cf78 count=2
+    userFilter kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxResults kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ClanGetUsersToJoin_Results @8207CFE4 kind=9
+  members: first=0x8207cfc0 count=1
+    usersInClans kind=array(10) off=8 cntOff=4 size=0 flags=5
+      UserClanData kind=struct(9) off=0 cntOff=- size=120 flags=0
+        user kind=struct(9) off=0 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        clanMemberCount kind=i32(3) off=72 cntOff=- size=4 flags=0
+        clanName kind=string(8) off=76 cntOff=- size=42 flags=0
+        clanIsOpenForMembership kind=bool(12) off=118 cntOff=- size=1 flags=0
+=== ClanInviteToClanByName_Params @8207D074 kind=9
+  members: first=0x8207d050 count=1
+    usernameToInvite kind=string(8) off=0 cntOff=- size=0 flags=3
+=== ClanInviteToClan_Params @8207D02C kind=9
+  members: first=0x8207d008 count=1
+    userToInvite kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ClanRecommendMemberForRemoval_Params @8207D0BC kind=9
+  members: first=0x8207d098 count=1
+    userToRemove kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ClanRemoveFromClan_Params @8207D104 kind=9
+  members: first=0x8207d0e0 count=1
+    userToRemove kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ClanRequestJoiningClanByName_Params @8207D194 kind=9
+  members: first=0x8207d170 count=1
+    clanTag kind=string(8) off=0 cntOff=- size=0 flags=3
+=== ClanRequestJoiningClan_Params @8207D14C kind=9
+  members: first=0x8207d128 count=1
+    clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ContentDownloadContent_Params @822138A8 kind=9
+  members: first=0x82213818 count=4
+    contentId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    payloadOffset kind=u32(4) off=4 cntOff=- size=4 flags=0
+    requestedSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    userInitiated kind=bool(12) off=12 cntOff=- size=1 flags=0
+=== ContentDownloadContent_Results @822138CC kind=9
+  members: first=0x822138f0 count=3
+    isLastBuffer kind=bool(12) off=0 cntOff=- size=1 flags=1
+    downloadData kind=bytes(15) off=12 cntOff=8 size=0 flags=5
+    totalSize kind=u32(4) off=16 cntOff=- size=4 flags=1
+=== ContentUploadContent_Params @8221395C kind=9
+  members: first=0x82213980 count=4
+    contentId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    payloadOffset kind=u32(4) off=4 cntOff=- size=4 flags=0
+    payloadTotalSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    uploadData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ContentUploadContent_Results @82213A34 kind=9
+  members: first=0x82213a10 count=1
+    payloadUploadedSize kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== TransactionReconcile_Params @82082C70 kind=9
+  members: first=0x82082c28 count=2
+    transactionId kind=guid(13) off=0 cntOff=- size=16 flags=0
+    cbBufferSize kind=i32(3) off=16 cntOff=- size=4 flags=0
+=== TransactionReconcile_Results @82082C94 kind=9
+  members: first=0x82082cb8 count=2
+    WebRequestPayload kind=bytes(15) off=8 cntOff=4 size=0 flags=5
+    cbMaxAvailable kind=i32(3) off=12 cntOff=- size=4 flags=1
+=== UserAcceptClanInvites_Params @8207C2C4 kind=9
+  members: first=0x8207c2a0 count=1
+    acceptingClanInvites kind=bool(12) off=0 cntOff=- size=1 flags=0
+=== UserGetUserData_Results @8207C30C kind=9
+  members: first=0x8207c2e8 count=1
+    userData kind=struct(9) off=0 cntOff=- size=72 flags=1
+      qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+      flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+      clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+      clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+      roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+      currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+      currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+      currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+=== UserReportPiracyCheckStateEx_Params @8207C450 kind=9
+  members: first=0x8207c378 count=6
+    piracyCheckState kind=i32(3) off=0 cntOff=- size=4 flags=0
+    dwFailedReads kind=u32(4) off=4 cntOff=- size=4 flags=0
+    dwFailedHashes kind=u32(4) off=8 cntOff=- size=4 flags=0
+    dwBlocksChecked kind=u32(4) off=12 cntOff=- size=4 flags=0
+    dwTotalBlocks kind=u32(4) off=16 cntOff=- size=4 flags=0
+    fComplete kind=bool(12) off=20 cntOff=- size=1 flags=0
+=== UserReportPiracyCheckStateEx_Results @8207C498 kind=9
+  members: first=0x8207c474 count=1
+    shouldShowPiracyUI kind=bool(12) off=0 cntOff=- size=1 flags=1
+=== UserReportPiracyCheckState_Params @8207C354 kind=9
+  members: first=0x8207c330 count=1
+    piracyCheckState kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== UserSetFriends_Params @8207C4E0 kind=9
+  members: first=0x8207c4bc count=1
+    friendXuids kind=array(10) off=4 cntOff=0 size=0 flags=3
+      UInt64 kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== WebServicesNotificationsClear_Params @8221075C kind=9
+  members: first=0x82210738 count=1
+    notificationId kind=i64(5) off=0 cntOff=- size=8 flags=0
+=== WebServicesNotificationsGetCategories_Params @822107A4 kind=9
+  members: first=0x82210780 count=1
+    maxResults kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== WebServicesNotificationsGetCategories_Results @822107EC kind=9
+  members: first=0x822107c8 count=1
+    results kind=array(10) off=8 cntOff=4 size=0 flags=5
+      XlsNotificationCategory kind=struct(9) off=0 cntOff=- size=648 flags=0
+        type kind=i32(3) off=0 cntOff=- size=4 flags=0
+        name kind=string(8) off=4 cntOff=- size=128 flags=0
+        description kind=string(8) off=132 cntOff=- size=512 flags=0
+        backgroundImageFileId kind=i32(3) off=644 cntOff=- size=4 flags=0
+=== WebServicesNotificationsMarkRead_Params @82210834 kind=9
+  members: first=0x82210810 count=1
+    notificationId kind=i64(5) off=0 cntOff=- size=8 flags=0
+=== WebServicesNotificationsRetrieveForUser_Params @822108C4 kind=9
+  members: first=0x82210858 count=3
+    nonce kind=u16(1) off=0 cntOff=- size=2 flags=0
+    maxResults kind=i32(3) off=4 cntOff=- size=4 flags=0
+    cbParameterBlockSize kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== WebServicesNotificationsRetrieveForUser_Results @82210954 kind=9
+  members: first=0x822108e8 count=3
+    results kind=array(10) off=8 cntOff=4 size=0 flags=5
+      XlsNotification kind=struct(9) off=0 cntOff=- size=34 flags=0
+        id kind=i64(5) off=0 cntOff=- size=8 flags=0
+        xuidRecipient kind=u64(6) off=8 cntOff=- size=8 flags=0
+        notificationType kind=i16(2) off=16 cntOff=- size=2 flags=0
+        hasThumbnail kind=bool(12) off=18 cntOff=- size=1 flags=0
+        isRead kind=bool(12) off=19 cntOff=- size=1 flags=0
+        deleteAction kind=i32(3) off=20 cntOff=- size=4 flags=0
+        expirationDate kind=i64(5) off=24 cntOff=- size=8 flags=0
+        cbParameters kind=i16(2) off=32 cntOff=- size=2 flags=0
+    parameterBlock kind=bytes(15) off=20 cntOff=16 size=0 flags=5
+    nextRetrieveSeconds kind=i32(3) off=24 cntOff=- size=4 flags=1
+=== WebServicesNotificationsStartNewSession_Results @822109C0 kind=9
+  members: first=0x82210978 count=2
+    nonce kind=u16(1) off=0 cntOff=- size=2 flags=1
+    nextRetrieveSeconds kind=i32(3) off=4 cntOff=- size=4 flags=1
