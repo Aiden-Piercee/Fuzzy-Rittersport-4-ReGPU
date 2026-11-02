@@ -113,3 +113,8 @@ def result_for(cls, method):
         if f"{stem}_Results" in t:
             return t[f"{stem}_Results"]
     return None
+
+
+def has_request(cls, method):
+    t = table()
+    return any(f"{stem}_Params" in t for stem in (f"Forza{cls}{method}", f"ForzaWebServices{cls}{method}"))

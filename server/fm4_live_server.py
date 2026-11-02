@@ -62,8 +62,13 @@ def default_reply(ctx):
     """Unhandled call: an empty record in the method's own reply layout when the game's
     descriptors know it (empty lists, zeros), otherwise a run of zeros."""
     import layouts, xtsw
-    sch = layouts.result_for(short_class(ctx.class_name), ctx.method)
-    return xtsw.encode(sch, {}) if sch is not None else EMPTY_TAIL
+    cls = short_class(ctx.class_name)
+    sch = layouts.result_for(cls, ctx.method)
+    if sch is not None:
+        return xtsw.encode(sch, {})
+    if layouts.has_request(cls, ctx.method):  # a known call with no reply fields: plain success
+        return b""
+    return EMPTY_TAIL
 
 
 def make_app(log_path, state=None):

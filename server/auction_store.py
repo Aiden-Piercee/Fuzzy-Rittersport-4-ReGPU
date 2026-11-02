@@ -10,7 +10,7 @@ did not sell (same call, "failed" side).
 
 Licence: AGPL-3.0-or-later.
 """
-import sqlite3, threading, time
+import os, sqlite3, threading, time
 
 ACTIVE, EXPIRED, SOLD, CANCELLED = "active", "expired", "sold", "cancelled"
 
@@ -159,7 +159,9 @@ class Store:
             self.user(bidder, gamertag)
             if a["status"] != ACTIVE or a["banned"]:
                 raise AuctionError(20, "auction is not open")
-            if a["seller"] == bidder:
+            # FM4_ALLOW_SELF_BID=1 lets one test profile bid on its own auctions (a solo tester
+            # otherwise has nothing to bid on); the console refuses it.
+            if a["seller"] == bidder and not os.environ.get("FM4_ALLOW_SELF_BID"):
                 raise AuctionError(21, "cannot bid on your own auction")
             if a["top_bidder"] == bidder:
                 raise AuctionError(22, "already the top bidder")

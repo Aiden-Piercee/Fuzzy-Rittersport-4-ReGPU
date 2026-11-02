@@ -192,6 +192,18 @@ class Wire(Base):
         self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[3]["bidAmount"], 10000)
         self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[1], 42)
 
+    def test_known_call_without_reply_fields_is_plain_success(self):
+        st, code, msg, tail = self.cl(1).raw("User", "ValidateProfileCheckpoint", bytes(36))
+        self.assertEqual((st, tail), (0, b""))
+        self.assertEqual(self.cl(1).call("User", "GetForzaAssetCounts", {"maxAssets": 16})[3], {"assets": []})
+        self.assertEqual(self.cl(1).call("Storefront", "QueryOnlineCredit")[3], {"credit": 0})
+
+    def test_self_bid_switch(self):
+        os.environ["FM4_ALLOW_SELF_BID"] = "1"; self.addCleanup(os.environ.pop, "FM4_ALLOW_SELF_BID")
+        c = self.cl(1)
+        aid = c.call("Auction", "Create", {"openingPrice": 10000, "durationMs": 24 * 3600_000, "car": CARW})[3]["auctionId"]
+        self.assertEqual(c.call("Auction", "PlaceBid", {"auctionId": aid, "amount": 10000})[0], 0)
+
     def test_config_matches_game_layout(self):
         r = self.cl(1).call("Auction", "GetGlobalConfig", {"maxFeeResults": 10})[3]
         self.assertEqual(r["feeData"][0], {"hours": 24, "credits": 2000})
