@@ -193,9 +193,14 @@ class Scores(Base):
         self.assertEqual(scores, sorted(scores)); self.assertTrue(60 < scores[0] < 200)
         again = c.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "pivotId": -1, "maxResults": 10})[3]
         self.assertEqual([x["score"] for x in again["rows"]], scores)    # stable, not re-invented
-        tt = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 4, "maxTimeTrialResults": 10})[3]
-        self.assertEqual([t["trackName"] for t in tt["timeTrials"]], ["LagunaSeca", "Tsukuba"])
-        self.assertTrue(tt["timeTrials"][0]["active"])
+        tt = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 2, "maxTimeTrialResults": 10})[3]
+        self.assertEqual([c["category"] for c in tt["timeTrialCategories"]], [0, 1])
+        self.assertEqual(len(tt["timeTrials"]), 10)
+        self.assertEqual([c["startIndex"] for c in tt["timeTrialCategories"]], [0, 5])
+        self.assertTrue(all(x["active"] and x["userRegistered"] for x in tt["timeTrials"]))
+        self.assertEqual(len({x["id"] for x in tt["timeTrials"]}), 10)
+        tt7 = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 7, "maxTimeTrialResults": 150})[3]
+        self.assertEqual(len(tt7["timeTrialCategories"]), 7)
         rv = c.call("Scoreboard", "GetRival", {"gameScoreboardId": 7, "rivalXuid": 0})
         self.assertEqual((rv[0], rv[3]["rival"]["scoreData"]["ghostFileId"]), (0, 0))
         self.assertTrue(rv[3]["rival"]["scoreData"]["score"] > 0)

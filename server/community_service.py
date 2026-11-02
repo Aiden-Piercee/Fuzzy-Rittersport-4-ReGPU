@@ -842,12 +842,21 @@ def time_trials(ctx, body):
     st = ctx.state
     if not (st.seed_scores and st.gamedb):
         return enc("Scoreboard", "GetTimeTrials", {})
+    # What categories 1-6 mean is not in the descriptors or the database: every requested category gets
+    # its own run of active trials (different tracks per category), sorted by category as the game expects.
     tracks = sorted((t for t in st.gamedb.tracks.values() if t["Active"]), key=lambda t: t["id"])
-    tracks = tracks[:max(1, min(r["maxTimeTrialResults"] or 10, 10))]
+    ncat = max(1, min(r["maxTimeTrialCategories"] or 1, 7))
+    per = max(1, min(5, (r["maxTimeTrialResults"] or 5) // ncat))
     now = st.store.clock()
-    entries = [{"id": t["id"] + 1, "scoreType": 0, "name": t["MediaName"], "description": f"Fastest lap at {t['MediaName']}",
-                "notRegisteredMessage": "", "trackId": t["id"], "trackName": t["MediaName"], "hopperId": 0,
-                "gameOptionsIndex": 0, "startDate": xtsw.iso(now - 86400), "endDate": xtsw.iso(now + 86400 * 365),
-                "userRegistered": True, "featured": i == 0, "active": True} for i, t in enumerate(tracks)]
-    return enc("Scoreboard", "GetTimeTrials", {"timeTrialCategories": [{"category": 0, "startIndex": 0}],
-                                               "timeTrials": entries})
+    cats, entries = [], []
+    for c in range(ncat):
+        cats.append({"category": c, "startIndex": len(entries)})
+        for i in range(per):
+            t = tracks[(c * 7 + i) % len(tracks)]
+            entries.append({
+                "id": c * 100 + i + 1, "scoreType": 0, "name": t["MediaName"],
+                "description": f"Fastest lap at {t['MediaName']}", "notRegisteredMessage": "",
+                "trackId": t["id"], "trackName": t["MediaName"], "hopperId": 0, "gameOptionsIndex": 0,
+                "startDate": xtsw.iso(now - 86400), "endDate": xtsw.iso(now + 86400 * 365),
+                "userRegistered": True, "featured": i == 0, "active": True})
+    return enc("Scoreboard", "GetTimeTrials", {"timeTrialCategories": cats, "timeTrials": entries})
