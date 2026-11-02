@@ -59,19 +59,20 @@ class Codec(unittest.TestCase):
 
 
 class Logon(Base):
-    def test_default_reply_is_zero_tail_and_registers_user(self):
+    def test_zero_reply_registers_user(self):
+        os.environ["FM4_LOGON_ZERO"] = "1"; self.addCleanup(os.environ.pop, "FM4_LOGON_ZERO")
         st, code, msg, tail = self.cl(5).raw("User", "Logon2", xtsw.encode(
             [("x", "u64"), ("g", "str")], {"x": 5, "g": "Tag"}))
         self.assertEqual((st, tail), (0, bytes(64)))
         self.assertEqual(self.store.user("5")["gamertag"], "Tag")
 
-    def test_logon_permissions_and_credits(self):
-        os.environ["FM4_LOGON_GUESS"] = "1"; self.addCleanup(os.environ.pop, "FM4_LOGON_GUESS")
-        st, _, _, r = self.cl(5).call("User", "Logon2", {"xuid": 5, "gamertag": "Tag"})
+    def test_logon_permissions(self):
+        login = {"xuid": 5, "gamertag": "Tag", "clientProfile": {"profileId": bytes(24)}}
+        st, _, _, r = self.cl(5).call("User", "Logon2", {"loginData": login})
         self.assertEqual(st, 0)
-        self.assertTrue(r["profile_valid"]); self.assertEqual(r["user"]["gamertag"], "Tag")
+        r = r["responseData"]
+        self.assertTrue(r["isProfileValid"]); self.assertEqual(r["userData"]["gamertag"], "Tag")
         self.assertTrue(all(p["enabled"] and p["access"] == 0 for p in r["permissions"]))
-        self.assertEqual(r["user"]["credits"], self.store.cfg["starting_credits"])
 
 
 CAR = {"title": "T", "car_ordinal": 9, "class": 2, "pi": 500, "power": 250, "car_blob": b"blob"}
@@ -145,8 +146,8 @@ class Rules(unittest.TestCase):
 class Wire(Base):
     def test_full_walk_over_http(self):
         sel, buy = self.cl(1001), self.cl(2002)
-        sel.call("User", "Logon2", {"xuid": 1001, "gamertag": "Seller"})
-        buy.call("User", "Logon2", {"xuid": 2002, "gamertag": "Buyer"})
+        sel.call("User", "Logon2", {"loginData": {"xuid": 1001, "gamertag": "Seller"}})
+        buy.call("User", "Logon2", {"loginData": {"xuid": 2002, "gamertag": "Buyer"}})
         st, _, _, r = sel.call("Auction", "Create", dict(CAR, start_price=20000, buyout=0, hours=24))
         self.assertEqual(st, 0); aid = r["id"]
         st, code, msg, _ = sel.call("Auction", "PlaceBid", {"id": aid, "amount": 30000})

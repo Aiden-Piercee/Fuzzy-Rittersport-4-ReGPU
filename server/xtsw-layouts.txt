@@ -1,0 +1,3181 @@
+=== ForzaAuctionCancel_Params @8208B12C kind=9
+  members: first=0x8208b108 count=1
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaAuctionCreate_Params @8208B36C kind=9
+  members: first=0x8208b150 count=15
+    openingPrice kind=u32(4) off=0 cntOff=- size=4 flags=0
+    buyoutPrice kind=u32(4) off=4 cntOff=- size=4 flags=0
+    listingFeePaid kind=u32(4) off=8 cntOff=- size=4 flags=0
+    durationMs kind=i64(5) off=16 cntOff=- size=8 flags=0
+    car kind=struct(9) off=24 cntOff=- size=76 flags=3
+      make kind=u16(1) off=0 cntOff=- size=2 flags=0
+      carId kind=u16(1) off=2 cntOff=- size=2 flags=0
+      garageId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      manColorIndex kind=u16(1) off=8 cntOff=- size=2 flags=0
+      countryId kind=u8(0) off=10 cntOff=- size=1 flags=0
+      displacementId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      aspirationTypeId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      perfIndex kind=float(7) off=20 cntOff=- size=4 flags=0
+      perfIndexFriendly kind=u16(1) off=24 cntOff=- size=2 flags=0
+      carClass kind=u8(0) off=26 cntOff=- size=1 flags=0
+      year kind=u16(1) off=28 cntOff=- size=2 flags=0
+      peakPower kind=float(7) off=32 cntOff=- size=4 flags=0
+      peakTorque kind=float(7) off=36 cntOff=- size=4 flags=0
+      curbWeight kind=float(7) off=40 cntOff=- size=4 flags=0
+      weightDistribution kind=float(7) off=44 cntOff=- size=4 flags=0
+      powertrainId kind=u8(0) off=48 cntOff=- size=1 flags=0
+      isLiveryLocked kind=bool(12) off=49 cntOff=- size=1 flags=0
+      isUnicorn kind=bool(12) off=50 cntOff=- size=1 flags=0
+      isReward kind=bool(12) off=51 cntOff=- size=1 flags=0
+      wasOriginallyFromAuctionHouse kind=bool(12) off=52 cntOff=- size=1 flags=0
+      wasOriginallyGifted kind=bool(12) off=53 cntOff=- size=1 flags=0
+      speedRating kind=float(7) off=56 cntOff=- size=4 flags=0
+      accelerationRating kind=float(7) off=60 cntOff=- size=4 flags=0
+      launchRating kind=float(7) off=64 cntOff=- size=4 flags=0
+      brakingRating kind=float(7) off=68 cntOff=- size=4 flags=0
+      handlingRating kind=float(7) off=72 cntOff=- size=4 flags=0
+    texturesId kind=i32(3) off=28 cntOff=- size=4 flags=0
+    liveryCreatorXuid kind=u64(6) off=32 cntOff=- size=8 flags=0
+    wzItemGuid kind=string(8) off=40 cntOff=- size=0 flags=3
+    unencryptedSize kind=i32(3) off=44 cntOff=- size=4 flags=0
+    liveryDetails kind=bytes(15) off=52 cntOff=48 size=0 flags=3
+    partsInstalled kind=bytes(15) off=60 cntOff=56 size=0 flags=3
+    partsInTrunk kind=bytes(15) off=68 cntOff=64 size=0 flags=3
+    tuning kind=bytes(15) off=76 cntOff=72 size=0 flags=3
+    carHistory kind=struct(9) off=80 cntOff=- size=84 flags=3
+      base kind=struct(9) off=0 cntOff=- size=84 flags=0
+        xp kind=u32(4) off=0 cntOff=- size=4 flags=0
+        distanceDriven kind=u32(4) off=4 cntOff=- size=4 flags=0
+        timeDriven kind=u32(4) off=8 cntOff=- size=4 flags=0
+        totalWinnings kind=u32(4) off=12 cntOff=- size=4 flags=0
+        totalRepairs kind=u32(4) off=16 cntOff=- size=4 flags=0
+        numPodiums kind=u32(4) off=20 cntOff=- size=4 flags=0
+        numVictories kind=u32(4) off=24 cntOff=- size=4 flags=0
+        numRaces kind=u32(4) off=28 cntOff=- size=4 flags=0
+        numOwners kind=u32(4) off=32 cntOff=- size=4 flags=0
+        numTimesSold kind=u32(4) off=36 cntOff=- size=4 flags=0
+        curOwnerNumRaces kind=u32(4) off=40 cntOff=- size=4 flags=0
+        curOwnerWinnings kind=u32(4) off=44 cntOff=- size=4 flags=0
+        curOwnerPurchaseDate kind=u32(4) off=48 cntOff=- size=4 flags=0
+        originalOwner kind=string(8) off=52 cntOff=- size=32 flags=0
+    wasLiveryLocked kind=bool(12) off=84 cntOff=- size=1 flags=0
+=== ForzaAuctionCreate_Results @8208B3B4 kind=9
+  members: first=0x8208b390 count=1
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaAuctionGetAuctions_Params @8208B468 kind=9
+  members: first=0x8208b3d8 count=4
+    auctionIds kind=array(10) off=4 cntOff=0 size=0 flags=3
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxAuctionResults kind=u32(4) off=8 cntOff=- size=4 flags=0
+    extendedAuctionIds kind=array(10) off=16 cntOff=12 size=0 flags=3
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxExtendedAuctionResults kind=u32(4) off=20 cntOff=- size=4 flags=0
+=== ForzaAuctionGetAuctions_Results @8208B48C kind=9
+  members: first=0x8208b4b0 count=2
+    auctions kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaAuction kind=struct(9) off=0 cntOff=- size=120 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        topBidAmount kind=u32(4) off=4 cntOff=- size=4 flags=0
+        topBidder kind=struct(9) off=8 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        nextBidAmount kind=u32(4) off=80 cntOff=- size=4 flags=0
+        numBids kind=u16(1) off=84 cntOff=- size=2 flags=0
+        status kind=i32(3) off=88 cntOff=- size=4 flags=0
+        reportingState kind=i32(3) off=92 cntOff=- size=4 flags=0
+        closingDate kind=systemtime(11) off=96 cntOff=- size=16 flags=0
+        allowedActions kind=i32(3) off=112 cntOff=- size=4 flags=0
+    extendedAuctions kind=array(10) off=20 cntOff=16 size=0 flags=5
+      ForzaAuctionExtended kind=struct(9) off=0 cntOff=- size=230552 flags=0
+        base kind=struct(9) off=0 cntOff=- size=120 flags=0
+          id kind=i32(3) off=0 cntOff=- size=4 flags=0
+          topBidAmount kind=u32(4) off=4 cntOff=- size=4 flags=0
+          topBidder kind=struct(9) off=8 cntOff=- size=72 flags=0
+            qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+            wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+            flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+            clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+            clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+            roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+            currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+            currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+            currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+          nextBidAmount kind=u32(4) off=80 cntOff=- size=4 flags=0
+          numBids kind=u16(1) off=84 cntOff=- size=2 flags=0
+          status kind=i32(3) off=88 cntOff=- size=4 flags=0
+          reportingState kind=i32(3) off=92 cntOff=- size=4 flags=0
+          closingDate kind=systemtime(11) off=96 cntOff=- size=16 flags=0
+          allowedActions kind=i32(3) off=112 cntOff=- size=4 flags=0
+        carModelId kind=i32(3) off=120 cntOff=- size=4 flags=0
+        buyoutAmount kind=u32(4) off=124 cntOff=- size=4 flags=0
+        carClass kind=u8(0) off=128 cntOff=- size=1 flags=0
+        carYear kind=u16(1) off=130 cntOff=- size=2 flags=0
+        performanceIndex kind=float(7) off=132 cntOff=- size=4 flags=0
+        isUnicorn kind=bool(12) off=136 cntOff=- size=1 flags=0
+        LiveryThumbnail kind=bytes(15) off=144 cntOff=140 size=230400 flags=0
+        liveryCreator kind=u64(6) off=230544 cntOff=- size=8 flags=0
+=== ForzaAuctionGetDetails_Params @8208B51C kind=9
+  members: first=0x8208b4f8 count=1
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaAuctionGetDetails_Results @8208B564 kind=9
+  members: first=0x8208b540 count=1
+    auctionDetails kind=struct(9) off=0 cntOff=- size=269480 flags=1
+      seller kind=struct(9) off=0 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+      liveryData kind=bytes(15) off=76 cntOff=72 size=256000 flags=0
+      car kind=struct(9) off=256076 cntOff=- size=76 flags=0
+        make kind=u16(1) off=0 cntOff=- size=2 flags=0
+        carId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        garageId kind=i32(3) off=4 cntOff=- size=4 flags=0
+        manColorIndex kind=u16(1) off=8 cntOff=- size=2 flags=0
+        countryId kind=u8(0) off=10 cntOff=- size=1 flags=0
+        displacementId kind=i32(3) off=12 cntOff=- size=4 flags=0
+        aspirationTypeId kind=i32(3) off=16 cntOff=- size=4 flags=0
+        perfIndex kind=float(7) off=20 cntOff=- size=4 flags=0
+        perfIndexFriendly kind=u16(1) off=24 cntOff=- size=2 flags=0
+        carClass kind=u8(0) off=26 cntOff=- size=1 flags=0
+        year kind=u16(1) off=28 cntOff=- size=2 flags=0
+        peakPower kind=float(7) off=32 cntOff=- size=4 flags=0
+        peakTorque kind=float(7) off=36 cntOff=- size=4 flags=0
+        curbWeight kind=float(7) off=40 cntOff=- size=4 flags=0
+        weightDistribution kind=float(7) off=44 cntOff=- size=4 flags=0
+        powertrainId kind=u8(0) off=48 cntOff=- size=1 flags=0
+        isLiveryLocked kind=bool(12) off=49 cntOff=- size=1 flags=0
+        isUnicorn kind=bool(12) off=50 cntOff=- size=1 flags=0
+        isReward kind=bool(12) off=51 cntOff=- size=1 flags=0
+        wasOriginallyFromAuctionHouse kind=bool(12) off=52 cntOff=- size=1 flags=0
+        wasOriginallyGifted kind=bool(12) off=53 cntOff=- size=1 flags=0
+        speedRating kind=float(7) off=56 cntOff=- size=4 flags=0
+        accelerationRating kind=float(7) off=60 cntOff=- size=4 flags=0
+        launchRating kind=float(7) off=64 cntOff=- size=4 flags=0
+        brakingRating kind=float(7) off=68 cntOff=- size=4 flags=0
+        handlingRating kind=float(7) off=72 cntOff=- size=4 flags=0
+      partsInstalled kind=bytes(15) off=256156 cntOff=256152 size=2048 flags=0
+      partsInTrunk kind=bytes(15) off=258208 cntOff=258204 size=10240 flags=0
+      tuning kind=bytes(15) off=268452 cntOff=268448 size=1024 flags=0
+=== ForzaAuctionGetGlobalConfig_Params @8208B618 kind=9
+  members: first=0x8208b588 count=4
+    maxFeeResults kind=u32(4) off=0 cntOff=- size=4 flags=0
+    maxSearchPriceResults kind=u32(4) off=4 cntOff=- size=4 flags=0
+    maxSearchYearResults kind=u32(4) off=8 cntOff=- size=4 flags=0
+    maxSearchPowerResults kind=u32(4) off=12 cntOff=- size=4 flags=0
+=== ForzaAuctionGetGlobalConfig_Results @8208B63C kind=9
+  members: first=0x8208b660 count=7
+    feeData kind=array(10) off=8 cntOff=4 size=0 flags=5
+      AuctionCreatePricing kind=struct(9) off=0 cntOff=- size=8 flags=0
+        hours kind=u32(4) off=0 cntOff=- size=4 flags=0
+        credits kind=u32(4) off=4 cntOff=- size=4 flags=0
+    searchPriceThresholds kind=array(10) off=20 cntOff=16 size=0 flags=5
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    searchYearThresholds kind=array(10) off=32 cntOff=28 size=0 flags=5
+      short kind=u16(1) off=0 cntOff=- size=2 flags=0
+    searchPowerThresholds kind=array(10) off=44 cntOff=40 size=0 flags=5
+      short kind=u16(1) off=0 cntOff=- size=2 flags=0
+    refreshParams kind=struct(9) off=48 cntOff=- size=2 flags=1
+      auctionsRefreshSeconds kind=u16(1) off=0 cntOff=- size=2 flags=0
+    defaultTime kind=u32(4) off=52 cntOff=- size=4 flags=1
+    serverCurrentTime kind=systemtime(11) off=56 cntOff=- size=16 flags=1
+=== ForzaAuctionGetMyAuctions_Params @8208B75C kind=9
+  members: first=0x8208b780 count=4
+    contentFlag kind=struct(9) off=0 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxResultIds kind=u32(4) off=4 cntOff=- size=4 flags=0
+    maxResults kind=u32(4) off=8 cntOff=- size=4 flags=0
+    maxUpdateResults kind=u32(4) off=12 cntOff=- size=4 flags=0
+=== ForzaAuctionGetMyAuctions_Results @8208B8A0 kind=9
+  members: first=0x8208b810 count=4
+    auctionIds kind=array(10) off=8 cntOff=4 size=0 flags=5
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    totalAvailable kind=u32(4) off=12 cntOff=- size=4 flags=1
+    auctionResults kind=array(10) off=24 cntOff=20 size=0 flags=5
+      ForzaAuctionExtended kind=struct(9) off=0 cntOff=- size=230552 flags=0
+        base kind=struct(9) off=0 cntOff=- size=120 flags=0
+          id kind=i32(3) off=0 cntOff=- size=4 flags=0
+          topBidAmount kind=u32(4) off=4 cntOff=- size=4 flags=0
+          topBidder kind=struct(9) off=8 cntOff=- size=72 flags=0
+            qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+            wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+            flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+            clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+            clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+            roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+            currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+            currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+            currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+          nextBidAmount kind=u32(4) off=80 cntOff=- size=4 flags=0
+          numBids kind=u16(1) off=84 cntOff=- size=2 flags=0
+          status kind=i32(3) off=88 cntOff=- size=4 flags=0
+          reportingState kind=i32(3) off=92 cntOff=- size=4 flags=0
+          closingDate kind=systemtime(11) off=96 cntOff=- size=16 flags=0
+          allowedActions kind=i32(3) off=112 cntOff=- size=4 flags=0
+        carModelId kind=i32(3) off=120 cntOff=- size=4 flags=0
+        buyoutAmount kind=u32(4) off=124 cntOff=- size=4 flags=0
+        carClass kind=u8(0) off=128 cntOff=- size=1 flags=0
+        carYear kind=u16(1) off=130 cntOff=- size=2 flags=0
+        performanceIndex kind=float(7) off=132 cntOff=- size=4 flags=0
+        isUnicorn kind=bool(12) off=136 cntOff=- size=1 flags=0
+        LiveryThumbnail kind=bytes(15) off=144 cntOff=140 size=230400 flags=0
+        liveryCreator kind=u64(6) off=230544 cntOff=- size=8 flags=0
+    auctionUpdateResults kind=array(10) off=36 cntOff=32 size=0 flags=5
+      ForzaAuction kind=struct(9) off=0 cntOff=- size=120 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        topBidAmount kind=u32(4) off=4 cntOff=- size=4 flags=0
+        topBidder kind=struct(9) off=8 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        nextBidAmount kind=u32(4) off=80 cntOff=- size=4 flags=0
+        numBids kind=u16(1) off=84 cntOff=- size=2 flags=0
+        status kind=i32(3) off=88 cntOff=- size=4 flags=0
+        reportingState kind=i32(3) off=92 cntOff=- size=4 flags=0
+        closingDate kind=systemtime(11) off=96 cntOff=- size=16 flags=0
+        allowedActions kind=i32(3) off=112 cntOff=- size=4 flags=0
+=== ForzaAuctionGetMyBids_Params @8208B8C4 kind=9
+  members: first=0x8208b8e8 count=4
+    contentFlag kind=struct(9) off=0 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    unicornsOnly kind=bool(12) off=4 cntOff=- size=1 flags=0
+    maxResultIds kind=u32(4) off=8 cntOff=- size=4 flags=0
+    maxResults kind=u32(4) off=12 cntOff=- size=4 flags=0
+=== ForzaAuctionGetMyBids_Results @8208B9E4 kind=9
+  members: first=0x8208b978 count=3
+    auctionIds kind=array(10) off=8 cntOff=4 size=0 flags=5
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    totalAvailable kind=u32(4) off=12 cntOff=- size=4 flags=1
+    auctionResults kind=array(10) off=24 cntOff=20 size=0 flags=5
+      ForzaAuctionExtended kind=struct(9) off=0 cntOff=- size=230552 flags=0
+        base kind=struct(9) off=0 cntOff=- size=120 flags=0
+          id kind=i32(3) off=0 cntOff=- size=4 flags=0
+          topBidAmount kind=u32(4) off=4 cntOff=- size=4 flags=0
+          topBidder kind=struct(9) off=8 cntOff=- size=72 flags=0
+            qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+            wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+            flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+            clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+            clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+            roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+            currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+            currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+            currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+          nextBidAmount kind=u32(4) off=80 cntOff=- size=4 flags=0
+          numBids kind=u16(1) off=84 cntOff=- size=2 flags=0
+          status kind=i32(3) off=88 cntOff=- size=4 flags=0
+          reportingState kind=i32(3) off=92 cntOff=- size=4 flags=0
+          closingDate kind=systemtime(11) off=96 cntOff=- size=16 flags=0
+          allowedActions kind=i32(3) off=112 cntOff=- size=4 flags=0
+        carModelId kind=i32(3) off=120 cntOff=- size=4 flags=0
+        buyoutAmount kind=u32(4) off=124 cntOff=- size=4 flags=0
+        carClass kind=u8(0) off=128 cntOff=- size=1 flags=0
+        carYear kind=u16(1) off=130 cntOff=- size=2 flags=0
+        performanceIndex kind=float(7) off=132 cntOff=- size=4 flags=0
+        isUnicorn kind=bool(12) off=136 cntOff=- size=1 flags=0
+        LiveryThumbnail kind=bytes(15) off=144 cntOff=140 size=230400 flags=0
+        liveryCreator kind=u64(6) off=230544 cntOff=- size=8 flags=0
+=== ForzaAuctionPlaceBid_Params @8208BA50 kind=9
+  members: first=0x8208ba08 count=2
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    amount kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ForzaAuctionPlaceBid_Results @8208BA98 kind=9
+  members: first=0x8208ba74 count=1
+    amountRefunded kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaAuctionRemoveMyBannedAuction_Params @8208BAE0 kind=9
+  members: first=0x8208babc count=1
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaAuctionReportContent_Params @8208BB28 kind=9
+  members: first=0x8208bb04 count=1
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaAuctionRestart_Params @8208BB4C kind=9
+  members: first=0x8208bb70 count=5
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    openingPrice kind=u32(4) off=4 cntOff=- size=4 flags=0
+    buyoutPrice kind=u32(4) off=8 cntOff=- size=4 flags=0
+    fee kind=u32(4) off=12 cntOff=- size=4 flags=0
+    durationMs kind=i64(5) off=16 cntOff=- size=8 flags=0
+=== ForzaAuctionRestart_Results @8208BC48 kind=9
+  members: first=0x8208bc24 count=1
+    auctionIdNew kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaAuctionRetrieveCarForAuction_Params @8208BC6C kind=9
+  members: first=0x8208bc90 count=5
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    cbLiveryDetailsBufferSize kind=u32(4) off=4 cntOff=- size=4 flags=0
+    cbPartsInstalledBufferSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    cbPartsInTrunkBufferSize kind=u32(4) off=12 cntOff=- size=4 flags=0
+    cbTuningBufferSize kind=u32(4) off=16 cntOff=- size=4 flags=0
+=== ForzaAuctionRetrieveCarForAuction_Results @8208BD44 kind=9
+  members: first=0x8208bd68 count=9
+    car kind=struct(9) off=0 cntOff=- size=76 flags=1
+      make kind=u16(1) off=0 cntOff=- size=2 flags=0
+      carId kind=u16(1) off=2 cntOff=- size=2 flags=0
+      garageId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      manColorIndex kind=u16(1) off=8 cntOff=- size=2 flags=0
+      countryId kind=u8(0) off=10 cntOff=- size=1 flags=0
+      displacementId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      aspirationTypeId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      perfIndex kind=float(7) off=20 cntOff=- size=4 flags=0
+      perfIndexFriendly kind=u16(1) off=24 cntOff=- size=2 flags=0
+      carClass kind=u8(0) off=26 cntOff=- size=1 flags=0
+      year kind=u16(1) off=28 cntOff=- size=2 flags=0
+      peakPower kind=float(7) off=32 cntOff=- size=4 flags=0
+      peakTorque kind=float(7) off=36 cntOff=- size=4 flags=0
+      curbWeight kind=float(7) off=40 cntOff=- size=4 flags=0
+      weightDistribution kind=float(7) off=44 cntOff=- size=4 flags=0
+      powertrainId kind=u8(0) off=48 cntOff=- size=1 flags=0
+      isLiveryLocked kind=bool(12) off=49 cntOff=- size=1 flags=0
+      isUnicorn kind=bool(12) off=50 cntOff=- size=1 flags=0
+      isReward kind=bool(12) off=51 cntOff=- size=1 flags=0
+      wasOriginallyFromAuctionHouse kind=bool(12) off=52 cntOff=- size=1 flags=0
+      wasOriginallyGifted kind=bool(12) off=53 cntOff=- size=1 flags=0
+      speedRating kind=float(7) off=56 cntOff=- size=4 flags=0
+      accelerationRating kind=float(7) off=60 cntOff=- size=4 flags=0
+      launchRating kind=float(7) off=64 cntOff=- size=4 flags=0
+      brakingRating kind=float(7) off=68 cntOff=- size=4 flags=0
+      handlingRating kind=float(7) off=72 cntOff=- size=4 flags=0
+    carHistory kind=struct(9) off=4 cntOff=- size=84 flags=1
+      base kind=struct(9) off=0 cntOff=- size=84 flags=0
+        xp kind=u32(4) off=0 cntOff=- size=4 flags=0
+        distanceDriven kind=u32(4) off=4 cntOff=- size=4 flags=0
+        timeDriven kind=u32(4) off=8 cntOff=- size=4 flags=0
+        totalWinnings kind=u32(4) off=12 cntOff=- size=4 flags=0
+        totalRepairs kind=u32(4) off=16 cntOff=- size=4 flags=0
+        numPodiums kind=u32(4) off=20 cntOff=- size=4 flags=0
+        numVictories kind=u32(4) off=24 cntOff=- size=4 flags=0
+        numRaces kind=u32(4) off=28 cntOff=- size=4 flags=0
+        numOwners kind=u32(4) off=32 cntOff=- size=4 flags=0
+        numTimesSold kind=u32(4) off=36 cntOff=- size=4 flags=0
+        curOwnerNumRaces kind=u32(4) off=40 cntOff=- size=4 flags=0
+        curOwnerWinnings kind=u32(4) off=44 cntOff=- size=4 flags=0
+        curOwnerPurchaseDate kind=u32(4) off=48 cntOff=- size=4 flags=0
+        originalOwner kind=string(8) off=52 cntOff=- size=32 flags=0
+    isOwner kind=bool(12) off=8 cntOff=- size=1 flags=1
+    partsInstalled kind=bytes(15) off=20 cntOff=16 size=0 flags=5
+    partsInTrunk kind=bytes(15) off=32 cntOff=28 size=0 flags=5
+    tuning kind=bytes(15) off=44 cntOff=40 size=0 flags=5
+    liveryDetailsEncrypted kind=bytes(15) off=56 cntOff=52 size=0 flags=5
+    liveryGuid kind=guid(13) off=60 cntOff=- size=16 flags=1
+    unencryptedSize kind=i32(3) off=64 cntOff=- size=4 flags=1
+=== ForzaAuctionRetrievePaymentForAuctionSold_Params @8208BED0 kind=9
+  members: first=0x8208beac count=1
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaAuctionRetrievePaymentForAuctionSold_Results @8208BF18 kind=9
+  members: first=0x8208bef4 count=1
+    bidAmount kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaAuctionRetrievePaymentsForAuctionLost_Params @8208BF60 kind=9
+  members: first=0x8208bf3c count=1
+    auctionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaAuctionRetrievePaymentsForAuctionLost_Results @8208BFA8 kind=9
+  members: first=0x8208bf84 count=1
+    bidAmount kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaAuctionSearchForAuction_Params @8208BFCC kind=9
+  members: first=0x8208bff0 count=5
+    xuidOwner kind=u64(6) off=0 cntOff=- size=8 flags=0
+    searchParams kind=struct(9) off=8 cntOff=- size=40 flags=3
+      PriceMin kind=i32(3) off=0 cntOff=- size=4 flags=0
+      PriceMax kind=i32(3) off=4 cntOff=- size=4 flags=0
+      MakeId kind=u16(1) off=8 cntOff=- size=2 flags=0
+      CarId kind=u16(1) off=10 cntOff=- size=2 flags=0
+      HasLivery kind=u16(1) off=12 cntOff=- size=2 flags=0
+      CountryId kind=u16(1) off=14 cntOff=- size=2 flags=0
+      CarClass kind=u16(1) off=16 cntOff=- size=2 flags=0
+      YearMin kind=u16(1) off=18 cntOff=- size=2 flags=0
+      YearMax kind=u16(1) off=20 cntOff=- size=2 flags=0
+      DriveType kind=u16(1) off=22 cntOff=- size=2 flags=0
+      EnginePosition kind=i32(3) off=24 cntOff=- size=4 flags=0
+      PowerMin kind=float(7) off=28 cntOff=- size=4 flags=0
+      PowerMax kind=float(7) off=32 cntOff=- size=4 flags=0
+      ContentReviewState kind=u16(1) off=36 cntOff=- size=2 flags=0
+      isUnicorn kind=bool(12) off=38 cntOff=- size=1 flags=0
+    contentFlag kind=struct(9) off=12 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxResultIds kind=u32(4) off=16 cntOff=- size=4 flags=0
+    maxResults kind=u32(4) off=20 cntOff=- size=4 flags=0
+=== ForzaAuctionSearchForAuction_Results @8208C0A4 kind=9
+  members: first=0x8208c0c8 count=3
+    auctionIds kind=array(10) off=8 cntOff=4 size=0 flags=5
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    totalAvailable kind=u32(4) off=12 cntOff=- size=4 flags=1
+    auctionResults kind=array(10) off=24 cntOff=20 size=0 flags=5
+      ForzaAuctionExtended kind=struct(9) off=0 cntOff=- size=230552 flags=0
+        base kind=struct(9) off=0 cntOff=- size=120 flags=0
+          id kind=i32(3) off=0 cntOff=- size=4 flags=0
+          topBidAmount kind=u32(4) off=4 cntOff=- size=4 flags=0
+          topBidder kind=struct(9) off=8 cntOff=- size=72 flags=0
+            qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+            wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+            flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+            clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+            clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+            roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+            currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+            currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+            currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+          nextBidAmount kind=u32(4) off=80 cntOff=- size=4 flags=0
+          numBids kind=u16(1) off=84 cntOff=- size=2 flags=0
+          status kind=i32(3) off=88 cntOff=- size=4 flags=0
+          reportingState kind=i32(3) off=92 cntOff=- size=4 flags=0
+          closingDate kind=systemtime(11) off=96 cntOff=- size=16 flags=0
+          allowedActions kind=i32(3) off=112 cntOff=- size=4 flags=0
+        carModelId kind=i32(3) off=120 cntOff=- size=4 flags=0
+        buyoutAmount kind=u32(4) off=124 cntOff=- size=4 flags=0
+        carClass kind=u8(0) off=128 cntOff=- size=1 flags=0
+        carYear kind=u16(1) off=130 cntOff=- size=2 flags=0
+        performanceIndex kind=float(7) off=132 cntOff=- size=4 flags=0
+        isUnicorn kind=bool(12) off=136 cntOff=- size=1 flags=0
+        LiveryThumbnail kind=bytes(15) off=144 cntOff=140 size=230400 flags=0
+        liveryCreator kind=u64(6) off=230544 cntOff=- size=8 flags=0
+=== ForzaAuctionUploadAuctionTextures_Params @8208C134 kind=9
+  members: first=0x8208c158 count=2
+    liveryTexture kind=bytes(15) off=4 cntOff=0 size=0 flags=3
+    LiveryThumbnail kind=bytes(15) off=12 cntOff=8 size=0 flags=3
+=== ForzaAuctionUploadAuctionTextures_Results @8208C1C4 kind=9
+  members: first=0x8208c1a0 count=1
+    texturesId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaCarClubGetClanDetails_Params @82086834 kind=9
+  members: first=0x82086810 count=1
+    clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaCarClubGetClanDetails_Results @8208687C kind=9
+  members: first=0x82086858 count=1
+    clanDetails kind=struct(9) off=0 cntOff=- size=336 flags=1
+      clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+      clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+      clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+      clanDescription kind=string(8) off=56 cntOff=- size=258 flags=0
+      isOpenForMembership kind=bool(12) off=314 cntOff=- size=1 flags=0
+      creationDate kind=systemtime(11) off=316 cntOff=- size=16 flags=0
+      carCount kind=u16(1) off=332 cntOff=- size=2 flags=0
+      memberCount kind=u16(1) off=334 cntOff=- size=2 flags=0
+=== ForzaCarClubGetClanFullInfo_Params @820868E8 kind=9
+  members: first=0x820868a0 count=2
+    clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxLeaders kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaCarClubGetClanFullInfo_Results @8208690C kind=9
+  members: first=0x82086930 count=2
+    clanDetails kind=struct(9) off=0 cntOff=- size=336 flags=1
+      clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+      clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+      clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+      clanDescription kind=string(8) off=56 cntOff=- size=258 flags=0
+      isOpenForMembership kind=bool(12) off=314 cntOff=- size=1 flags=0
+      creationDate kind=systemtime(11) off=316 cntOff=- size=16 flags=0
+      carCount kind=u16(1) off=332 cntOff=- size=2 flags=0
+      memberCount kind=u16(1) off=334 cntOff=- size=2 flags=0
+    leaders kind=array(10) off=12 cntOff=8 size=0 flags=5
+      UserData kind=struct(9) off=0 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+=== ForzaDLCGetCarIdsByPopularity_Params @82086BD8 kind=9
+  members: first=0x82086bb4 count=1
+    maxResults kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaDLCGetCarIdsByPopularity_Results @82086C20 kind=9
+  members: first=0x82086bfc count=1
+    carIds kind=array(10) off=8 cntOff=4 size=0 flags=5
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaDLCGetFeaturedOfferIds_Params @82086C68 kind=9
+  members: first=0x82086c44 count=1
+    maxResults kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaDLCGetFeaturedOfferIds_Results @82086CB0 kind=9
+  members: first=0x82086c8c count=1
+    offerIds kind=array(10) off=8 cntOff=4 size=0 flags=5
+      Int64 kind=i64(5) off=0 cntOff=- size=8 flags=0
+=== ForzaDLCGetUpsellOfferId_Results @82086CF8 kind=9
+  members: first=0x82086cd4 count=1
+    offerId kind=i64(5) off=0 cntOff=- size=8 flags=1
+=== ForzaDLCMetadataGetDBPatchFileInfo_Results @8208CF94 kind=9
+  members: first=0x8208cf70 count=1
+    patchInfo kind=struct(9) off=0 cntOff=- size=156 flags=1
+      base kind=struct(9) off=0 cntOff=- size=116 flags=0
+        Path kind=bytes(15) off=4 cntOff=0 size=81 flags=0
+        Id kind=i32(3) off=88 cntOff=- size=4 flags=0
+        Version kind=i32(3) off=92 cntOff=- size=4 flags=0
+        Priority kind=i32(3) off=96 cntOff=- size=4 flags=0
+        DirStart kind=i32(3) off=100 cntOff=- size=4 flags=0
+        DirSize kind=i32(3) off=104 cntOff=- size=4 flags=0
+        DirEntries kind=i32(3) off=108 cntOff=- size=4 flags=0
+        Size kind=i32(3) off=112 cntOff=- size=4 flags=0
+      Digest kind=bytes(15) off=120 cntOff=116 size=32 flags=0
+      DigestId kind=i32(3) off=152 cntOff=- size=4 flags=0
+=== ForzaDLCMetadataGetDigestFile_Params @8208CFDC kind=9
+  members: first=0x8208cfb8 count=1
+    maxSize kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaDLCMetadataGetDigestFile_Results @8208D048 kind=9
+  members: first=0x8208d000 count=2
+    digestId kind=i32(3) off=0 cntOff=- size=4 flags=1
+    data kind=bytes(15) off=12 cntOff=8 size=0 flags=5
+=== ForzaDLCMetadataGetStringTableInfo_Params @8208D090 kind=9
+  members: first=0x8208d06c count=1
+    language kind=string(8) off=0 cntOff=- size=0 flags=3
+=== ForzaDLCMetadataGetStringTableInfo_Results @8208D0D8 kind=9
+  members: first=0x8208d0b4 count=1
+    stringTableInfo kind=struct(9) off=0 cntOff=- size=156 flags=1
+      base kind=struct(9) off=0 cntOff=- size=116 flags=0
+        Path kind=bytes(15) off=4 cntOff=0 size=81 flags=0
+        Id kind=i32(3) off=88 cntOff=- size=4 flags=0
+        Version kind=i32(3) off=92 cntOff=- size=4 flags=0
+        Priority kind=i32(3) off=96 cntOff=- size=4 flags=0
+        DirStart kind=i32(3) off=100 cntOff=- size=4 flags=0
+        DirSize kind=i32(3) off=104 cntOff=- size=4 flags=0
+        DirEntries kind=i32(3) off=108 cntOff=- size=4 flags=0
+        Size kind=i32(3) off=112 cntOff=- size=4 flags=0
+      Digest kind=bytes(15) off=120 cntOff=116 size=32 flags=0
+      DigestId kind=i32(3) off=152 cntOff=- size=4 flags=0
+=== ForzaDLCMetadataGetThumbnailInfo_Params @8208D120 kind=9
+  members: first=0x8208d0fc count=1
+    maxThumbnails kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaDLCMetadataGetThumbnailInfo_Results @8208D168 kind=9
+  members: first=0x8208d144 count=1
+    thumbnailInfo kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaDLCThumbnailInfo kind=struct(9) off=0 cntOff=- size=116 flags=0
+        base kind=struct(9) off=0 cntOff=- size=116 flags=0
+          Path kind=bytes(15) off=4 cntOff=0 size=81 flags=0
+          Id kind=i32(3) off=88 cntOff=- size=4 flags=0
+          Version kind=i32(3) off=92 cntOff=- size=4 flags=0
+          Priority kind=i32(3) off=96 cntOff=- size=4 flags=0
+          DirStart kind=i32(3) off=100 cntOff=- size=4 flags=0
+          DirSize kind=i32(3) off=104 cntOff=- size=4 flags=0
+          DirEntries kind=i32(3) off=108 cntOff=- size=4 flags=0
+          Size kind=i32(3) off=112 cntOff=- size=4 flags=0
+=== ForzaDailyCreditBonusGetPayout_Results @82086A1C kind=9
+  members: first=0x820869f8 count=1
+    amount kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaGameplayLogConfigureOld_Results @8209AE84 kind=9
+  members: first=0x8209ae60 count=1
+    config kind=struct(9) off=0 cntOff=- size=24 flags=1
+      Enabled kind=bool(12) off=0 cntOff=- size=1 flags=0
+      FlushInterval kind=u32(4) off=4 cntOff=- size=4 flags=0
+      Throttle kind=bytes(15) off=8 cntOff=- size=14 flags=0
+=== ForzaGameplayLogConfigure_Results @8209AE3C kind=9
+  members: first=0x8209ae18 count=1
+    config kind=struct(9) off=0 cntOff=- size=24 flags=1
+      Enabled kind=bool(12) off=0 cntOff=- size=1 flags=0
+      FlushInterval kind=u32(4) off=4 cntOff=- size=4 flags=0
+      Throttle kind=bytes(15) off=8 cntOff=- size=15 flags=0
+=== ForzaGameplayLogCount_Results @8209AECC kind=9
+  members: first=0x8209aea8 count=1
+    n kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaGameplayLogWrite_Params @8209AF5C kind=9
+  members: first=0x8209aef0 count=3
+    sessionTime kind=u32(4) off=0 cntOff=- size=4 flags=0
+    count kind=i32(3) off=4 cntOff=- size=4 flags=0
+    entries kind=bytes(15) off=12 cntOff=8 size=0 flags=3
+=== ForzaGiftLayerGroupCreate_Params @820995C0 kind=9
+  members: first=0x82099530 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=16 flags=3
+      RecipientXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      Type kind=i32(3) off=8 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=12 cntOff=- size=4 flags=0
+    layerGroupDesc kind=struct(9) off=4 cntOff=- size=4 flags=3
+      base kind=struct(9) off=0 cntOff=- size=4 flags=0
+        NumLayers kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=2 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaGiftLayerGroupCreate_Results @820995E4 kind=9
+  members: first=0x82099608 count=2
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+    giftId kind=i32(3) off=4 cntOff=- size=4 flags=1
+=== ForzaGiftLayerGroupDownloadInfo_Params @82099674 kind=9
+  members: first=0x82099650 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftLayerGroupDownloadInfo_Results @820996BC kind=9
+  members: first=0x82099698 count=1
+    layerGroupDesc kind=struct(9) off=0 cntOff=- size=4 flags=1
+      base kind=struct(9) off=0 cntOff=- size=4 flags=0
+        NumLayers kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=2 cntOff=- size=1 flags=0
+=== ForzaGiftLiveryCreate_Params @82099838 kind=9
+  members: first=0x820997a8 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=16 flags=3
+      RecipientXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      Type kind=i32(3) off=8 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=12 cntOff=- size=4 flags=0
+    liveryDesc kind=struct(9) off=4 cntOff=- size=12 flags=3
+      base kind=struct(9) off=0 cntOff=- size=12 flags=0
+        MakeId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        TextureId kind=i32(3) off=4 cntOff=- size=4 flags=0
+        ForStorefrontUse kind=bool(12) off=8 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaGiftLiveryCreate_Results @8209985C kind=9
+  members: first=0x82099880 count=2
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+    giftId kind=i32(3) off=4 cntOff=- size=4 flags=1
+=== ForzaGiftLiveryDownloadInfo_Params @820998EC kind=9
+  members: first=0x820998c8 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftLiveryDownloadInfo_Results @82099934 kind=9
+  members: first=0x82099910 count=1
+    liveryDesc kind=struct(9) off=0 cntOff=- size=12 flags=1
+      base kind=struct(9) off=0 cntOff=- size=12 flags=0
+        MakeId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        TextureId kind=i32(3) off=4 cntOff=- size=4 flags=0
+        ForStorefrontUse kind=bool(12) off=8 cntOff=- size=1 flags=0
+=== ForzaGiftPhotoCreate_Params @82098618 kind=9
+  members: first=0x82098588 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=16 flags=3
+      RecipientXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      Type kind=i32(3) off=8 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=12 cntOff=- size=4 flags=0
+    photoDesc kind=struct(9) off=4 cntOff=- size=26 flags=3
+      base kind=struct(9) off=0 cntOff=- size=26 flags=0
+        EnvironmentId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        MakeId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        CreationTime kind=systemtime(11) off=8 cntOff=- size=16 flags=0
+        ForStorefrontUse kind=bool(12) off=24 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaGiftPhotoCreate_Results @8209863C kind=9
+  members: first=0x82098660 count=2
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+    giftId kind=i32(3) off=4 cntOff=- size=4 flags=1
+=== ForzaGiftPhotoDownloadInfo_Params @820986CC kind=9
+  members: first=0x820986a8 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftPhotoDownloadInfo_Results @82098714 kind=9
+  members: first=0x820986f0 count=1
+    photoDesc kind=struct(9) off=0 cntOff=- size=26 flags=1
+      base kind=struct(9) off=0 cntOff=- size=26 flags=0
+        EnvironmentId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        MakeId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        CreationTime kind=systemtime(11) off=8 cntOff=- size=16 flags=0
+        ForStorefrontUse kind=bool(12) off=24 cntOff=- size=1 flags=0
+=== ForzaGiftReplayCreate_Params @82099AB0 kind=9
+  members: first=0x82099a20 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=16 flags=3
+      RecipientXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      Type kind=i32(3) off=8 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=12 cntOff=- size=4 flags=0
+    replayDesc kind=struct(9) off=4 cntOff=- size=10 flags=3
+      base kind=struct(9) off=0 cntOff=- size=10 flags=0
+        EnvironmentId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        MakeId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=8 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaGiftReplayCreate_Results @82099AD4 kind=9
+  members: first=0x82099af8 count=2
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+    giftId kind=i32(3) off=4 cntOff=- size=4 flags=1
+=== ForzaGiftReplayDownloadInfo_Params @82099B64 kind=9
+  members: first=0x82099b40 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftReplayDownloadInfo_Results @82099BAC kind=9
+  members: first=0x82099b88 count=1
+    replayDesc kind=struct(9) off=0 cntOff=- size=10 flags=1
+      base kind=struct(9) off=0 cntOff=- size=10 flags=0
+        EnvironmentId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        MakeId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=8 cntOff=- size=1 flags=0
+=== ForzaGiftTuningCreate_Params @82099338 kind=9
+  members: first=0x820992a8 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=16 flags=3
+      RecipientXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      Type kind=i32(3) off=8 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=12 cntOff=- size=4 flags=0
+    tuningDesc kind=struct(9) off=4 cntOff=- size=12 flags=3
+      base kind=struct(9) off=0 cntOff=- size=12 flags=0
+        MakeId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        ClassId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        EnvironmentId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=8 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=10 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaGiftTuningCreate_Results @8209935C kind=9
+  members: first=0x82099380 count=2
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+    giftId kind=i32(3) off=4 cntOff=- size=4 flags=1
+=== ForzaGiftTuningDownloadInfo_Params @820993EC kind=9
+  members: first=0x820993c8 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftTuningDownloadInfo_Results @82099434 kind=9
+  members: first=0x82099410 count=1
+    tuningDesc kind=struct(9) off=0 cntOff=- size=12 flags=1
+      base kind=struct(9) off=0 cntOff=- size=12 flags=0
+        MakeId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        ClassId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        EnvironmentId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=8 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=10 cntOff=- size=1 flags=0
+=== ForzaGiftingGetFileGiftInfo_Params @8208C63C kind=9
+  members: first=0x8208c618 count=1
+    giftId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftingGetFileGiftInfo_Results @8208C684 kind=9
+  members: first=0x8208c660 count=1
+    fileInfo kind=struct(9) off=0 cntOff=- size=153616 flags=1
+      FileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+      Type kind=i32(3) off=4 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+      PreviewPayload kind=bytes(15) off=16 cntOff=12 size=153600 flags=0
+=== ForzaGiftingGetGiftsForUser_Params @8208C6F0 kind=9
+  members: first=0x8208c6a8 count=2
+    startAt kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxResults kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaGiftingGetGiftsForUser_Results @8208C714 kind=9
+  members: first=0x8208c738 count=2
+    results kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaGiftListing kind=struct(9) off=0 cntOff=- size=24 flags=0
+        giftId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        senderXuid kind=u64(6) off=8 cntOff=- size=8 flags=0
+        reason kind=i32(3) off=16 cntOff=- size=4 flags=0
+        giftType kind=i32(3) off=20 cntOff=- size=4 flags=0
+    nAvailable kind=u32(4) off=12 cntOff=- size=4 flags=1
+=== ForzaGiftingMarkFileGiftRetrieved_Params @8208C7A4 kind=9
+  members: first=0x8208c780 count=1
+    giftId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftingRetrieveCarGift_Params @8208C87C kind=9
+  members: first=0x8208c7c8 count=5
+    giftId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    cbLiveryDetailsBufferSize kind=u32(4) off=4 cntOff=- size=4 flags=0
+    cbPartsInstalled kind=u32(4) off=8 cntOff=- size=4 flags=0
+    cbPartsInTrunk kind=u32(4) off=12 cntOff=- size=4 flags=0
+    cbTuning kind=u32(4) off=16 cntOff=- size=4 flags=0
+=== ForzaGiftingRetrieveCarGift_Results @8208C99C kind=9
+  members: first=0x8208c8a0 count=7
+    carHistory kind=struct(9) off=0 cntOff=- size=84 flags=1
+      base kind=struct(9) off=0 cntOff=- size=84 flags=0
+        xp kind=u32(4) off=0 cntOff=- size=4 flags=0
+        distanceDriven kind=u32(4) off=4 cntOff=- size=4 flags=0
+        timeDriven kind=u32(4) off=8 cntOff=- size=4 flags=0
+        totalWinnings kind=u32(4) off=12 cntOff=- size=4 flags=0
+        totalRepairs kind=u32(4) off=16 cntOff=- size=4 flags=0
+        numPodiums kind=u32(4) off=20 cntOff=- size=4 flags=0
+        numVictories kind=u32(4) off=24 cntOff=- size=4 flags=0
+        numRaces kind=u32(4) off=28 cntOff=- size=4 flags=0
+        numOwners kind=u32(4) off=32 cntOff=- size=4 flags=0
+        numTimesSold kind=u32(4) off=36 cntOff=- size=4 flags=0
+        curOwnerNumRaces kind=u32(4) off=40 cntOff=- size=4 flags=0
+        curOwnerWinnings kind=u32(4) off=44 cntOff=- size=4 flags=0
+        curOwnerPurchaseDate kind=u32(4) off=48 cntOff=- size=4 flags=0
+        originalOwner kind=string(8) off=52 cntOff=- size=32 flags=0
+    car kind=struct(9) off=4 cntOff=- size=76 flags=1
+      make kind=u16(1) off=0 cntOff=- size=2 flags=0
+      carId kind=u16(1) off=2 cntOff=- size=2 flags=0
+      garageId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      manColorIndex kind=u16(1) off=8 cntOff=- size=2 flags=0
+      countryId kind=u8(0) off=10 cntOff=- size=1 flags=0
+      displacementId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      aspirationTypeId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      perfIndex kind=float(7) off=20 cntOff=- size=4 flags=0
+      perfIndexFriendly kind=u16(1) off=24 cntOff=- size=2 flags=0
+      carClass kind=u8(0) off=26 cntOff=- size=1 flags=0
+      year kind=u16(1) off=28 cntOff=- size=2 flags=0
+      peakPower kind=float(7) off=32 cntOff=- size=4 flags=0
+      peakTorque kind=float(7) off=36 cntOff=- size=4 flags=0
+      curbWeight kind=float(7) off=40 cntOff=- size=4 flags=0
+      weightDistribution kind=float(7) off=44 cntOff=- size=4 flags=0
+      powertrainId kind=u8(0) off=48 cntOff=- size=1 flags=0
+      isLiveryLocked kind=bool(12) off=49 cntOff=- size=1 flags=0
+      isUnicorn kind=bool(12) off=50 cntOff=- size=1 flags=0
+      isReward kind=bool(12) off=51 cntOff=- size=1 flags=0
+      wasOriginallyFromAuctionHouse kind=bool(12) off=52 cntOff=- size=1 flags=0
+      wasOriginallyGifted kind=bool(12) off=53 cntOff=- size=1 flags=0
+      speedRating kind=float(7) off=56 cntOff=- size=4 flags=0
+      accelerationRating kind=float(7) off=60 cntOff=- size=4 flags=0
+      launchRating kind=float(7) off=64 cntOff=- size=4 flags=0
+      brakingRating kind=float(7) off=68 cntOff=- size=4 flags=0
+      handlingRating kind=float(7) off=72 cntOff=- size=4 flags=0
+    giftListing kind=struct(9) off=8 cntOff=- size=24 flags=1
+      giftId kind=i32(3) off=0 cntOff=- size=4 flags=0
+      senderXuid kind=u64(6) off=8 cntOff=- size=8 flags=0
+      reason kind=i32(3) off=16 cntOff=- size=4 flags=0
+      giftType kind=i32(3) off=20 cntOff=- size=4 flags=0
+    liveryDetails kind=bytes(15) off=20 cntOff=16 size=0 flags=5
+    partsInstalled kind=bytes(15) off=32 cntOff=28 size=0 flags=5
+    partsInTrunk kind=bytes(15) off=44 cntOff=40 size=0 flags=5
+    tuning kind=bytes(15) off=56 cntOff=52 size=0 flags=5
+=== ForzaGiftingRetrieveCreditsGift_Params @8208C9E4 kind=9
+  members: first=0x8208c9c0 count=1
+    giftId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaGiftingRetrieveCreditsGift_Results @8208CA2C kind=9
+  members: first=0x8208ca08 count=1
+    creditAmount kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaGiftingSendCarGift_Params @8208CC00 kind=9
+  members: first=0x8208ca50 count=12
+    recipientXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    car kind=struct(9) off=8 cntOff=- size=76 flags=3
+      make kind=u16(1) off=0 cntOff=- size=2 flags=0
+      carId kind=u16(1) off=2 cntOff=- size=2 flags=0
+      garageId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      manColorIndex kind=u16(1) off=8 cntOff=- size=2 flags=0
+      countryId kind=u8(0) off=10 cntOff=- size=1 flags=0
+      displacementId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      aspirationTypeId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      perfIndex kind=float(7) off=20 cntOff=- size=4 flags=0
+      perfIndexFriendly kind=u16(1) off=24 cntOff=- size=2 flags=0
+      carClass kind=u8(0) off=26 cntOff=- size=1 flags=0
+      year kind=u16(1) off=28 cntOff=- size=2 flags=0
+      peakPower kind=float(7) off=32 cntOff=- size=4 flags=0
+      peakTorque kind=float(7) off=36 cntOff=- size=4 flags=0
+      curbWeight kind=float(7) off=40 cntOff=- size=4 flags=0
+      weightDistribution kind=float(7) off=44 cntOff=- size=4 flags=0
+      powertrainId kind=u8(0) off=48 cntOff=- size=1 flags=0
+      isLiveryLocked kind=bool(12) off=49 cntOff=- size=1 flags=0
+      isUnicorn kind=bool(12) off=50 cntOff=- size=1 flags=0
+      isReward kind=bool(12) off=51 cntOff=- size=1 flags=0
+      wasOriginallyFromAuctionHouse kind=bool(12) off=52 cntOff=- size=1 flags=0
+      wasOriginallyGifted kind=bool(12) off=53 cntOff=- size=1 flags=0
+      speedRating kind=float(7) off=56 cntOff=- size=4 flags=0
+      accelerationRating kind=float(7) off=60 cntOff=- size=4 flags=0
+      launchRating kind=float(7) off=64 cntOff=- size=4 flags=0
+      brakingRating kind=float(7) off=68 cntOff=- size=4 flags=0
+      handlingRating kind=float(7) off=72 cntOff=- size=4 flags=0
+    texturesId kind=i32(3) off=12 cntOff=- size=4 flags=0
+    liveryCreatorXuid kind=u64(6) off=16 cntOff=- size=8 flags=0
+    wzItemGuid kind=string(8) off=24 cntOff=- size=0 flags=3
+    unencryptedSize kind=i32(3) off=28 cntOff=- size=4 flags=0
+    liveryDetails kind=bytes(15) off=36 cntOff=32 size=0 flags=3
+    partsInstalled kind=bytes(15) off=44 cntOff=40 size=0 flags=3
+    partsInTrunk kind=bytes(15) off=52 cntOff=48 size=0 flags=3
+    tuning kind=bytes(15) off=60 cntOff=56 size=0 flags=3
+    carHistory kind=struct(9) off=64 cntOff=- size=84 flags=3
+      base kind=struct(9) off=0 cntOff=- size=84 flags=0
+        xp kind=u32(4) off=0 cntOff=- size=4 flags=0
+        distanceDriven kind=u32(4) off=4 cntOff=- size=4 flags=0
+        timeDriven kind=u32(4) off=8 cntOff=- size=4 flags=0
+        totalWinnings kind=u32(4) off=12 cntOff=- size=4 flags=0
+        totalRepairs kind=u32(4) off=16 cntOff=- size=4 flags=0
+        numPodiums kind=u32(4) off=20 cntOff=- size=4 flags=0
+        numVictories kind=u32(4) off=24 cntOff=- size=4 flags=0
+        numRaces kind=u32(4) off=28 cntOff=- size=4 flags=0
+        numOwners kind=u32(4) off=32 cntOff=- size=4 flags=0
+        numTimesSold kind=u32(4) off=36 cntOff=- size=4 flags=0
+        curOwnerNumRaces kind=u32(4) off=40 cntOff=- size=4 flags=0
+        curOwnerWinnings kind=u32(4) off=44 cntOff=- size=4 flags=0
+        curOwnerPurchaseDate kind=u32(4) off=48 cntOff=- size=4 flags=0
+        originalOwner kind=string(8) off=52 cntOff=- size=32 flags=0
+    wasLiveryLocked kind=bool(12) off=68 cntOff=- size=1 flags=0
+=== ForzaGiftingSendCarGift_Results @8208CC48 kind=9
+  members: first=0x8208cc24 count=1
+    giftId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaGiftingSendCreditsGift_Params @8208CC6C kind=9
+  members: first=0x8208cc90 count=3
+    recipientXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    credits kind=u32(4) off=8 cntOff=- size=4 flags=0
+    reason kind=string(8) off=12 cntOff=- size=0 flags=3
+=== ForzaGiftingSendCreditsGift_Results @8208CD20 kind=9
+  members: first=0x8208ccfc count=1
+    giftId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaHopperGetGameOptions_Params @82087044 kind=9
+  members: first=0x82086fd8 count=3
+    hopperId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    roundNum kind=i32(3) off=4 cntOff=- size=4 flags=0
+    cchOptionXmlMax kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ForzaHopperGetGameOptions_Results @8208708C kind=9
+  members: first=0x82087068 count=1
+    gameOptionsXml kind=bytes(15) off=8 cntOff=4 size=0 flags=5
+=== ForzaHopperGetList_Params @820870F8 kind=9
+  members: first=0x820870b0 count=2
+    maxCategoryResults kind=u32(4) off=0 cntOff=- size=4 flags=0
+    maxHopperResults kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ForzaHopperGetList_Results @8208711C kind=9
+  members: first=0x82087140 count=2
+    hopperCategories kind=array(10) off=8 cntOff=4 size=0 flags=5
+      HopperCategory kind=struct(9) off=0 cntOff=- size=2180 flags=0
+        name kind=string(8) off=0 cntOff=- size=128 flags=0
+        description kind=string(8) off=128 cntOff=- size=2048 flags=0
+        hopperStartIndex kind=u32(4) off=2176 cntOff=- size=4 flags=0
+    hoppers kind=array(10) off=20 cntOff=16 size=0 flags=5
+      HopperData kind=struct(9) off=0 cntOff=- size=2200 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        name kind=string(8) off=4 cntOff=- size=128 flags=0
+        description kind=string(8) off=132 cntOff=- size=2048 flags=0
+        playerCount kind=i32(3) off=2180 cntOff=- size=4 flags=0
+        allowVoteToSkip kind=bool(12) off=2184 cntOff=- size=1 flags=0
+        allowVoteToKick kind=bool(12) off=2185 cntOff=- size=1 flags=0
+        allowVoteToRebalance kind=bool(12) off=2186 cntOff=- size=1 flags=0
+        payoutModifier kind=float(7) off=2188 cntOff=- size=4 flags=0
+        hideTrueSkill kind=bool(12) off=2192 cntOff=- size=1 flags=0
+        maxPartySize kind=u8(0) off=2193 cntOff=- size=1 flags=0
+        icon kind=i32(3) off=2196 cntOff=- size=4 flags=0
+=== ForzaHopperGetSearchSettings_Params @820871AC kind=9
+  members: first=0x82087188 count=1
+    hopperId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaHopperGetSearchSettings_Results @820871F4 kind=9
+  members: first=0x820871d0 count=1
+    settings kind=struct(9) off=0 cntOff=- size=92 flags=1
+      sessionFilterSettings kind=struct(9) off=0 cntOff=- size=68 flags=0
+        numStartingMatchmakingQueryResults kind=u32(4) off=0 cntOff=- size=4 flags=0
+        shouldQosProbe kind=bool(12) off=4 cntOff=- size=1 flags=0
+        shouldReportQosToServer kind=bool(12) off=5 cntOff=- size=1 flags=0
+        maxWaitingForQosDataSeconds kind=u32(4) off=8 cntOff=- size=4 flags=0
+        maxBpsConsumedDuringQos kind=u32(4) off=12 cntOff=- size=4 flags=0
+        maxProbesToSend kind=u32(4) off=16 cntOff=- size=4 flags=0
+        maxMedQosRttAllowedMs kind=u32(4) off=20 cntOff=- size=4 flags=0
+        maxMinQosRttAllowedMs kind=u32(4) off=24 cntOff=- size=4 flags=0
+        minUpstreamBandwidth kind=u32(4) off=28 cntOff=- size=4 flags=0
+        minDownstreamBandwidth kind=u32(4) off=32 cntOff=- size=4 flags=0
+        scoreBonusForJoinInProgress kind=float(7) off=36 cntOff=- size=4 flags=0
+        scoreBonusForJoinInShortIntermission kind=float(7) off=40 cntOff=- size=4 flags=0
+        scoreBonusForEmptySlots kind=float(7) off=44 cntOff=- size=4 flags=0
+        rankFactorMinPing kind=float(7) off=48 cntOff=- size=4 flags=0
+        rankFactorAvgPing kind=float(7) off=52 cntOff=- size=4 flags=0
+        rankFactorUpstreamBandwidth kind=float(7) off=56 cntOff=- size=4 flags=0
+        rankFactorDownstreamBandwidth kind=float(7) off=60 cntOff=- size=4 flags=0
+        minScoreToConnect kind=float(7) off=64 cntOff=- size=4 flags=0
+      maxConnectAttemptsBeforeCreating kind=u32(4) off=68 cntOff=- size=4 flags=0
+      maxConnectSecondsBeforeCreating kind=u32(4) off=72 cntOff=- size=4 flags=0
+      maxWaitingForClientsToConnectSeconds kind=u32(4) off=76 cntOff=- size=4 flags=0
+      minPlayersToLaunch kind=u32(4) off=80 cntOff=- size=4 flags=0
+      intermissionTimeMs kind=u32(4) off=84 cntOff=- size=4 flags=0
+      shortIntermissionTimeMs kind=u32(4) off=88 cntOff=- size=4 flags=0
+=== ForzaHopperGetSessionListFilterSettings_Results @8208723C kind=9
+  members: first=0x82087218 count=1
+    settings kind=struct(9) off=0 cntOff=- size=68 flags=1
+      numStartingMatchmakingQueryResults kind=u32(4) off=0 cntOff=- size=4 flags=0
+      shouldQosProbe kind=bool(12) off=4 cntOff=- size=1 flags=0
+      shouldReportQosToServer kind=bool(12) off=5 cntOff=- size=1 flags=0
+      maxWaitingForQosDataSeconds kind=u32(4) off=8 cntOff=- size=4 flags=0
+      maxBpsConsumedDuringQos kind=u32(4) off=12 cntOff=- size=4 flags=0
+      maxProbesToSend kind=u32(4) off=16 cntOff=- size=4 flags=0
+      maxMedQosRttAllowedMs kind=u32(4) off=20 cntOff=- size=4 flags=0
+      maxMinQosRttAllowedMs kind=u32(4) off=24 cntOff=- size=4 flags=0
+      minUpstreamBandwidth kind=u32(4) off=28 cntOff=- size=4 flags=0
+      minDownstreamBandwidth kind=u32(4) off=32 cntOff=- size=4 flags=0
+      scoreBonusForJoinInProgress kind=float(7) off=36 cntOff=- size=4 flags=0
+      scoreBonusForJoinInShortIntermission kind=float(7) off=40 cntOff=- size=4 flags=0
+      scoreBonusForEmptySlots kind=float(7) off=44 cntOff=- size=4 flags=0
+      rankFactorMinPing kind=float(7) off=48 cntOff=- size=4 flags=0
+      rankFactorAvgPing kind=float(7) off=52 cntOff=- size=4 flags=0
+      rankFactorUpstreamBandwidth kind=float(7) off=56 cntOff=- size=4 flags=0
+      rankFactorDownstreamBandwidth kind=float(7) off=60 cntOff=- size=4 flags=0
+      minScoreToConnect kind=float(7) off=64 cntOff=- size=4 flags=0
+=== ForzaHopperReportQosData_Params @82087284 kind=9
+  members: first=0x82087260 count=1
+    qosWireDataArray kind=array(10) off=4 cntOff=0 size=0 flags=3
+      QoSWireData kind=struct(9) off=0 cntOff=- size=28 flags=0
+        sessionID kind=blob8(18) off=0 cntOff=- size=8 flags=0
+        bFlags kind=u8(0) off=8 cntOff=- size=1 flags=0
+        cProbesXmit kind=i16(2) off=10 cntOff=- size=2 flags=0
+        cProbesRecv kind=u8(0) off=12 cntOff=- size=1 flags=0
+        wRttMinInMsecs kind=i16(2) off=14 cntOff=- size=2 flags=0
+        wRttMedInMsecs kind=i16(2) off=16 cntOff=- size=2 flags=0
+        dwUpBitsPerSec kind=u32(4) off=20 cntOff=- size=4 flags=0
+        dwDnBitsPerSec kind=u32(4) off=24 cntOff=- size=4 flags=0
+=== ForzaHopperReportVoting_Params @8208735C kind=9
+  members: first=0x820872a8 count=5
+    votingMode kind=i32(3) off=0 cntOff=- size=4 flags=0
+    result kind=i32(3) off=4 cntOff=- size=4 flags=0
+    trackId kind=i32(3) off=8 cntOff=- size=4 flags=0
+    hopperId kind=i32(3) off=12 cntOff=- size=4 flags=0
+    playerVotes kind=array(10) off=20 cntOff=16 size=0 flags=3
+      PlayerVoteEntry kind=struct(9) off=0 cntOff=- size=16 flags=0
+        xuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        playerVote kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ForzaHopperUserRegister_Params @820873C8 kind=9
+  members: first=0x82087380 count=2
+    hopperId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    sessionId kind=blob8(18) off=4 cntOff=- size=8 flags=0
+=== ForzaHopperUserRegister_Results @82087410 kind=9
+  members: first=0x820873ec count=1
+    nextRegisterSeconds kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaLargeFileUploadCreate_Params @8209B69C kind=9
+  members: first=0x8209b630 count=3
+    payloadSize kind=u32(4) off=0 cntOff=- size=4 flags=0
+    overwriteOldest kind=bool(12) off=4 cntOff=- size=1 flags=0
+    userFileName kind=string(8) off=8 cntOff=- size=0 flags=3
+=== ForzaLargeFileUploadCreate_Results @8209B6E4 kind=9
+  members: first=0x8209b6c0 count=1
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaSharedCarCreate_Params @820830B4 kind=9
+  members: first=0x82083000 count=5
+    completeCarData kind=struct(9) off=0 cntOff=- size=112 flags=3
+      gameCarId kind=guid(13) off=0 cntOff=- size=16 flags=0
+      ProfileId kind=bytes(15) off=20 cntOff=16 size=24 flags=0
+      modelId kind=u16(1) off=44 cntOff=- size=2 flags=0
+      manufacturerColorIndex kind=u16(1) off=46 cntOff=- size=2 flags=0
+      carColorRGB kind=i32(3) off=48 cntOff=- size=4 flags=0
+      isMetallic kind=bool(12) off=52 cntOff=- size=1 flags=0
+      specialColorIndex kind=u16(1) off=54 cntOff=- size=2 flags=0
+      perfIndex kind=float(7) off=56 cntOff=- size=4 flags=0
+      simPeakPower kind=float(7) off=60 cntOff=- size=4 flags=0
+      curbWeight kind=float(7) off=64 cntOff=- size=4 flags=0
+      classId kind=u8(0) off=68 cntOff=- size=1 flags=0
+      driveTypeId kind=u8(0) off=69 cntOff=- size=1 flags=0
+      engineConfigId kind=u8(0) off=70 cntOff=- size=1 flags=0
+      cylinderId kind=u8(0) off=71 cntOff=- size=1 flags=0
+      aspirationTypeId kind=u8(0) off=72 cntOff=- size=1 flags=0
+      displacementId kind=i32(3) off=76 cntOff=- size=4 flags=0
+      isStock kind=bool(12) off=80 cntOff=- size=1 flags=0
+      speedRating kind=float(7) off=84 cntOff=- size=4 flags=0
+      accelerationRating kind=float(7) off=88 cntOff=- size=4 flags=0
+      launchRating kind=float(7) off=92 cntOff=- size=4 flags=0
+      brakingRating kind=float(7) off=96 cntOff=- size=4 flags=0
+      handlingRating kind=float(7) off=100 cntOff=- size=4 flags=0
+      simPeakTorque kind=float(7) off=104 cntOff=- size=4 flags=0
+      weightDistribution kind=float(7) off=108 cntOff=- size=4 flags=0
+    texturesId kind=i32(3) off=4 cntOff=- size=4 flags=0
+    liveryDetails kind=bytes(15) off=12 cntOff=8 size=0 flags=3
+    tuning kind=bytes(15) off=20 cntOff=16 size=0 flags=3
+    overWriteExisting kind=bool(12) off=24 cntOff=- size=1 flags=0
+=== ForzaSharedCarCreate_Results @820830FC kind=9
+  members: first=0x820830d8 count=1
+    carId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaSharedCarDownloadSharedCar_Params @820831B0 kind=9
+  members: first=0x82083120 count=4
+    carId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    version kind=i32(3) off=4 cntOff=- size=4 flags=0
+    maxLiveryLength kind=u32(4) off=8 cntOff=- size=4 flags=0
+    maxTuningLength kind=u32(4) off=12 cntOff=- size=4 flags=0
+=== ForzaSharedCarDownloadSharedCar_Results @820831D4 kind=9
+  members: first=0x820831f8 count=2
+    liveryDetails kind=bytes(15) off=8 cntOff=4 size=0 flags=5
+    tuningDetails kind=bytes(15) off=20 cntOff=16 size=0 flags=5
+=== ForzaSharedCarGetCarDetails_Params @82083288 kind=9
+  members: first=0x82083240 count=2
+    carCount kind=i32(3) off=0 cntOff=- size=4 flags=0
+    carIds kind=array(10) off=8 cntOff=4 size=0 flags=3
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaSharedCarGetCarDetails_Results @820832D0 kind=9
+  members: first=0x820832ac count=1
+    carData kind=array(10) off=8 cntOff=4 size=0 flags=5
+      SharedCarDetails kind=struct(9) off=0 cntOff=- size=230420 flags=0
+        sharedCarId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        thumbnail kind=bytes(15) off=8 cntOff=4 size=230400 flags=0
+        manufacturerColorIndex kind=u16(1) off=230408 cntOff=- size=2 flags=0
+        carColorRGB kind=i32(3) off=230412 cntOff=- size=4 flags=0
+        isMetallic kind=bool(12) off=230416 cntOff=- size=1 flags=0
+        specialColorIndex kind=u16(1) off=230418 cntOff=- size=2 flags=0
+=== ForzaSharedCarGetClubCars_Params @82083318 kind=9
+  members: first=0x820832f4 count=1
+    maxResults kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaSharedCarGetClubCars_Results @82083360 kind=9
+  members: first=0x8208333c count=1
+    carData kind=array(10) off=8 cntOff=4 size=0 flags=5
+      SharedCarLightweightData kind=struct(9) off=0 cntOff=- size=424 flags=0
+        owner kind=struct(9) off=0 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        sharedDate kind=systemtime(11) off=72 cntOff=- size=16 flags=0
+        lastUsedDate kind=systemtime(11) off=88 cntOff=- size=16 flags=0
+        sharedCarId kind=i32(3) off=104 cntOff=- size=4 flags=0
+        modelId kind=u16(1) off=108 cntOff=- size=2 flags=0
+        raceCount kind=i32(3) off=112 cntOff=- size=4 flags=0
+        perfIndex kind=float(7) off=116 cntOff=- size=4 flags=0
+        year kind=u16(1) off=120 cntOff=- size=2 flags=0
+        makeId kind=u16(1) off=122 cntOff=- size=2 flags=0
+        modelFamilyId kind=u16(1) off=124 cntOff=- size=2 flags=0
+        bodyFamilyId kind=u16(1) off=126 cntOff=- size=2 flags=0
+        carTypeId kind=u8(0) off=128 cntOff=- size=1 flags=0
+        regionId kind=u8(0) off=129 cntOff=- size=1 flags=0
+        countryId kind=u8(0) off=130 cntOff=- size=1 flags=0
+        familySpecialId kind=u8(0) off=131 cntOff=- size=1 flags=0
+        enginePlacementId kind=u8(0) off=132 cntOff=- size=1 flags=0
+        simPeakPower kind=float(7) off=136 cntOff=- size=4 flags=0
+        curbWeight kind=float(7) off=140 cntOff=- size=4 flags=0
+        classId kind=u8(0) off=144 cntOff=- size=1 flags=0
+        driveTypeId kind=u8(0) off=145 cntOff=- size=1 flags=0
+        engineConfigId kind=u8(0) off=146 cntOff=- size=1 flags=0
+        cylinderId kind=u8(0) off=147 cntOff=- size=1 flags=0
+        aspirationTypeId kind=u8(0) off=148 cntOff=- size=1 flags=0
+        displacementId kind=i32(3) off=152 cntOff=- size=4 flags=0
+        isStock kind=bool(12) off=156 cntOff=- size=1 flags=0
+        speedRating kind=float(7) off=160 cntOff=- size=4 flags=0
+        accelerationRating kind=float(7) off=164 cntOff=- size=4 flags=0
+        launchRating kind=float(7) off=168 cntOff=- size=4 flags=0
+        brakingRating kind=float(7) off=172 cntOff=- size=4 flags=0
+        handlingRating kind=float(7) off=176 cntOff=- size=4 flags=0
+        simPeakTorque kind=float(7) off=180 cntOff=- size=4 flags=0
+        weightDistribution kind=float(7) off=184 cntOff=- size=4 flags=0
+        MakeName kind=string(8) off=188 cntOff=- size=62 flags=0
+        ModelName kind=string(8) off=250 cntOff=- size=162 flags=0
+        contentId kind=i32(3) off=412 cntOff=- size=4 flags=0
+        version kind=i32(3) off=416 cntOff=- size=4 flags=0
+=== ForzaSharedCarIncrementRaceCount_Params @820833A8 kind=9
+  members: first=0x82083384 count=1
+    carId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaSharedCarRemoveSharedCar_Params @820833F0 kind=9
+  members: first=0x820833cc count=1
+    carId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaSharedCarUploadCarTextures_Params @82083414 kind=9
+  members: first=0x82083438 count=2
+    liveryTexture kind=bytes(15) off=4 cntOff=0 size=0 flags=3
+    LiveryThumbnail kind=bytes(15) off=12 cntOff=8 size=0 flags=3
+=== ForzaSharedCarUploadCarTextures_Results @820834A4 kind=9
+  members: first=0x82083480 count=1
+    texturesId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaStorefrontAddFavoriteUser_Params @82087E64 kind=9
+  members: first=0x82087e40 count=1
+    favoriteXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ForzaStorefrontAddOnlineCredit_Params @82087EAC kind=9
+  members: first=0x82087e88 count=1
+    credit kind=u32(4) off=0 cntOff=- size=4 flags=0
+=== ForzaStorefrontChangeFileDescription_Params @82087F18 kind=9
+  members: first=0x82087ed0 count=2
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    newDescription kind=string(8) off=4 cntOff=- size=0 flags=3
+=== ForzaStorefrontChangeFilePriceQuantity_Params @82087F3C kind=9
+  members: first=0x82087f60 count=3
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    newPrice kind=i32(3) off=4 cntOff=- size=4 flags=0
+    newQuantity kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontChangeFileTitle_Params @82087FCC kind=9
+  members: first=0x82087ff0 count=2
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    newTitle kind=string(8) off=4 cntOff=- size=0 flags=3
+=== ForzaStorefrontGetFeaturedFiles_Params @82088080 kind=9
+  members: first=0x82088038 count=2
+    clientContentFlag kind=struct(9) off=0 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxFiles kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetFeaturedFiles_Results @820880C8 kind=9
+  members: first=0x820880a4 count=1
+    FeaturedFiles kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFile kind=struct(9) off=0 cntOff=- size=154280 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Type kind=i32(3) off=4 cntOff=- size=4 flags=0
+        Title kind=string(8) off=8 cntOff=- size=34 flags=0
+        Description kind=string(8) off=42 cntOff=- size=514 flags=0
+        Price kind=i32(3) off=556 cntOff=- size=4 flags=0
+        Quantity kind=i32(3) off=560 cntOff=- size=4 flags=0
+        DownloadCount kind=u32(4) off=564 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=568 cntOff=- size=4 flags=0
+        SubmissionTime kind=systemtime(11) off=572 cntOff=- size=16 flags=0
+        KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+        KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+        Owner kind=struct(9) off=592 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        PayloadSize kind=u32(4) off=664 cntOff=- size=4 flags=0
+        PreviewPayload kind=bytes(15) off=672 cntOff=668 size=153600 flags=0
+        Ordinal kind=u16(1) off=154272 cntOff=- size=2 flags=0
+        IsUnderReview kind=bool(12) off=154274 cntOff=- size=1 flags=0
+=== ForzaStorefrontGetFileHeavyWeightData_Params @820880EC kind=9
+  members: first=0x82088110 count=2
+    fileCount kind=i32(3) off=0 cntOff=- size=4 flags=0
+    FileIds kind=array(10) off=8 cntOff=4 size=0 flags=3
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetFileHeavyWeightData_Results @8208817C kind=9
+  members: first=0x82088158 count=1
+    fileData kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFile kind=struct(9) off=0 cntOff=- size=154280 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Type kind=i32(3) off=4 cntOff=- size=4 flags=0
+        Title kind=string(8) off=8 cntOff=- size=34 flags=0
+        Description kind=string(8) off=42 cntOff=- size=514 flags=0
+        Price kind=i32(3) off=556 cntOff=- size=4 flags=0
+        Quantity kind=i32(3) off=560 cntOff=- size=4 flags=0
+        DownloadCount kind=u32(4) off=564 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=568 cntOff=- size=4 flags=0
+        SubmissionTime kind=systemtime(11) off=572 cntOff=- size=16 flags=0
+        KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+        KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+        Owner kind=struct(9) off=592 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        PayloadSize kind=u32(4) off=664 cntOff=- size=4 flags=0
+        PreviewPayload kind=bytes(15) off=672 cntOff=668 size=153600 flags=0
+        Ordinal kind=u16(1) off=154272 cntOff=- size=2 flags=0
+        IsUnderReview kind=bool(12) off=154274 cntOff=- size=1 flags=0
+=== ForzaStorefrontGetFileListForPage_Params @82088230 kind=9
+  members: first=0x820881a0 count=4
+    ownerXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    startAt kind=u32(4) off=8 cntOff=- size=4 flags=0
+    maxFiles kind=u32(4) off=12 cntOff=- size=4 flags=0
+    page kind=i32(3) off=16 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetFileListForPage_Results @82088254 kind=9
+  members: first=0x82088278 count=2
+    Files kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFile kind=struct(9) off=0 cntOff=- size=154280 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Type kind=i32(3) off=4 cntOff=- size=4 flags=0
+        Title kind=string(8) off=8 cntOff=- size=34 flags=0
+        Description kind=string(8) off=42 cntOff=- size=514 flags=0
+        Price kind=i32(3) off=556 cntOff=- size=4 flags=0
+        Quantity kind=i32(3) off=560 cntOff=- size=4 flags=0
+        DownloadCount kind=u32(4) off=564 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=568 cntOff=- size=4 flags=0
+        SubmissionTime kind=systemtime(11) off=572 cntOff=- size=16 flags=0
+        KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+        KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+        Owner kind=struct(9) off=592 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        PayloadSize kind=u32(4) off=664 cntOff=- size=4 flags=0
+        PreviewPayload kind=bytes(15) off=672 cntOff=668 size=153600 flags=0
+        Ordinal kind=u16(1) off=154272 cntOff=- size=2 flags=0
+        IsUnderReview kind=bool(12) off=154274 cntOff=- size=1 flags=0
+    totalFiles kind=u32(4) off=12 cntOff=- size=4 flags=1
+=== ForzaStorefrontGetFriendsPopulatedStorefrontXUIDs_Params @82088308 kind=9
+  members: first=0x820882c0 count=2
+    xuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    maxResults kind=u32(4) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetFriendsPopulatedStorefrontXUIDs_Results @82088350 kind=9
+  members: first=0x8208832c count=1
+    results kind=array(10) off=8 cntOff=4 size=0 flags=5
+      UserData kind=struct(9) off=0 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+=== ForzaStorefrontGetMostDownloadedFiles_Params @82088374 kind=9
+  members: first=0x82088398 count=2
+    clientContentFlag kind=struct(9) off=0 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxFiles kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetMostDownloadedFiles_Results @82088404 kind=9
+  members: first=0x820883e0 count=1
+    MostDownloadedFiles kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFile kind=struct(9) off=0 cntOff=- size=154280 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Type kind=i32(3) off=4 cntOff=- size=4 flags=0
+        Title kind=string(8) off=8 cntOff=- size=34 flags=0
+        Description kind=string(8) off=42 cntOff=- size=514 flags=0
+        Price kind=i32(3) off=556 cntOff=- size=4 flags=0
+        Quantity kind=i32(3) off=560 cntOff=- size=4 flags=0
+        DownloadCount kind=u32(4) off=564 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=568 cntOff=- size=4 flags=0
+        SubmissionTime kind=systemtime(11) off=572 cntOff=- size=16 flags=0
+        KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+        KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+        Owner kind=struct(9) off=592 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        PayloadSize kind=u32(4) off=664 cntOff=- size=4 flags=0
+        PreviewPayload kind=bytes(15) off=672 cntOff=668 size=153600 flags=0
+        Ordinal kind=u16(1) off=154272 cntOff=- size=2 flags=0
+        IsUnderReview kind=bool(12) off=154274 cntOff=- size=1 flags=0
+=== ForzaStorefrontGetPageList_Params @82088470 kind=9
+  members: first=0x82088428 count=2
+    ownerXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    maxPages kind=u32(4) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetPageList_Results @820884B8 kind=9
+  members: first=0x82088494 count=1
+    Pages kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontPage kind=struct(9) off=0 cntOff=- size=12 flags=0
+        Page kind=i32(3) off=0 cntOff=- size=4 flags=0
+        TotalSlots kind=u32(4) off=4 cntOff=- size=4 flags=0
+        UsedSlots kind=u32(4) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetStats_Params @82088500 kind=9
+  members: first=0x820884dc count=1
+    xuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ForzaStorefrontGetStats_Results @82088548 kind=9
+  members: first=0x82088524 count=1
+    stats kind=struct(9) off=0 cntOff=- size=56 flags=1
+      liveriesUploaded kind=u32(4) off=0 cntOff=- size=4 flags=0
+      liveriesDownloaded kind=u32(4) off=4 cntOff=- size=4 flags=0
+      layerGroupsUploaded kind=u32(4) off=8 cntOff=- size=4 flags=0
+      layerGroupsDownloaded kind=u32(4) off=12 cntOff=- size=4 flags=0
+      painterScoreboardRank kind=u32(4) off=16 cntOff=- size=4 flags=0
+      tuningFilesUploaded kind=u32(4) off=20 cntOff=- size=4 flags=0
+      tuningFilesDownloaded kind=u32(4) off=24 cntOff=- size=4 flags=0
+      tunerScoreboardRank kind=u32(4) off=28 cntOff=- size=4 flags=0
+      photosUploaded kind=u32(4) off=32 cntOff=- size=4 flags=0
+      photosDownloaded kind=u32(4) off=36 cntOff=- size=4 flags=0
+      photoScoreboardRank kind=u32(4) off=40 cntOff=- size=4 flags=0
+      replaysUploaded kind=u32(4) off=44 cntOff=- size=4 flags=0
+      replaysDownloaded kind=u32(4) off=48 cntOff=- size=4 flags=0
+      replayScoreboardRank kind=u32(4) off=52 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetStorefrontFavorites_Params @8208856C kind=9
+  members: first=0x82088590 count=2
+    storefrontXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    maxResults kind=u32(4) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetStorefrontFavorites_Results @820885FC kind=9
+  members: first=0x820885d8 count=1
+    results kind=array(10) off=8 cntOff=4 size=0 flags=5
+      UserData kind=struct(9) off=0 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+=== ForzaStorefrontGetTopRatedFiles_Params @82088668 kind=9
+  members: first=0x82088620 count=2
+    clientContentFlag kind=struct(9) off=0 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxFiles kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaStorefrontGetTopRatedFiles_Results @820886B0 kind=9
+  members: first=0x8208868c count=1
+    TopRatedFiles kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFile kind=struct(9) off=0 cntOff=- size=154280 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Type kind=i32(3) off=4 cntOff=- size=4 flags=0
+        Title kind=string(8) off=8 cntOff=- size=34 flags=0
+        Description kind=string(8) off=42 cntOff=- size=514 flags=0
+        Price kind=i32(3) off=556 cntOff=- size=4 flags=0
+        Quantity kind=i32(3) off=560 cntOff=- size=4 flags=0
+        DownloadCount kind=u32(4) off=564 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=568 cntOff=- size=4 flags=0
+        SubmissionTime kind=systemtime(11) off=572 cntOff=- size=16 flags=0
+        KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+        KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+        Owner kind=struct(9) off=592 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        PayloadSize kind=u32(4) off=664 cntOff=- size=4 flags=0
+        PreviewPayload kind=bytes(15) off=672 cntOff=668 size=153600 flags=0
+        Ordinal kind=u16(1) off=154272 cntOff=- size=2 flags=0
+        IsUnderReview kind=bool(12) off=154274 cntOff=- size=1 flags=0
+=== ForzaStorefrontGetTotalSales_Params @820886F8 kind=9
+  members: first=0x820886d4 count=1
+    xuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ForzaStorefrontGetTotalSales_Results @8208871C kind=9
+  members: first=0x82088740 count=2
+    count kind=u32(4) off=0 cntOff=- size=4 flags=1
+    earnings kind=u32(4) off=4 cntOff=- size=4 flags=1
+=== ForzaStorefrontIncrementViews_Params @820887AC kind=9
+  members: first=0x82088788 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaStorefrontLayerGroupCreate_Params @8209B3A0 kind=9
+  members: first=0x8209b310 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=592 flags=3
+      Title kind=string(8) off=0 cntOff=- size=34 flags=0
+      Description kind=string(8) off=34 cntOff=- size=514 flags=0
+      Price kind=i32(3) off=548 cntOff=- size=4 flags=0
+      Quantity kind=i32(3) off=552 cntOff=- size=4 flags=0
+      DownloadCount kind=i32(3) off=556 cntOff=- size=4 flags=0
+      SubmissionTime kind=systemtime(11) off=560 cntOff=- size=16 flags=0
+      Rating kind=float(7) off=576 cntOff=- size=4 flags=0
+      Type kind=i32(3) off=580 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=584 cntOff=- size=4 flags=0
+      KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+      KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+    layerGroupDesc kind=struct(9) off=4 cntOff=- size=4 flags=3
+      base kind=struct(9) off=0 cntOff=- size=4 flags=0
+        NumLayers kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=2 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaStorefrontLayerGroupCreate_Results @8209B3E8 kind=9
+  members: first=0x8209b3c4 count=1
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaStorefrontLiveryCreate_Params @8209B098 kind=9
+  members: first=0x8209b008 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=592 flags=3
+      Title kind=string(8) off=0 cntOff=- size=34 flags=0
+      Description kind=string(8) off=34 cntOff=- size=514 flags=0
+      Price kind=i32(3) off=548 cntOff=- size=4 flags=0
+      Quantity kind=i32(3) off=552 cntOff=- size=4 flags=0
+      DownloadCount kind=i32(3) off=556 cntOff=- size=4 flags=0
+      SubmissionTime kind=systemtime(11) off=560 cntOff=- size=16 flags=0
+      Rating kind=float(7) off=576 cntOff=- size=4 flags=0
+      Type kind=i32(3) off=580 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=584 cntOff=- size=4 flags=0
+      KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+      KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+    liveryDesc kind=struct(9) off=4 cntOff=- size=12 flags=3
+      base kind=struct(9) off=0 cntOff=- size=12 flags=0
+        MakeId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        TextureId kind=i32(3) off=4 cntOff=- size=4 flags=0
+        ForStorefrontUse kind=bool(12) off=8 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaStorefrontLiveryCreate_Results @8209B0E0 kind=9
+  members: first=0x8209b0bc count=1
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaStorefrontPhotoCreate_Params @82098460 kind=9
+  members: first=0x820983d0 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=592 flags=3
+      Title kind=string(8) off=0 cntOff=- size=34 flags=0
+      Description kind=string(8) off=34 cntOff=- size=514 flags=0
+      Price kind=i32(3) off=548 cntOff=- size=4 flags=0
+      Quantity kind=i32(3) off=552 cntOff=- size=4 flags=0
+      DownloadCount kind=i32(3) off=556 cntOff=- size=4 flags=0
+      SubmissionTime kind=systemtime(11) off=560 cntOff=- size=16 flags=0
+      Rating kind=float(7) off=576 cntOff=- size=4 flags=0
+      Type kind=i32(3) off=580 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=584 cntOff=- size=4 flags=0
+      KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+      KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+    photoDesc kind=struct(9) off=4 cntOff=- size=26 flags=3
+      base kind=struct(9) off=0 cntOff=- size=26 flags=0
+        EnvironmentId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        MakeId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        CreationTime kind=systemtime(11) off=8 cntOff=- size=16 flags=0
+        ForStorefrontUse kind=bool(12) off=24 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaStorefrontPhotoCreate_Results @820984A8 kind=9
+  members: first=0x82098484 count=1
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaStorefrontPurchase_Params @82088860 kind=9
+  members: first=0x820887d0 count=4
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    price kind=i32(3) off=4 cntOff=- size=4 flags=0
+    maxPayloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    maxPreviewSize kind=u32(4) off=12 cntOff=- size=4 flags=0
+=== ForzaStorefrontPurchase_Results @82088884 kind=9
+  members: first=0x820888a8 count=4
+    returnCredits kind=i32(3) off=0 cntOff=- size=4 flags=1
+    payload kind=bytes(15) off=12 cntOff=8 size=0 flags=5
+    previewPayload kind=bytes(15) off=24 cntOff=20 size=0 flags=5
+    purchasedFileInfo kind=struct(9) off=28 cntOff=- size=112 flags=1
+      Title kind=string(8) off=0 cntOff=- size=34 flags=0
+      Ordinal kind=u16(1) off=34 cntOff=- size=2 flags=0
+      Type kind=i32(3) off=36 cntOff=- size=4 flags=0
+      Owner kind=struct(9) off=40 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+=== ForzaStorefrontQueryOnlineCredit_Results @8208895C kind=9
+  members: first=0x82088938 count=1
+    credit kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaStorefrontRemoveFavoriteUser_Params @820889A4 kind=9
+  members: first=0x82088980 count=1
+    notSoFavoriteXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ForzaStorefrontRemoveFile_Params @820889EC kind=9
+  members: first=0x820889c8 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaStorefrontReplayCreate_Params @8209B520 kind=9
+  members: first=0x8209b490 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=592 flags=3
+      Title kind=string(8) off=0 cntOff=- size=34 flags=0
+      Description kind=string(8) off=34 cntOff=- size=514 flags=0
+      Price kind=i32(3) off=548 cntOff=- size=4 flags=0
+      Quantity kind=i32(3) off=552 cntOff=- size=4 flags=0
+      DownloadCount kind=i32(3) off=556 cntOff=- size=4 flags=0
+      SubmissionTime kind=systemtime(11) off=560 cntOff=- size=16 flags=0
+      Rating kind=float(7) off=576 cntOff=- size=4 flags=0
+      Type kind=i32(3) off=580 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=584 cntOff=- size=4 flags=0
+      KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+      KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+    replayDesc kind=struct(9) off=4 cntOff=- size=10 flags=3
+      base kind=struct(9) off=0 cntOff=- size=10 flags=0
+        EnvironmentId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        MakeId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=8 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaStorefrontReplayCreate_Results @8209B568 kind=9
+  members: first=0x8209b544 count=1
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaStorefrontReportContent_Params @82088A34 kind=9
+  members: first=0x82088a10 count=1
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaStorefrontRetrieveOnlineCredit_Params @82088A7C kind=9
+  members: first=0x82088a58 count=1
+    unused kind=bool(12) off=0 cntOff=- size=1 flags=0
+=== ForzaStorefrontRetrieveOnlineCredit_Results @82088AC4 kind=9
+  members: first=0x82088aa0 count=1
+    credit kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaStorefrontSearchLayergroupFiles_Params @82088B30 kind=9
+  members: first=0x82088ae8 count=2
+    searchParams kind=struct(9) off=0 cntOff=- size=200 flags=3
+      PriceMax kind=i32(3) off=0 cntOff=- size=4 flags=0
+      MakeId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      ModelId kind=i32(3) off=8 cntOff=- size=4 flags=0
+      ClassId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      KeywordOneId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      KeywordTwoId kind=i32(3) off=20 cntOff=- size=4 flags=0
+      ManualSearchKeywords kind=string(8) off=24 cntOff=- size=130 flags=0
+      EnvironmentId kind=i32(3) off=156 cntOff=- size=4 flags=0
+      TrackId kind=i32(3) off=160 cntOff=- size=4 flags=0
+      NumLayers kind=i32(3) off=164 cntOff=- size=4 flags=0
+      GamerTag kind=string(8) off=168 cntOff=- size=32 flags=0
+    maxFiles kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaStorefrontSearchLayergroupFiles_Results @82088B78 kind=9
+  members: first=0x82088b54 count=1
+    searchResults kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFileLightweightData kind=struct(9) off=0 cntOff=- size=20 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=4 cntOff=- size=4 flags=0
+        Price kind=i32(3) off=8 cntOff=- size=4 flags=0
+        DownloadCount kind=i32(3) off=12 cntOff=- size=4 flags=0
+        Ordinal kind=u16(1) off=16 cntOff=- size=2 flags=0
+=== ForzaStorefrontSearchLiveryFiles_Params @82088B9C kind=9
+  members: first=0x82088bc0 count=3
+    searchParams kind=struct(9) off=0 cntOff=- size=200 flags=3
+      PriceMax kind=i32(3) off=0 cntOff=- size=4 flags=0
+      MakeId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      ModelId kind=i32(3) off=8 cntOff=- size=4 flags=0
+      ClassId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      KeywordOneId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      KeywordTwoId kind=i32(3) off=20 cntOff=- size=4 flags=0
+      ManualSearchKeywords kind=string(8) off=24 cntOff=- size=130 flags=0
+      EnvironmentId kind=i32(3) off=156 cntOff=- size=4 flags=0
+      TrackId kind=i32(3) off=160 cntOff=- size=4 flags=0
+      NumLayers kind=i32(3) off=164 cntOff=- size=4 flags=0
+      GamerTag kind=string(8) off=168 cntOff=- size=32 flags=0
+    clientContentFlag kind=struct(9) off=4 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxFiles kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontSearchLiveryFiles_Results @82088C50 kind=9
+  members: first=0x82088c2c count=1
+    searchResults kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFileLightweightData kind=struct(9) off=0 cntOff=- size=20 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=4 cntOff=- size=4 flags=0
+        Price kind=i32(3) off=8 cntOff=- size=4 flags=0
+        DownloadCount kind=i32(3) off=12 cntOff=- size=4 flags=0
+        Ordinal kind=u16(1) off=16 cntOff=- size=2 flags=0
+=== ForzaStorefrontSearchPhotoFiles_Params @82088C74 kind=9
+  members: first=0x82088c98 count=2
+    searchParams kind=struct(9) off=0 cntOff=- size=200 flags=3
+      PriceMax kind=i32(3) off=0 cntOff=- size=4 flags=0
+      MakeId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      ModelId kind=i32(3) off=8 cntOff=- size=4 flags=0
+      ClassId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      KeywordOneId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      KeywordTwoId kind=i32(3) off=20 cntOff=- size=4 flags=0
+      ManualSearchKeywords kind=string(8) off=24 cntOff=- size=130 flags=0
+      EnvironmentId kind=i32(3) off=156 cntOff=- size=4 flags=0
+      TrackId kind=i32(3) off=160 cntOff=- size=4 flags=0
+      NumLayers kind=i32(3) off=164 cntOff=- size=4 flags=0
+      GamerTag kind=string(8) off=168 cntOff=- size=32 flags=0
+    maxFiles kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaStorefrontSearchPhotoFiles_Results @82088D04 kind=9
+  members: first=0x82088ce0 count=1
+    searchResults kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFileLightweightData kind=struct(9) off=0 cntOff=- size=20 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=4 cntOff=- size=4 flags=0
+        Price kind=i32(3) off=8 cntOff=- size=4 flags=0
+        DownloadCount kind=i32(3) off=12 cntOff=- size=4 flags=0
+        Ordinal kind=u16(1) off=16 cntOff=- size=2 flags=0
+=== ForzaStorefrontSearchReplayFiles_Params @82088D94 kind=9
+  members: first=0x82088d28 count=3
+    searchParams kind=struct(9) off=0 cntOff=- size=200 flags=3
+      PriceMax kind=i32(3) off=0 cntOff=- size=4 flags=0
+      MakeId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      ModelId kind=i32(3) off=8 cntOff=- size=4 flags=0
+      ClassId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      KeywordOneId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      KeywordTwoId kind=i32(3) off=20 cntOff=- size=4 flags=0
+      ManualSearchKeywords kind=string(8) off=24 cntOff=- size=130 flags=0
+      EnvironmentId kind=i32(3) off=156 cntOff=- size=4 flags=0
+      TrackId kind=i32(3) off=160 cntOff=- size=4 flags=0
+      NumLayers kind=i32(3) off=164 cntOff=- size=4 flags=0
+      GamerTag kind=string(8) off=168 cntOff=- size=32 flags=0
+    clientContentFlag kind=struct(9) off=4 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxFiles kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontSearchReplayFiles_Results @82088DDC kind=9
+  members: first=0x82088db8 count=1
+    searchResults kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFileLightweightData kind=struct(9) off=0 cntOff=- size=20 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=4 cntOff=- size=4 flags=0
+        Price kind=i32(3) off=8 cntOff=- size=4 flags=0
+        DownloadCount kind=i32(3) off=12 cntOff=- size=4 flags=0
+        Ordinal kind=u16(1) off=16 cntOff=- size=2 flags=0
+=== ForzaStorefrontSearchTuningFiles_Params @82088E6C kind=9
+  members: first=0x82088e00 count=3
+    searchParams kind=struct(9) off=0 cntOff=- size=200 flags=3
+      PriceMax kind=i32(3) off=0 cntOff=- size=4 flags=0
+      MakeId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      ModelId kind=i32(3) off=8 cntOff=- size=4 flags=0
+      ClassId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      KeywordOneId kind=i32(3) off=16 cntOff=- size=4 flags=0
+      KeywordTwoId kind=i32(3) off=20 cntOff=- size=4 flags=0
+      ManualSearchKeywords kind=string(8) off=24 cntOff=- size=130 flags=0
+      EnvironmentId kind=i32(3) off=156 cntOff=- size=4 flags=0
+      TrackId kind=i32(3) off=160 cntOff=- size=4 flags=0
+      NumLayers kind=i32(3) off=164 cntOff=- size=4 flags=0
+      GamerTag kind=string(8) off=168 cntOff=- size=32 flags=0
+    clientContentFlag kind=struct(9) off=4 cntOff=- size=16 flags=3
+      High kind=i64(5) off=0 cntOff=- size=8 flags=0
+      Low kind=i64(5) off=8 cntOff=- size=8 flags=0
+    maxFiles kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ForzaStorefrontSearchTuningFiles_Results @82088EB4 kind=9
+  members: first=0x82088e90 count=1
+    searchResults kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaStorefrontFileLightweightData kind=struct(9) off=0 cntOff=- size=20 flags=0
+        Id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Rating kind=float(7) off=4 cntOff=- size=4 flags=0
+        Price kind=i32(3) off=8 cntOff=- size=4 flags=0
+        DownloadCount kind=i32(3) off=12 cntOff=- size=4 flags=0
+        Ordinal kind=u16(1) off=16 cntOff=- size=2 flags=0
+=== ForzaStorefrontSetDefaultPage_Params @82088EFC kind=9
+  members: first=0x82088ed8 count=1
+    page kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaStorefrontSubmitFileRating_Params @82088F68 kind=9
+  members: first=0x82088f20 count=2
+    fileId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    rating kind=u16(1) off=4 cntOff=- size=2 flags=0
+=== ForzaStorefrontTuningCreate_Params @8209B218 kind=9
+  members: first=0x8209b188 count=4
+    fileHeader kind=struct(9) off=0 cntOff=- size=592 flags=3
+      Title kind=string(8) off=0 cntOff=- size=34 flags=0
+      Description kind=string(8) off=34 cntOff=- size=514 flags=0
+      Price kind=i32(3) off=548 cntOff=- size=4 flags=0
+      Quantity kind=i32(3) off=552 cntOff=- size=4 flags=0
+      DownloadCount kind=i32(3) off=556 cntOff=- size=4 flags=0
+      SubmissionTime kind=systemtime(11) off=560 cntOff=- size=16 flags=0
+      Rating kind=float(7) off=576 cntOff=- size=4 flags=0
+      Type kind=i32(3) off=580 cntOff=- size=4 flags=0
+      PayloadSize kind=u32(4) off=584 cntOff=- size=4 flags=0
+      KeywordOne kind=u8(0) off=588 cntOff=- size=1 flags=0
+      KeywordTwo kind=u8(0) off=589 cntOff=- size=1 flags=0
+    tuningDesc kind=struct(9) off=4 cntOff=- size=12 flags=3
+      base kind=struct(9) off=0 cntOff=- size=12 flags=0
+        MakeId kind=u16(1) off=0 cntOff=- size=2 flags=0
+        ModelId kind=u16(1) off=2 cntOff=- size=2 flags=0
+        ClassId kind=u16(1) off=4 cntOff=- size=2 flags=0
+        EnvironmentId kind=u16(1) off=6 cntOff=- size=2 flags=0
+        TrackId kind=u16(1) off=8 cntOff=- size=2 flags=0
+        ForStorefrontUse kind=bool(12) off=10 cntOff=- size=1 flags=0
+    payloadSize kind=u32(4) off=8 cntOff=- size=4 flags=0
+    previewData kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaStorefrontTuningCreate_Results @8209B260 kind=9
+  members: first=0x8209b23c count=1
+    contentFileId kind=i32(3) off=0 cntOff=- size=4 flags=1
+=== ForzaUserApplyProfanityFilter_Params @82083BE8 kind=9
+  members: first=0x82083ba0 count=2
+    rawText kind=string(8) off=0 cntOff=- size=0 flags=3
+    maxFilteredTextLength kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaUserApplyProfanityFilter_Results @82083C0C kind=9
+  members: first=0x82083c30 count=3
+    filteredText kind=string(8) off=4 cntOff=- size=0 flags=5
+    expletivesFound kind=i32(3) off=8 cntOff=- size=4 flags=1
+    exceptionThrown kind=bool(12) off=12 cntOff=- size=1 flags=1
+=== ForzaUserConsumeAsset_Params @82083C9C kind=9
+  members: first=0x82083cc0 count=2
+    assetID kind=u32(4) off=0 cntOff=- size=4 flags=0
+    quantity kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ForzaUserEnumerateAsset_Params @82083D50 kind=9
+  members: first=0x82083d08 count=2
+    assetID kind=u32(4) off=0 cntOff=- size=4 flags=0
+    quantity kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ForzaUserGetForzaAssetCount_Params @82083D74 kind=9
+  members: first=0x82083d98 count=2
+    assetID kind=u32(4) off=0 cntOff=- size=4 flags=0
+    total kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ForzaUserGetForzaAssetCount_Results @82083E04 kind=9
+  members: first=0x82083de0 count=1
+    quantity kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaUserGetForzaAssetCounts_Params @82083E4C kind=9
+  members: first=0x82083e28 count=1
+    maxAssets kind=i32(3) off=0 cntOff=- size=4 flags=0
+=== ForzaUserGetForzaAssetCounts_Results @82083E94 kind=9
+  members: first=0x82083e70 count=1
+    assets kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ForzaAssetCount kind=struct(9) off=0 cntOff=- size=8 flags=0
+        assetID kind=u32(4) off=0 cntOff=- size=4 flags=0
+        quantity kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ForzaUserGetGamercardData_Params @82083F00 kind=9
+  members: first=0x82083eb8 count=2
+    userXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+    gamerTag kind=string(8) off=8 cntOff=- size=0 flags=3
+=== ForzaUserGetGamercardData_Results @82083F48 kind=9
+  members: first=0x82083f24 count=1
+    gamerInfo kind=struct(9) off=0 cntOff=- size=2060 flags=1
+      score kind=i32(3) off=0 cntOff=- size=4 flags=0
+      tileUrl kind=string(8) off=4 cntOff=- size=1026 flags=0
+      reputationUrl kind=string(8) off=1030 cntOff=- size=1026 flags=0
+      reputationBucket kind=i32(3) off=2056 cntOff=- size=4 flags=0
+=== ForzaUserGetPermissionsTable_Params @82083F90 kind=9
+  members: first=0x82083f6c count=1
+    maxPermissions kind=u32(4) off=0 cntOff=- size=4 flags=0
+=== ForzaUserGetPermissionsTable_Results @82083FB4 kind=9
+  members: first=0x82083fd8 count=3
+    permissions kind=array(10) off=8 cntOff=4 size=0 flags=5
+      MethodPermission kind=struct(9) off=0 cntOff=- size=16 flags=0
+        MethodId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        Tier kind=i32(3) off=4 cntOff=- size=4 flags=0
+        IsEnabled kind=bool(12) off=8 cntOff=- size=1 flags=0
+        Access kind=i32(3) off=12 cntOff=- size=4 flags=0
+    featureAreasBanMask kind=u32(4) off=12 cntOff=- size=4 flags=1
+    userFlags kind=u8(0) off=16 cntOff=- size=1 flags=1
+=== ForzaUserGetVipState_Results @82084068 kind=9
+  members: first=0x82084044 count=1
+    isVip kind=bool(12) off=0 cntOff=- size=1 flags=1
+=== ForzaUserIsUserAForza3Player_Params @820840B0 kind=9
+  members: first=0x8208408c count=1
+    userXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+=== ForzaUserIsUserAForza3Player_Results @820840F8 kind=9
+  members: first=0x820840d4 count=1
+    isPlayer kind=bool(12) off=0 cntOff=- size=1 flags=1
+=== ForzaUserLogon2_Params @820841D0 kind=9
+  members: first=0x820841ac count=1
+    loginData kind=struct(9) off=0 cntOff=- size=8936 flags=3
+      qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+      userTier kind=i32(3) off=40 cntOff=- size=4 flags=0
+      language kind=i32(3) off=44 cntOff=- size=4 flags=0
+      region kind=i32(3) off=48 cntOff=- size=4 flags=0
+      locale kind=i32(3) off=52 cntOff=- size=4 flags=0
+      LCID kind=i32(3) off=56 cntOff=- size=4 flags=0
+      ipAddress kind=u32(4) off=60 cntOff=- size=4 flags=0
+      machineId kind=u64(6) off=64 cntOff=- size=8 flags=0
+      macAddress kind=bytes(15) off=72 cntOff=- size=6 flags=0
+      ageGroup kind=u8(0) off=78 cntOff=- size=1 flags=0
+      clientProfile kind=struct(9) off=80 cntOff=- size=32 flags=0
+        ProfileId kind=bytes(15) off=4 cntOff=0 size=24 flags=0
+        TransactionCount kind=i32(3) off=28 cntOff=- size=4 flags=0
+      titleVersion kind=i32(3) off=112 cntOff=- size=4 flags=0
+      currentCareerLevel kind=u8(0) off=116 cntOff=- size=1 flags=0
+      currentBadgeId kind=i16(2) off=118 cntOff=- size=2 flags=0
+      currentPlayerTitleId kind=i16(2) off=120 cntOff=- size=2 flags=0
+      friendXuids kind=array(10) off=128 cntOff=124 size=800 flags=0
+        UInt64 kind=u64(6) off=0 cntOff=- size=8 flags=0
+      gameCarIds kind=array(10) off=932 cntOff=928 size=8000 flags=0
+        GUID kind=guid(13) off=0 cntOff=- size=16 flags=0
+=== ForzaUserLogon2_Results @82084218 kind=9
+  members: first=0x820841f4 count=1
+    responseData kind=struct(9) off=0 cntOff=- size=16232 flags=1
+      isProfileValid kind=bool(12) off=0 cntOff=- size=1 flags=0
+      lastOnlineProfileUpdateAllTablesTranId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      permissions kind=array(10) off=12 cntOff=8 size=4096 flags=0
+        MethodPermission kind=struct(9) off=0 cntOff=- size=16 flags=0
+          MethodId kind=i32(3) off=0 cntOff=- size=4 flags=0
+          Tier kind=i32(3) off=4 cntOff=- size=4 flags=0
+          IsEnabled kind=bool(12) off=8 cntOff=- size=1 flags=0
+          Access kind=i32(3) off=12 cntOff=- size=4 flags=0
+      featureAreasBanMask kind=u32(4) off=4108 cntOff=- size=4 flags=0
+      userFlags kind=u8(0) off=4112 cntOff=- size=1 flags=0
+      upsellOfferId kind=i64(5) off=4120 cntOff=- size=8 flags=0
+      upsellText kind=string(8) off=4128 cntOff=- size=602 flags=0
+      vipOfferIds kind=array(10) off=4736 cntOff=4732 size=128 flags=0
+        Int64 kind=i64(5) off=0 cntOff=- size=8 flags=0
+      userData kind=struct(9) off=4864 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+      notificationNonce kind=u16(1) off=4936 cntOff=- size=2 flags=0
+      notificationPollIntervalSeconds kind=i32(3) off=4940 cntOff=- size=4 flags=0
+      notificationCategories kind=array(10) off=4948 cntOff=4944 size=3240 flags=0
+        XlsNotificationCategory kind=struct(9) off=0 cntOff=- size=648 flags=0
+          type kind=i32(3) off=0 cntOff=- size=4 flags=0
+          name kind=string(8) off=4 cntOff=- size=128 flags=0
+          description kind=string(8) off=132 cntOff=- size=512 flags=0
+          backgroundImageFileId kind=i32(3) off=644 cntOff=- size=4 flags=0
+      storefrontCap kind=i32(3) off=8188 cntOff=- size=4 flags=0
+      gameplayLogConfig kind=struct(9) off=8192 cntOff=- size=24 flags=0
+        Enabled kind=bool(12) off=0 cntOff=- size=1 flags=0
+        FlushInterval kind=u32(4) off=4 cntOff=- size=4 flags=0
+        Throttle kind=bytes(15) off=8 cntOff=- size=15 flags=0
+      carsToUnshareFromGame kind=array(10) off=8220 cntOff=8216 size=8000 flags=0
+        GUID kind=guid(13) off=0 cntOff=- size=16 flags=0
+      defaultTimeoutMs kind=i32(3) off=16220 cntOff=- size=4 flags=0
+      defaultContentTimeoutMs kind=i32(3) off=16224 cntOff=- size=4 flags=0
+=== ForzaUserLogon_Params @82084140 kind=9
+  members: first=0x8208411c count=1
+    loginData kind=struct(9) off=0 cntOff=- size=8936 flags=3
+      qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+      wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+      userTier kind=i32(3) off=40 cntOff=- size=4 flags=0
+      language kind=i32(3) off=44 cntOff=- size=4 flags=0
+      region kind=i32(3) off=48 cntOff=- size=4 flags=0
+      locale kind=i32(3) off=52 cntOff=- size=4 flags=0
+      LCID kind=i32(3) off=56 cntOff=- size=4 flags=0
+      ipAddress kind=u32(4) off=60 cntOff=- size=4 flags=0
+      machineId kind=u64(6) off=64 cntOff=- size=8 flags=0
+      macAddress kind=bytes(15) off=72 cntOff=- size=6 flags=0
+      ageGroup kind=u8(0) off=78 cntOff=- size=1 flags=0
+      clientProfile kind=struct(9) off=80 cntOff=- size=32 flags=0
+        ProfileId kind=bytes(15) off=4 cntOff=0 size=24 flags=0
+        TransactionCount kind=i32(3) off=28 cntOff=- size=4 flags=0
+      titleVersion kind=i32(3) off=112 cntOff=- size=4 flags=0
+      currentCareerLevel kind=u8(0) off=116 cntOff=- size=1 flags=0
+      currentBadgeId kind=i16(2) off=118 cntOff=- size=2 flags=0
+      currentPlayerTitleId kind=i16(2) off=120 cntOff=- size=2 flags=0
+      friendXuids kind=array(10) off=128 cntOff=124 size=800 flags=0
+        UInt64 kind=u64(6) off=0 cntOff=- size=8 flags=0
+      gameCarIds kind=array(10) off=932 cntOff=928 size=8000 flags=0
+        GUID kind=guid(13) off=0 cntOff=- size=16 flags=0
+=== ForzaUserLogon_Results @82084188 kind=9
+  members: first=0x82084164 count=1
+    responseData kind=struct(9) off=0 cntOff=- size=16232 flags=1
+      isProfileValid kind=bool(12) off=0 cntOff=- size=1 flags=0
+      lastOnlineProfileUpdateAllTablesTranId kind=i32(3) off=4 cntOff=- size=4 flags=0
+      permissions kind=array(10) off=12 cntOff=8 size=4096 flags=0
+        MethodPermission kind=struct(9) off=0 cntOff=- size=16 flags=0
+          MethodId kind=i32(3) off=0 cntOff=- size=4 flags=0
+          Tier kind=i32(3) off=4 cntOff=- size=4 flags=0
+          IsEnabled kind=bool(12) off=8 cntOff=- size=1 flags=0
+          Access kind=i32(3) off=12 cntOff=- size=4 flags=0
+      featureAreasBanMask kind=u32(4) off=4108 cntOff=- size=4 flags=0
+      userFlags kind=u8(0) off=4112 cntOff=- size=1 flags=0
+      upsellOfferId kind=i64(5) off=4120 cntOff=- size=8 flags=0
+      upsellText kind=string(8) off=4128 cntOff=- size=602 flags=0
+      vipOfferIds kind=array(10) off=4736 cntOff=4732 size=128 flags=0
+        Int64 kind=i64(5) off=0 cntOff=- size=8 flags=0
+      userData kind=struct(9) off=4864 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+      notificationNonce kind=u16(1) off=4936 cntOff=- size=2 flags=0
+      notificationPollIntervalSeconds kind=i32(3) off=4940 cntOff=- size=4 flags=0
+      notificationCategories kind=array(10) off=4948 cntOff=4944 size=3240 flags=0
+        XlsNotificationCategory kind=struct(9) off=0 cntOff=- size=648 flags=0
+          type kind=i32(3) off=0 cntOff=- size=4 flags=0
+          name kind=string(8) off=4 cntOff=- size=128 flags=0
+          description kind=string(8) off=132 cntOff=- size=512 flags=0
+          backgroundImageFileId kind=i32(3) off=644 cntOff=- size=4 flags=0
+      storefrontCap kind=i32(3) off=8188 cntOff=- size=4 flags=0
+      gameplayLogConfig kind=struct(9) off=8192 cntOff=- size=24 flags=0
+        Enabled kind=bool(12) off=0 cntOff=- size=1 flags=0
+        FlushInterval kind=u32(4) off=4 cntOff=- size=4 flags=0
+        Throttle kind=bytes(15) off=8 cntOff=- size=14 flags=0
+      carsToUnshareFromGame kind=array(10) off=8220 cntOff=8216 size=8000 flags=0
+        GUID kind=guid(13) off=0 cntOff=- size=16 flags=0
+      defaultTimeoutMs kind=i32(3) off=16220 cntOff=- size=4 flags=0
+      defaultContentTimeoutMs kind=i32(3) off=16224 cntOff=- size=4 flags=0
+=== ForzaUserQueryOnlineCredits_Results @82084260 kind=9
+  members: first=0x8208423c count=1
+    credit kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaUserRegisterV3ProfileImport_Params @82084284 kind=9
+  members: first=0x820842a8 count=3
+    userLevel kind=u8(0) off=0 cntOff=- size=1 flags=0
+    netWorth kind=struct(9) off=4 cntOff=- size=24 flags=3
+      onlineWinnings kind=u32(4) off=0 cntOff=- size=4 flags=0
+      totalWinnings kind=u32(4) off=4 cntOff=- size=4 flags=0
+      carsInGarage kind=u32(4) off=8 cntOff=- size=4 flags=0
+      carsTotalValue kind=u32(4) off=12 cntOff=- size=4 flags=0
+      partsTotalValue kind=u32(4) off=16 cntOff=- size=4 flags=0
+      currentCredits kind=u32(4) off=20 cntOff=- size=4 flags=0
+    checkpointClient kind=struct(9) off=8 cntOff=- size=32 flags=3
+      ProfileId kind=bytes(15) off=4 cntOff=0 size=24 flags=0
+      TransactionCount kind=i32(3) off=28 cntOff=- size=4 flags=0
+=== ForzaUserRetrieveOnlineCredits_Params @82084338 kind=9
+  members: first=0x82084314 count=1
+    unused kind=bool(12) off=0 cntOff=- size=1 flags=0
+=== ForzaUserRetrieveOnlineCredits_Results @82084380 kind=9
+  members: first=0x8208435c count=1
+    credit kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaUserRetrieveProfileImportCredits_Params @820843C8 kind=9
+  members: first=0x820843a4 count=1
+    unused kind=bool(12) off=0 cntOff=- size=1 flags=0
+=== ForzaUserRetrieveProfileImportCredits_Results @82084410 kind=9
+  members: first=0x820843ec count=1
+    credit kind=u32(4) off=0 cntOff=- size=4 flags=1
+=== ForzaUserSetPlayercardInfo_Params @82084434 kind=9
+  members: first=0x82084458 count=3
+    currentCareerLevel kind=u8(0) off=0 cntOff=- size=1 flags=0
+    currentBadgeId kind=i16(2) off=2 cntOff=- size=2 flags=0
+    currentPlayerTitleId kind=i16(2) off=4 cntOff=- size=2 flags=0
+=== ForzaUserSetVipState_Params @820844E8 kind=9
+  members: first=0x820844c4 count=1
+    isVip kind=bool(12) off=0 cntOff=- size=1 flags=0
+=== ForzaUserTwoPhaseConsumeForzaAsset_Params @8208450C kind=9
+  members: first=0x82084530 count=4
+    assetID kind=u32(4) off=0 cntOff=- size=4 flags=0
+    total kind=u32(4) off=4 cntOff=- size=4 flags=0
+    quantity kind=u32(4) off=8 cntOff=- size=4 flags=0
+    context kind=bytes(15) off=16 cntOff=12 size=0 flags=3
+=== ForzaUserTwoPhaseConsumeForzaAsset_Results @820845E4 kind=9
+  members: first=0x820845c0 count=1
+    success kind=bool(12) off=0 cntOff=- size=1 flags=1
+=== ForzaUserUpdateProfileCheckpoint_Params @82084650 kind=9
+  members: first=0x82084608 count=2
+    clientProfile kind=struct(9) off=0 cntOff=- size=32 flags=3
+      ProfileId kind=bytes(15) off=4 cntOff=0 size=24 flags=0
+      TransactionCount kind=i32(3) off=28 cntOff=- size=4 flags=0
+    titleVersion kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaUserValidateProfileCheckpoint_Params @82084674 kind=9
+  members: first=0x82084698 count=2
+    clientProfile kind=struct(9) off=0 cntOff=- size=32 flags=3
+      ProfileId kind=bytes(15) off=4 cntOff=0 size=24 flags=0
+      TransactionCount kind=i32(3) off=28 cntOff=- size=4 flags=0
+    titleVersion kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaUserWriteRaceStatsEx_Params @820847DC kind=9
+  members: first=0x82084770 count=3
+    id kind=u32(4) off=0 cntOff=- size=4 flags=0
+    raceStats kind=struct(9) off=4 cntOff=- size=80 flags=3
+      finished kind=bool(12) off=0 cntOff=- size=1 flags=0
+      uiNavigationArea kind=u8(0) off=1 cntOff=- size=1 flags=0
+      userFinishPosition kind=u8(0) off=2 cntOff=- size=1 flags=0
+      userScore kind=float(7) off=4 cntOff=- size=4 flags=0
+      winLossMargin kind=float(7) off=8 cntOff=- size=4 flags=0
+      biggerIsBetter kind=bool(12) off=12 cntOff=- size=1 flags=0
+      endConditionType kind=u8(0) off=13 cntOff=- size=1 flags=0
+      maxPlaces kind=u8(0) off=14 cntOff=- size=1 flags=0
+      numHumans kind=u8(0) off=15 cntOff=- size=1 flags=0
+      numAI kind=u8(0) off=16 cntOff=- size=1 flags=0
+      secondsInRace kind=float(7) off=20 cntOff=- size=4 flags=0
+      eventId kind=u16(1) off=24 cntOff=- size=2 flags=0
+      hopperId kind=u16(1) off=26 cntOff=- size=2 flags=0
+      damageDifficultyType kind=u8(0) off=28 cntOff=- size=1 flags=0
+      collisionMode kind=u8(0) off=29 cntOff=- size=1 flags=0
+      hadLivery kind=bool(12) off=30 cntOff=- size=1 flags=0
+      timeDriven kind=float(7) off=32 cntOff=- size=4 flags=0
+      distanceDriven kind=float(7) off=36 cntOff=- size=4 flags=0
+      topSpeed kind=float(7) off=40 cntOff=- size=4 flags=0
+      sessionId kind=blob8(18) off=44 cntOff=- size=8 flags=0
+      partySessionId kind=blob8(18) off=52 cntOff=- size=8 flags=0
+      userLevel kind=u8(0) off=60 cntOff=- size=1 flags=0
+      userXP kind=u32(4) off=64 cntOff=- size=4 flags=0
+      totalWinnings kind=u32(4) off=68 cntOff=- size=4 flags=0
+      onlineWinnings kind=u32(4) off=72 cntOff=- size=4 flags=0
+      currentCredits kind=u32(4) off=76 cntOff=- size=4 flags=0
+    scoreData kind=struct(9) off=8 cntOff=- size=412 flags=3
+      base kind=struct(9) off=0 cntOff=- size=408 flags=0
+        gameScoreboardId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        score kind=float(7) off=4 cntOff=- size=4 flags=0
+        trackId kind=u16(1) off=8 cntOff=- size=2 flags=0
+        carId kind=u16(1) off=10 cntOff=- size=2 flags=0
+        garageId kind=i32(3) off=12 cntOff=- size=4 flags=0
+        carDriveTypeId kind=u8(0) off=16 cntOff=- size=1 flags=0
+        carPower kind=float(7) off=20 cntOff=- size=4 flags=0
+        carTorque kind=float(7) off=24 cntOff=- size=4 flags=0
+        carWeight kind=float(7) off=28 cntOff=- size=4 flags=0
+        carClassId kind=u8(0) off=32 cntOff=- size=1 flags=0
+        carPerformanceIndex kind=float(7) off=36 cntOff=- size=4 flags=0
+        isClean kind=bool(12) off=40 cntOff=- size=1 flags=0
+        usedSTM kind=bool(12) off=41 cntOff=- size=1 flags=0
+        usedABS kind=bool(12) off=42 cntOff=- size=1 flags=0
+        usedTCS kind=bool(12) off=43 cntOff=- size=1 flags=0
+        usedAutoBrake kind=bool(12) off=44 cntOff=- size=1 flags=0
+        usedAutoShifting kind=bool(12) off=45 cntOff=- size=1 flags=0
+        usedClutch kind=bool(12) off=46 cntOff=- size=1 flags=0
+        usedDrafting kind=bool(12) off=47 cntOff=- size=1 flags=0
+        usedMulligan kind=bool(12) off=48 cntOff=- size=1 flags=0
+        usedFullSuggestedLine kind=bool(12) off=49 cntOff=- size=1 flags=0
+        usedBrakingSuggestedLine kind=bool(12) off=50 cntOff=- size=1 flags=0
+        hadPenalty kind=bool(12) off=51 cntOff=- size=1 flags=0
+        installedParts kind=struct(9) off=52 cntOff=- size=180 flags=0
+          base kind=struct(9) off=0 cntOff=- size=8 flags=0
+            m_TireBrand kind=i32(3) off=0 cntOff=- size=4 flags=0
+            m_WheelStyle kind=i32(3) off=4 cntOff=- size=4 flags=0
+          m_CarParts kind=array(10) off=8 cntOff=- size=172 flags=0
+            int kind=i32(3) off=0 cntOff=- size=4 flags=0
+        tuning kind=struct(9) off=232 cntOff=- size=176 flags=0
+          base kind=struct(9) off=0 cntOff=- size=140 flags=0
+            m_FrontDownforce kind=float(7) off=0 cntOff=- size=4 flags=0
+            m_RearDownforce kind=float(7) off=4 cntOff=- size=4 flags=0
+            m_FinalDriveRatio kind=float(7) off=8 cntOff=- size=4 flags=0
+            m_BrakePressure kind=float(7) off=12 cntOff=- size=4 flags=0
+            m_BrakeBias kind=float(7) off=16 cntOff=- size=4 flags=0
+            m_HandbrakePressure kind=float(7) off=20 cntOff=- size=4 flags=0
+            m_CenterDiffTorqueSplit kind=float(7) off=24 cntOff=- size=4 flags=0
+            m_STMScale kind=float(7) off=28 cntOff=- size=4 flags=0
+            m_TCSTakeOffSlipDef kind=float(7) off=32 cntOff=- size=4 flags=0
+            m_TCSMovingSlipDef kind=float(7) off=36 cntOff=- size=4 flags=0
+            m_SteerSpeed kind=float(7) off=40 cntOff=- size=4 flags=0
+            m_SteerAmount kind=float(7) off=44 cntOff=- size=4 flags=0
+            m_FrontSuspTire kind=struct(9) off=48 cntOff=- size=44 flags=0
+              m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+              m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+              m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+              m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+              m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+              m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+              m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+              m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+              m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+              m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+              m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+            m_RearSuspTire kind=struct(9) off=92 cntOff=- size=44 flags=0
+              m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+              m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+              m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+              m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+              m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+              m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+              m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+              m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+              m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+              m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+              m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+            m_FuelLoad kind=float(7) off=136 cntOff=- size=4 flags=0
+          m_GearRatios kind=array(10) off=140 cntOff=- size=36 flags=0
+            float kind=float(7) off=0 cntOff=- size=4 flags=0
+      numCarsPassed kind=i32(3) off=408 cntOff=- size=4 flags=0
+=== ForzaUserWriteRaceStats_Params @8208474C kind=9
+  members: first=0x820846e0 count=3
+    id kind=u32(4) off=0 cntOff=- size=4 flags=0
+    raceStats kind=struct(9) off=4 cntOff=- size=80 flags=3
+      finished kind=bool(12) off=0 cntOff=- size=1 flags=0
+      uiNavigationArea kind=u8(0) off=1 cntOff=- size=1 flags=0
+      userFinishPosition kind=u8(0) off=2 cntOff=- size=1 flags=0
+      userScore kind=float(7) off=4 cntOff=- size=4 flags=0
+      winLossMargin kind=float(7) off=8 cntOff=- size=4 flags=0
+      biggerIsBetter kind=bool(12) off=12 cntOff=- size=1 flags=0
+      endConditionType kind=u8(0) off=13 cntOff=- size=1 flags=0
+      maxPlaces kind=u8(0) off=14 cntOff=- size=1 flags=0
+      numHumans kind=u8(0) off=15 cntOff=- size=1 flags=0
+      numAI kind=u8(0) off=16 cntOff=- size=1 flags=0
+      secondsInRace kind=float(7) off=20 cntOff=- size=4 flags=0
+      eventId kind=u16(1) off=24 cntOff=- size=2 flags=0
+      hopperId kind=u16(1) off=26 cntOff=- size=2 flags=0
+      damageDifficultyType kind=u8(0) off=28 cntOff=- size=1 flags=0
+      collisionMode kind=u8(0) off=29 cntOff=- size=1 flags=0
+      hadLivery kind=bool(12) off=30 cntOff=- size=1 flags=0
+      timeDriven kind=float(7) off=32 cntOff=- size=4 flags=0
+      distanceDriven kind=float(7) off=36 cntOff=- size=4 flags=0
+      topSpeed kind=float(7) off=40 cntOff=- size=4 flags=0
+      sessionId kind=blob8(18) off=44 cntOff=- size=8 flags=0
+      partySessionId kind=blob8(18) off=52 cntOff=- size=8 flags=0
+      userLevel kind=u8(0) off=60 cntOff=- size=1 flags=0
+      userXP kind=u32(4) off=64 cntOff=- size=4 flags=0
+      totalWinnings kind=u32(4) off=68 cntOff=- size=4 flags=0
+      onlineWinnings kind=u32(4) off=72 cntOff=- size=4 flags=0
+      currentCredits kind=u32(4) off=76 cntOff=- size=4 flags=0
+    scoreData kind=struct(9) off=8 cntOff=- size=408 flags=3
+      gameScoreboardId kind=i32(3) off=0 cntOff=- size=4 flags=0
+      score kind=float(7) off=4 cntOff=- size=4 flags=0
+      trackId kind=u16(1) off=8 cntOff=- size=2 flags=0
+      carId kind=u16(1) off=10 cntOff=- size=2 flags=0
+      garageId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      carDriveTypeId kind=u8(0) off=16 cntOff=- size=1 flags=0
+      carPower kind=float(7) off=20 cntOff=- size=4 flags=0
+      carTorque kind=float(7) off=24 cntOff=- size=4 flags=0
+      carWeight kind=float(7) off=28 cntOff=- size=4 flags=0
+      carClassId kind=u8(0) off=32 cntOff=- size=1 flags=0
+      carPerformanceIndex kind=float(7) off=36 cntOff=- size=4 flags=0
+      isClean kind=bool(12) off=40 cntOff=- size=1 flags=0
+      usedSTM kind=bool(12) off=41 cntOff=- size=1 flags=0
+      usedABS kind=bool(12) off=42 cntOff=- size=1 flags=0
+      usedTCS kind=bool(12) off=43 cntOff=- size=1 flags=0
+      usedAutoBrake kind=bool(12) off=44 cntOff=- size=1 flags=0
+      usedAutoShifting kind=bool(12) off=45 cntOff=- size=1 flags=0
+      usedClutch kind=bool(12) off=46 cntOff=- size=1 flags=0
+      usedDrafting kind=bool(12) off=47 cntOff=- size=1 flags=0
+      usedMulligan kind=bool(12) off=48 cntOff=- size=1 flags=0
+      usedFullSuggestedLine kind=bool(12) off=49 cntOff=- size=1 flags=0
+      usedBrakingSuggestedLine kind=bool(12) off=50 cntOff=- size=1 flags=0
+      hadPenalty kind=bool(12) off=51 cntOff=- size=1 flags=0
+      installedParts kind=struct(9) off=52 cntOff=- size=180 flags=0
+        base kind=struct(9) off=0 cntOff=- size=8 flags=0
+          m_TireBrand kind=i32(3) off=0 cntOff=- size=4 flags=0
+          m_WheelStyle kind=i32(3) off=4 cntOff=- size=4 flags=0
+        m_CarParts kind=array(10) off=8 cntOff=- size=172 flags=0
+          int kind=i32(3) off=0 cntOff=- size=4 flags=0
+      tuning kind=struct(9) off=232 cntOff=- size=176 flags=0
+        base kind=struct(9) off=0 cntOff=- size=140 flags=0
+          m_FrontDownforce kind=float(7) off=0 cntOff=- size=4 flags=0
+          m_RearDownforce kind=float(7) off=4 cntOff=- size=4 flags=0
+          m_FinalDriveRatio kind=float(7) off=8 cntOff=- size=4 flags=0
+          m_BrakePressure kind=float(7) off=12 cntOff=- size=4 flags=0
+          m_BrakeBias kind=float(7) off=16 cntOff=- size=4 flags=0
+          m_HandbrakePressure kind=float(7) off=20 cntOff=- size=4 flags=0
+          m_CenterDiffTorqueSplit kind=float(7) off=24 cntOff=- size=4 flags=0
+          m_STMScale kind=float(7) off=28 cntOff=- size=4 flags=0
+          m_TCSTakeOffSlipDef kind=float(7) off=32 cntOff=- size=4 flags=0
+          m_TCSMovingSlipDef kind=float(7) off=36 cntOff=- size=4 flags=0
+          m_SteerSpeed kind=float(7) off=40 cntOff=- size=4 flags=0
+          m_SteerAmount kind=float(7) off=44 cntOff=- size=4 flags=0
+          m_FrontSuspTire kind=struct(9) off=48 cntOff=- size=44 flags=0
+            m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+            m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+            m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+            m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+            m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+            m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+            m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+            m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+            m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+            m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+            m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+          m_RearSuspTire kind=struct(9) off=92 cntOff=- size=44 flags=0
+            m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+            m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+            m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+            m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+            m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+            m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+            m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+            m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+            m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+            m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+            m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+          m_FuelLoad kind=float(7) off=136 cntOff=- size=4 flags=0
+        m_GearRatios kind=array(10) off=140 cntOff=- size=36 flags=0
+          float kind=float(7) off=0 cntOff=- size=4 flags=0
+=== ForzaWebServicesNotificationsGetThumbnail_Params @8208A680 kind=9
+  members: first=0x8208a638 count=2
+    notificationId kind=i64(5) off=0 cntOff=- size=8 flags=0
+    maxSize kind=i32(3) off=8 cntOff=- size=4 flags=0
+=== ForzaWebServicesNotificationsGetThumbnail_Results @8208A6A4 kind=9
+  members: first=0x8208a6c8 count=2
+    data kind=bytes(15) off=8 cntOff=4 size=0 flags=5
+    required kind=i32(3) off=12 cntOff=- size=4 flags=1
+=== ForzaWebServicesNotificationsSendTextNotification_Params @8208A758 kind=9
+  members: first=0x8208a710 count=2
+    xuidRecipient kind=u64(6) off=0 cntOff=- size=8 flags=0
+    message kind=string(8) off=8 cntOff=- size=0 flags=3
+=== ForzaWebServicesNotificationsSendTextNotification_Results @8208A7A0 kind=9
+  members: first=0x8208a77c count=1
+    notificationId kind=i64(5) off=0 cntOff=- size=8 flags=1
+=== ForzaWebServicesOnlineProfileDeleteCarSetup_Params @82084F70 kind=9
+  members: first=0x82084f28 count=2
+    carId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    name kind=string(8) off=4 cntOff=- size=0 flags=3
+=== ForzaWebServicesOnlineProfileDeleteLiveryGroup_Params @82085024 kind=9
+  members: first=0x82085000 count=1
+    name kind=string(8) off=0 cntOff=- size=0 flags=3
+=== ForzaWebServicesOnlineProfileDeleteLivery_Params @82084F94 kind=9
+  members: first=0x82084fb8 count=2
+    name kind=string(8) off=0 cntOff=- size=0 flags=3
+    carId kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaWebServicesOnlineProfileRenameCarSetup_Params @820850B4 kind=9
+  members: first=0x82085048 count=3
+    carId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    oldName kind=string(8) off=4 cntOff=- size=0 flags=3
+    newName kind=string(8) off=8 cntOff=- size=0 flags=3
+=== ForzaWebServicesOnlineProfileRenameLiveryGroup_Params @820851B0 kind=9
+  members: first=0x82085168 count=2
+    oldName kind=string(8) off=0 cntOff=- size=0 flags=3
+    newName kind=string(8) off=4 cntOff=- size=0 flags=3
+=== ForzaWebServicesOnlineProfileRenameLivery_Params @82085144 kind=9
+  members: first=0x820850d8 count=3
+    oldName kind=string(8) off=0 cntOff=- size=0 flags=3
+    carId kind=i32(3) off=4 cntOff=- size=4 flags=0
+    newName kind=string(8) off=8 cntOff=- size=0 flags=3
+=== ForzaWebServicesOnlineProfileUpdateAllTables_Params @820856E4 kind=9
+  members: first=0x82085438 count=19
+    transactionId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    aiPlayerHistories kind=array(10) off=8 cntOff=4 size=0 flags=3
+      ForzaProfileAIPlayerHistory kind=struct(9) off=0 cntOff=- size=36 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        lvl kind=i32(3) off=4 cntOff=- size=4 flags=0
+        totalWinnings kind=i32(3) off=8 cntOff=- size=4 flags=0
+        distanceDriven kind=i32(3) off=12 cntOff=- size=4 flags=0
+        timeDriven kind=i32(3) off=16 cntOff=- size=4 flags=0
+        numVictories kind=i32(3) off=20 cntOff=- size=4 flags=0
+        numPodiums kind=i32(3) off=24 cntOff=- size=4 flags=0
+        numRaces kind=i32(3) off=28 cntOff=- size=4 flags=0
+        totalRepairs kind=i32(3) off=32 cntOff=- size=4 flags=0
+    carGroups kind=array(10) off=16 cntOff=12 size=0 flags=3
+      ForzaProfileCarGroup kind=struct(9) off=0 cntOff=- size=112 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        sortOrder kind=i32(3) off=4 cntOff=- size=4 flags=0
+        displayName kind=string(8) off=8 cntOff=- size=102 flags=0
+    deleteCarGroups kind=array(10) off=24 cntOff=20 size=0 flags=3
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    eventResults kind=array(10) off=32 cntOff=28 size=0 flags=3
+      ForzaProfileEventResult kind=struct(9) off=0 cntOff=- size=8 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        place kind=i32(3) off=4 cntOff=- size=4 flags=0
+    garageCars kind=array(10) off=40 cntOff=36 size=0 flags=3
+      ForzaProfileGarageCar kind=struct(9) off=0 cntOff=- size=552 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        carId kind=i32(3) off=4 cntOff=- size=4 flags=0
+        performanceIndex kind=float(7) off=8 cntOff=- size=4 flags=0
+        classID kind=i32(3) off=12 cntOff=- size=4 flags=0
+        partsValue kind=i32(3) off=16 cntOff=- size=4 flags=0
+        speedRating kind=float(7) off=20 cntOff=- size=4 flags=0
+        accelerationRating kind=float(7) off=24 cntOff=- size=4 flags=0
+        launchRating kind=float(7) off=28 cntOff=- size=4 flags=0
+        brakingRating kind=float(7) off=32 cntOff=- size=4 flags=0
+        handlingRating kind=float(7) off=36 cntOff=- size=4 flags=0
+        curbWeight kind=float(7) off=40 cntOff=- size=4 flags=0
+        weightDistribution kind=float(7) off=44 cntOff=- size=4 flags=0
+        aspirationTypeId kind=i32(3) off=48 cntOff=- size=4 flags=0
+        simPeakPower kind=float(7) off=52 cntOff=- size=4 flags=0
+        simPeakAngVel kind=float(7) off=56 cntOff=- size=4 flags=0
+        simPeakTorque kind=float(7) off=60 cntOff=- size=4 flags=0
+        simPeakTorqueAngVel kind=float(7) off=64 cntOff=- size=4 flags=0
+        simRedlineAngVel kind=float(7) off=68 cntOff=- size=4 flags=0
+        peakIntakePSI kind=float(7) off=72 cntOff=- size=4 flags=0
+        distanceDriven kind=i32(3) off=76 cntOff=- size=4 flags=0
+        timeDriven kind=i32(3) off=80 cntOff=- size=4 flags=0
+        totalWinnings kind=i32(3) off=84 cntOff=- size=4 flags=0
+        totalRepairs kind=i32(3) off=88 cntOff=- size=4 flags=0
+        numVictories kind=i32(3) off=92 cntOff=- size=4 flags=0
+        numPodiums kind=i32(3) off=96 cntOff=- size=4 flags=0
+        numRaces kind=i32(3) off=100 cntOff=- size=4 flags=0
+        numOwners kind=i32(3) off=104 cntOff=- size=4 flags=0
+        numTimesSold kind=i32(3) off=108 cntOff=- size=4 flags=0
+        curOwnerPurchaseDate kind=i32(3) off=112 cntOff=- size=4 flags=0
+        curOwnerNumRaces kind=i32(3) off=116 cntOff=- size=4 flags=0
+        curOwnerWinnings kind=i32(3) off=120 cntOff=- size=4 flags=0
+        originalOwner kind=string(8) off=124 cntOff=- size=32 flags=0
+        carGroup kind=i32(3) off=156 cntOff=- size=4 flags=0
+        flags kind=i32(3) off=160 cntOff=- size=4 flags=0
+        engine kind=i32(3) off=164 cntOff=- size=4 flags=0
+        drivetrain kind=i32(3) off=168 cntOff=- size=4 flags=0
+        carBody kind=i32(3) off=172 cntOff=- size=4 flags=0
+        brakes kind=i32(3) off=176 cntOff=- size=4 flags=0
+        springDamper kind=i32(3) off=180 cntOff=- size=4 flags=0
+        antiSwayFront kind=i32(3) off=184 cntOff=- size=4 flags=0
+        antiSwayRear kind=i32(3) off=188 cntOff=- size=4 flags=0
+        tireCompound kind=i32(3) off=192 cntOff=- size=4 flags=0
+        rearWing kind=i32(3) off=196 cntOff=- size=4 flags=0
+        rimSizeFront kind=i32(3) off=200 cntOff=- size=4 flags=0
+        rimSizeRear kind=i32(3) off=204 cntOff=- size=4 flags=0
+        camshaft kind=i32(3) off=208 cntOff=- size=4 flags=0
+        valves kind=i32(3) off=212 cntOff=- size=4 flags=0
+        displacement kind=i32(3) off=216 cntOff=- size=4 flags=0
+        pistonsCompression kind=i32(3) off=220 cntOff=- size=4 flags=0
+        fuelSystem kind=i32(3) off=224 cntOff=- size=4 flags=0
+        ignition kind=i32(3) off=228 cntOff=- size=4 flags=0
+        exhaust kind=i32(3) off=232 cntOff=- size=4 flags=0
+        intake kind=i32(3) off=236 cntOff=- size=4 flags=0
+        flywheel kind=i32(3) off=240 cntOff=- size=4 flags=0
+        manifold kind=i32(3) off=244 cntOff=- size=4 flags=0
+        restrictorPlate kind=i32(3) off=248 cntOff=- size=4 flags=0
+        oilCooling kind=i32(3) off=252 cntOff=- size=4 flags=0
+        singleTurbo kind=i32(3) off=256 cntOff=- size=4 flags=0
+        twinTurbo kind=i32(3) off=260 cntOff=- size=4 flags=0
+        quadTurbo kind=i32(3) off=264 cntOff=- size=4 flags=0
+        superchargerCSC kind=i32(3) off=268 cntOff=- size=4 flags=0
+        superchargerDSC kind=i32(3) off=272 cntOff=- size=4 flags=0
+        intercooler kind=i32(3) off=276 cntOff=- size=4 flags=0
+        clutch kind=i32(3) off=280 cntOff=- size=4 flags=0
+        transmission kind=i32(3) off=284 cntOff=- size=4 flags=0
+        driveline kind=i32(3) off=288 cntOff=- size=4 flags=0
+        differential kind=i32(3) off=292 cntOff=- size=4 flags=0
+        frontBumper kind=i32(3) off=296 cntOff=- size=4 flags=0
+        rearBumper kind=i32(3) off=300 cntOff=- size=4 flags=0
+        hood kind=i32(3) off=304 cntOff=- size=4 flags=0
+        sideSkirts kind=i32(3) off=308 cntOff=- size=4 flags=0
+        tireWidthFront kind=i32(3) off=312 cntOff=- size=4 flags=0
+        tireWidthRear kind=i32(3) off=316 cntOff=- size=4 flags=0
+        weightReduction kind=i32(3) off=320 cntOff=- size=4 flags=0
+        chassisStiffness kind=i32(3) off=324 cntOff=- size=4 flags=0
+        tireBrand kind=i32(3) off=328 cntOff=- size=4 flags=0
+        wheelStyle kind=i32(3) off=332 cntOff=- size=4 flags=0
+        defaultManufacturerColorIndex kind=i32(3) off=336 cntOff=- size=4 flags=0
+        liveryFileName kind=string(8) off=340 cntOff=- size=66 flags=0
+        sharedId kind=i32(3) off=408 cntOff=- size=4 flags=0
+        tuning_frontTirePressure kind=float(7) off=412 cntOff=- size=4 flags=0
+        tuning_rearTirePressure kind=float(7) off=416 cntOff=- size=4 flags=0
+        tuning_finalDriveRatio kind=float(7) off=420 cntOff=- size=4 flags=0
+        tuning_firstGear kind=float(7) off=424 cntOff=- size=4 flags=0
+        tuning_secondGear kind=float(7) off=428 cntOff=- size=4 flags=0
+        tuning_thirdGear kind=float(7) off=432 cntOff=- size=4 flags=0
+        tuning_fourthGear kind=float(7) off=436 cntOff=- size=4 flags=0
+        tuning_fifthGear kind=float(7) off=440 cntOff=- size=4 flags=0
+        tuning_sixthGear kind=float(7) off=444 cntOff=- size=4 flags=0
+        tuning_seventhGear kind=float(7) off=448 cntOff=- size=4 flags=0
+        tuning_eighthGear kind=float(7) off=452 cntOff=- size=4 flags=0
+        tuning_frontCamber kind=float(7) off=456 cntOff=- size=4 flags=0
+        tuning_rearCamber kind=float(7) off=460 cntOff=- size=4 flags=0
+        tuning_frontToe kind=float(7) off=464 cntOff=- size=4 flags=0
+        tuning_rearToe kind=float(7) off=468 cntOff=- size=4 flags=0
+        tuning_frontCaster kind=float(7) off=472 cntOff=- size=4 flags=0
+        tuning_frontSwaybar kind=float(7) off=476 cntOff=- size=4 flags=0
+        tuning_rearSwaybar kind=float(7) off=480 cntOff=- size=4 flags=0
+        tuning_frontSpring kind=float(7) off=484 cntOff=- size=4 flags=0
+        tuning_rearSpring kind=float(7) off=488 cntOff=- size=4 flags=0
+        tuning_frontRideHeight kind=float(7) off=492 cntOff=- size=4 flags=0
+        tuning_rearRideHeight kind=float(7) off=496 cntOff=- size=4 flags=0
+        tuning_frontDampingStiffness kind=float(7) off=500 cntOff=- size=4 flags=0
+        tuning_rearDampingStiffness kind=float(7) off=504 cntOff=- size=4 flags=0
+        tuning_frontBumpRatio kind=float(7) off=508 cntOff=- size=4 flags=0
+        tuning_rearBumpRatio kind=float(7) off=512 cntOff=- size=4 flags=0
+        tuning_frontDownforce kind=float(7) off=516 cntOff=- size=4 flags=0
+        tuning_rearDownforce kind=float(7) off=520 cntOff=- size=4 flags=0
+        tuning_brakeBalance kind=float(7) off=524 cntOff=- size=4 flags=0
+        tuning_brakePressure kind=float(7) off=528 cntOff=- size=4 flags=0
+        tuning_frontAccel kind=float(7) off=532 cntOff=- size=4 flags=0
+        tuning_rearAccel kind=float(7) off=536 cntOff=- size=4 flags=0
+        tuning_frontDecel kind=float(7) off=540 cntOff=- size=4 flags=0
+        tuning_rearDecel kind=float(7) off=544 cntOff=- size=4 flags=0
+        tuning_centerTorque kind=float(7) off=548 cntOff=- size=4 flags=0
+    deleteGarageCars kind=array(10) off=48 cntOff=44 size=0 flags=3
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    purchasedParts kind=array(10) off=56 cntOff=52 size=0 flags=3
+      ForzaProfilePurchasedPart kind=struct(9) off=0 cntOff=- size=24 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        garageId kind=i32(3) off=4 cntOff=- size=4 flags=0
+        partEnum kind=i32(3) off=8 cntOff=- size=4 flags=0
+        partId kind=i32(3) off=12 cntOff=- size=4 flags=0
+        manufacturerId kind=i32(3) off=16 cntOff=- size=4 flags=0
+        pricePaid kind=i32(3) off=20 cntOff=- size=4 flags=0
+    deletePurchasedParts kind=array(10) off=64 cntOff=60 size=0 flags=3
+      int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    raceResults kind=array(10) off=72 cntOff=68 size=0 flags=3
+      ForzaProfileRaceResult kind=struct(9) off=0 cntOff=- size=8 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        place kind=i32(3) off=4 cntOff=- size=4 flags=0
+    tracksUsed kind=array(10) off=80 cntOff=76 size=0 flags=3
+      ForzaProfileTrackUsage kind=struct(9) off=0 cntOff=- size=16 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        numCareerRaces kind=i32(3) off=4 cntOff=- size=4 flags=0
+        numNonCareerRaces kind=i32(3) off=8 cntOff=- size=4 flags=0
+        viewed kind=bool(12) off=12 cntOff=- size=1 flags=0
+    contentSeen kind=array(10) off=88 cntOff=84 size=0 flags=3
+      ForzaProfileContentSeen kind=struct(9) off=0 cntOff=- size=8 flags=0
+        id kind=i64(5) off=0 cntOff=- size=8 flags=0
+    affinities kind=array(10) off=96 cntOff=92 size=0 flags=3
+      ForzaProfileAffinity kind=struct(9) off=0 cntOff=- size=16 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        xp kind=i32(3) off=4 cntOff=- size=4 flags=0
+        timeDriven kind=i32(3) off=8 cntOff=- size=4 flags=0
+        distanceDriven kind=i32(3) off=12 cntOff=- size=4 flags=0
+    carExperienceUnlocks kind=array(10) off=104 cntOff=100 size=0 flags=3
+      ForzaProfileCarExperienceUnlock kind=struct(9) off=0 cntOff=- size=4 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+    carExperienceRevealsSeen kind=array(10) off=112 cntOff=108 size=0 flags=3
+      ForzaProfileCarExperienceRevealSeen kind=struct(9) off=0 cntOff=- size=4 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+    badgeTitleProgress kind=array(10) off=120 cntOff=116 size=0 flags=3
+      ForzaProfileBadgeTitleProgress kind=struct(9) off=0 cntOff=- size=8 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        currentProgress kind=i32(3) off=4 cntOff=- size=4 flags=0
+    badgeTitleUnlocks kind=array(10) off=128 cntOff=124 size=0 flags=3
+      ForzaProfileBadgeTitleUnlock kind=struct(9) off=0 cntOff=- size=8 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        isNewBadge kind=bool(12) off=4 cntOff=- size=1 flags=0
+        isNewTitle kind=bool(12) off=5 cntOff=- size=1 flags=0
+    carPointsOfInterestProgress kind=array(10) off=136 cntOff=132 size=0 flags=3
+      ForzaProfileCarPointsOfInterestProgress kind=struct(9) off=0 cntOff=- size=8 flags=0
+        id kind=i32(3) off=0 cntOff=- size=4 flags=0
+        numPOIActivations kind=i32(3) off=4 cntOff=- size=4 flags=0
+    raceStatsId kind=u32(4) off=140 cntOff=- size=4 flags=0
+=== ForzaWebServicesOnlineProfileUpdateAll_Params @820851D4 kind=9
+  members: first=0x820851f8 count=16
+    assists kind=array(10) off=4 cntOff=0 size=0 flags=3
+      ForzaProfileAssists kind=struct(9) off=0 cntOff=- size=24 flags=0
+        metaDiff kind=i16(2) off=0 cntOff=- size=2 flags=0
+        suggestedLine kind=i16(2) off=2 cntOff=- size=2 flags=0
+        braking kind=i16(2) off=4 cntOff=- size=2 flags=0
+        steering kind=i16(2) off=6 cntOff=- size=2 flags=0
+        stabilityControl kind=i16(2) off=8 cntOff=- size=2 flags=0
+        tractionControl kind=i16(2) off=10 cntOff=- size=2 flags=0
+        shifting kind=i16(2) off=12 cntOff=- size=2 flags=0
+        damageFuelWear kind=i16(2) off=14 cntOff=- size=2 flags=0
+        aiDiff kind=i16(2) off=16 cntOff=- size=2 flags=0
+        aiUpgrades kind=i16(2) off=18 cntOff=- size=2 flags=0
+        rewind kind=i16(2) off=20 cntOff=- size=2 flags=0
+        classRestriction kind=i16(2) off=22 cntOff=- size=2 flags=0
+    avOptions kind=array(10) off=12 cntOff=8 size=0 flags=3
+      ForzaProfileAVOptions kind=struct(9) off=0 cntOff=- size=20 flags=0
+        masterVolume kind=float(7) off=0 cntOff=- size=4 flags=0
+        inRaceMusic kind=i16(2) off=4 cntOff=- size=2 flags=0
+        menuMusic kind=i16(2) off=6 cntOff=- size=2 flags=0
+        sfxFocus kind=i16(2) off=8 cntOff=- size=2 flags=0
+        playbackSystem kind=i16(2) off=10 cntOff=- size=2 flags=0
+        subtitles kind=i16(2) off=12 cntOff=- size=2 flags=0
+        gamma kind=float(7) off=16 cntOff=- size=4 flags=0
+    controllerLayout kind=array(10) off=20 cntOff=16 size=0 flags=3
+      ForzaProfileControllerLayout kind=struct(9) off=0 cntOff=- size=28 flags=0
+        layout kind=i32(3) off=0 cntOff=- size=4 flags=0
+        controllerDPad kind=i32(3) off=4 cntOff=- size=4 flags=0
+        rumbleSetting kind=i32(3) off=8 cntOff=- size=4 flags=0
+        invertGearUpDown kind=i32(3) off=12 cntOff=- size=4 flags=0
+        invertCameraLookBack kind=i32(3) off=16 cntOff=- size=4 flags=0
+        invertHandbrakeClutch kind=i32(3) off=20 cntOff=- size=4 flags=0
+        rewindOnBack kind=i32(3) off=24 cntOff=- size=4 flags=0
+    controllerAdvancedOptions kind=array(10) off=28 cntOff=24 size=0 flags=3
+      ForzaProfileControllerAdvancedOptions kind=struct(9) off=0 cntOff=- size=48 flags=0
+        steeringAxisDeadzoneInside kind=float(7) off=0 cntOff=- size=4 flags=0
+        steeringAxisDeadzoneOutside kind=float(7) off=4 cntOff=- size=4 flags=0
+        throttleDeadzoneInside kind=float(7) off=8 cntOff=- size=4 flags=0
+        throttleDeadzoneOutside kind=float(7) off=12 cntOff=- size=4 flags=0
+        brakeDeadzoneInside kind=float(7) off=16 cntOff=- size=4 flags=0
+        brakeDeadzoneOutside kind=float(7) off=20 cntOff=- size=4 flags=0
+        clutchDeadzoneInside kind=float(7) off=24 cntOff=- size=4 flags=0
+        clutchDeadzoneOutside kind=float(7) off=28 cntOff=- size=4 flags=0
+        handbrakeDeadzoneInside kind=float(7) off=32 cntOff=- size=4 flags=0
+        handbrakeDeadzoneOutside kind=float(7) off=36 cntOff=- size=4 flags=0
+        rumbleScale kind=float(7) off=40 cntOff=- size=4 flags=0
+        forceFeedbackScale kind=float(7) off=44 cntOff=- size=4 flags=0
+    wheelLayout kind=array(10) off=36 cntOff=32 size=0 flags=3
+      ForzaProfileControllerLayout kind=struct(9) off=0 cntOff=- size=28 flags=0
+        layout kind=i32(3) off=0 cntOff=- size=4 flags=0
+        controllerDPad kind=i32(3) off=4 cntOff=- size=4 flags=0
+        rumbleSetting kind=i32(3) off=8 cntOff=- size=4 flags=0
+        invertGearUpDown kind=i32(3) off=12 cntOff=- size=4 flags=0
+        invertCameraLookBack kind=i32(3) off=16 cntOff=- size=4 flags=0
+        invertHandbrakeClutch kind=i32(3) off=20 cntOff=- size=4 flags=0
+        rewindOnBack kind=i32(3) off=24 cntOff=- size=4 flags=0
+    wheelAdvancedOptions kind=array(10) off=44 cntOff=40 size=0 flags=3
+      ForzaProfileControllerAdvancedOptions kind=struct(9) off=0 cntOff=- size=48 flags=0
+        steeringAxisDeadzoneInside kind=float(7) off=0 cntOff=- size=4 flags=0
+        steeringAxisDeadzoneOutside kind=float(7) off=4 cntOff=- size=4 flags=0
+        throttleDeadzoneInside kind=float(7) off=8 cntOff=- size=4 flags=0
+        throttleDeadzoneOutside kind=float(7) off=12 cntOff=- size=4 flags=0
+        brakeDeadzoneInside kind=float(7) off=16 cntOff=- size=4 flags=0
+        brakeDeadzoneOutside kind=float(7) off=20 cntOff=- size=4 flags=0
+        clutchDeadzoneInside kind=float(7) off=24 cntOff=- size=4 flags=0
+        clutchDeadzoneOutside kind=float(7) off=28 cntOff=- size=4 flags=0
+        handbrakeDeadzoneInside kind=float(7) off=32 cntOff=- size=4 flags=0
+        handbrakeDeadzoneOutside kind=float(7) off=36 cntOff=- size=4 flags=0
+        rumbleScale kind=float(7) off=40 cntOff=- size=4 flags=0
+        forceFeedbackScale kind=float(7) off=44 cntOff=- size=4 flags=0
+    bristolLayout kind=array(10) off=52 cntOff=48 size=0 flags=3
+      ForzaProfileControllerLayout kind=struct(9) off=0 cntOff=- size=28 flags=0
+        layout kind=i32(3) off=0 cntOff=- size=4 flags=0
+        controllerDPad kind=i32(3) off=4 cntOff=- size=4 flags=0
+        rumbleSetting kind=i32(3) off=8 cntOff=- size=4 flags=0
+        invertGearUpDown kind=i32(3) off=12 cntOff=- size=4 flags=0
+        invertCameraLookBack kind=i32(3) off=16 cntOff=- size=4 flags=0
+        invertHandbrakeClutch kind=i32(3) off=20 cntOff=- size=4 flags=0
+        rewindOnBack kind=i32(3) off=24 cntOff=- size=4 flags=0
+    bristolAdvancedOptions kind=array(10) off=60 cntOff=56 size=0 flags=3
+      ForzaProfileControllerAdvancedOptions kind=struct(9) off=0 cntOff=- size=48 flags=0
+        steeringAxisDeadzoneInside kind=float(7) off=0 cntOff=- size=4 flags=0
+        steeringAxisDeadzoneOutside kind=float(7) off=4 cntOff=- size=4 flags=0
+        throttleDeadzoneInside kind=float(7) off=8 cntOff=- size=4 flags=0
+        throttleDeadzoneOutside kind=float(7) off=12 cntOff=- size=4 flags=0
+        brakeDeadzoneInside kind=float(7) off=16 cntOff=- size=4 flags=0
+        brakeDeadzoneOutside kind=float(7) off=20 cntOff=- size=4 flags=0
+        clutchDeadzoneInside kind=float(7) off=24 cntOff=- size=4 flags=0
+        clutchDeadzoneOutside kind=float(7) off=28 cntOff=- size=4 flags=0
+        handbrakeDeadzoneInside kind=float(7) off=32 cntOff=- size=4 flags=0
+        handbrakeDeadzoneOutside kind=float(7) off=36 cntOff=- size=4 flags=0
+        rumbleScale kind=float(7) off=40 cntOff=- size=4 flags=0
+        forceFeedbackScale kind=float(7) off=44 cntOff=- size=4 flags=0
+    hudOptions kind=array(10) off=68 cntOff=64 size=0 flags=3
+      ForzaProfileHUDOptions kind=struct(9) off=0 cntOff=- size=64 flags=0
+        cameraAngle kind=i32(3) off=0 cntOff=- size=4 flags=0
+        cameraEffects kind=i32(3) off=4 cntOff=- size=4 flags=0
+        damageTireWear kind=i32(3) off=8 cntOff=- size=4 flags=0
+        map kind=i32(3) off=12 cntOff=- size=4 flags=0
+        aheadBehindLabels kind=i32(3) off=16 cntOff=- size=4 flags=0
+        timers kind=i32(3) off=20 cntOff=- size=4 flags=0
+        wrongWay kind=i32(3) off=24 cntOff=- size=4 flags=0
+        namesOverCars kind=i32(3) off=28 cntOff=- size=4 flags=0
+        speedometer kind=i32(3) off=32 cntOff=- size=4 flags=0
+        mirror kind=i32(3) off=36 cntOff=- size=4 flags=0
+        metersAhead kind=i32(3) off=40 cntOff=- size=4 flags=0
+        units kind=i32(3) off=44 cntOff=- size=4 flags=0
+        ghosts kind=i32(3) off=48 cntOff=- size=4 flags=0
+        rewind kind=i32(3) off=52 cntOff=- size=4 flags=0
+        raceFeats kind=i32(3) off=56 cntOff=- size=4 flags=0
+        driftHud kind=i32(3) off=60 cntOff=- size=4 flags=0
+    photoModeSettings kind=array(10) off=76 cntOff=72 size=0 flags=3
+      ForzaProfilePhotoModeSettings kind=struct(9) off=0 cntOff=- size=40 flags=0
+        useDefaultEffects kind=bool(12) off=0 cntOff=- size=1 flags=0
+        aperture kind=float(7) off=4 cntOff=- size=4 flags=0
+        brightness kind=float(7) off=8 cntOff=- size=4 flags=0
+        color kind=float(7) off=12 cntOff=- size=4 flags=0
+        contrast kind=float(7) off=16 cntOff=- size=4 flags=0
+        exposure kind=float(7) off=20 cntOff=- size=4 flags=0
+        focus kind=float(7) off=24 cntOff=- size=4 flags=0
+        sepia kind=float(7) off=28 cntOff=- size=4 flags=0
+        vignette kind=float(7) off=32 cntOff=- size=4 flags=0
+        shutterSpeed kind=float(7) off=36 cntOff=- size=4 flags=0
+    playerHistory kind=array(10) off=84 cntOff=80 size=0 flags=3
+      ForzaProfilePlayerHistory kind=struct(9) off=0 cntOff=- size=88 flags=0
+        isVip kind=bool(12) off=0 cntOff=- size=1 flags=0
+        lastTrialImage kind=u32(4) off=4 cntOff=- size=4 flags=0
+        lastRewardedLevel kind=u32(4) off=8 cntOff=- size=4 flags=0
+        credits kind=u32(4) off=12 cntOff=- size=4 flags=0
+        auctionsOpen kind=u32(4) off=16 cntOff=- size=4 flags=0
+        bidsOutstanding kind=u32(4) off=20 cntOff=- size=4 flags=0
+        numAuctionHouseTransactions kind=u32(4) off=24 cntOff=- size=4 flags=0
+        currentNumberOfMessagesDownloaded kind=u32(4) off=28 cntOff=- size=4 flags=0
+        lastMessageCenterMonth kind=i16(2) off=32 cntOff=- size=2 flags=0
+        lastMessageCenterDay kind=i16(2) off=34 cntOff=- size=2 flags=0
+        messageCenterVisits kind=i16(2) off=36 cntOff=- size=2 flags=0
+        perfectAutocrossCount kind=i16(2) off=38 cntOff=- size=2 flags=0
+        rivalsCompletionTracking kind=i16(2) off=40 cntOff=- size=2 flags=0
+        careerCarId kind=u32(4) off=44 cntOff=- size=4 flags=0
+        homespaceTrackId kind=u32(4) off=48 cntOff=- size=4 flags=0
+        upstreamBandwidthPeak kind=u32(4) off=52 cntOff=- size=4 flags=0
+        flags kind=u64(6) off=56 cntOff=- size=8 flags=0
+        updateVersionOnServer kind=i32(3) off=64 cntOff=- size=4 flags=0
+        playerCardBadgeId kind=u32(4) off=68 cntOff=- size=4 flags=0
+        playerCardTitleId kind=u32(4) off=72 cntOff=- size=4 flags=0
+        upTime kind=u64(6) off=80 cntOff=- size=8 flags=0
+    playerRaceHistory kind=array(10) off=92 cntOff=88 size=0 flags=3
+      ForzaProfilePlayerRaceHistory kind=struct(9) off=0 cntOff=- size=84 flags=0
+        level kind=u32(4) off=0 cntOff=- size=4 flags=0
+        xp kind=u32(4) off=4 cntOff=- size=4 flags=0
+        totalWinnings kind=u32(4) off=8 cntOff=- size=4 flags=0
+        onlineWinnings kind=u32(4) off=12 cntOff=- size=4 flags=0
+        totalRepairs kind=u32(4) off=16 cntOff=- size=4 flags=0
+        distanceDriven kind=u32(4) off=20 cntOff=- size=4 flags=0
+        timeDriven kind=u32(4) off=24 cntOff=- size=4 flags=0
+        topSpeed kind=float(7) off=28 cntOff=- size=4 flags=0
+        longestJump kind=float(7) off=32 cntOff=- size=4 flags=0
+        numVictories kind=u32(4) off=36 cntOff=- size=4 flags=0
+        numPodiums kind=u32(4) off=40 cntOff=- size=4 flags=0
+        numRaces kind=u32(4) off=44 cntOff=- size=4 flags=0
+        numLinearPlayRaces kind=u32(4) off=48 cntOff=- size=4 flags=0
+        aiSkill kind=float(7) off=52 cntOff=- size=4 flags=0
+        numPerfectDrifts kind=u32(4) off=56 cntOff=- size=4 flags=0
+        numPerfectDrafts kind=u32(4) off=60 cntOff=- size=4 flags=0
+        numPerfectTurns kind=u32(4) off=64 cntOff=- size=4 flags=0
+        numPerfectPasses kind=u32(4) off=68 cntOff=- size=4 flags=0
+        numPerfectSpeeds kind=u32(4) off=72 cntOff=- size=4 flags=0
+        numCreditsSpent kind=u32(4) off=76 cntOff=- size=4 flags=0
+        numCreditsEarned kind=u32(4) off=80 cntOff=- size=4 flags=0
+    uiCounters kind=array(10) off=100 cntOff=96 size=0 flags=3
+      ForzaProfileUICounters kind=struct(9) off=0 cntOff=- size=40 flags=0
+        timeInAllMenus kind=u32(4) off=0 cntOff=- size=4 flags=0
+        timeInUpgrades kind=u32(4) off=4 cntOff=- size=4 flags=0
+        timeInTuning kind=u32(4) off=8 cntOff=- size=4 flags=0
+        timeInPaintShop kind=u32(4) off=12 cntOff=- size=4 flags=0
+        timeInAuctionHouse kind=u32(4) off=16 cntOff=- size=4 flags=0
+        timeInStorefront kind=u32(4) off=20 cntOff=- size=4 flags=0
+        timeInTestDrive kind=u32(4) off=24 cntOff=- size=4 flags=0
+        timeInShowroomController kind=u32(4) off=28 cntOff=- size=4 flags=0
+        timeInShowroomNatal kind=u32(4) off=32 cntOff=- size=4 flags=0
+        layerGroupImportCount kind=u32(4) off=36 cntOff=- size=4 flags=0
+    showroom kind=array(10) off=108 cntOff=104 size=0 flags=3
+      ForzaProfileShowroom kind=struct(9) off=0 cntOff=- size=12 flags=0
+        carId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        carColor kind=i32(3) off=4 cntOff=- size=4 flags=0
+        kinectTutorialCompleted kind=bool(12) off=8 cntOff=- size=1 flags=0
+        controllerTutorialCompleted kind=bool(12) off=9 cntOff=- size=1 flags=0
+    headTrackingSettings kind=array(10) off=116 cntOff=112 size=0 flags=3
+      ForzaProfileHeadTrackingSettings kind=struct(9) off=0 cntOff=- size=40 flags=0
+        enabled kind=bool(12) off=0 cntOff=- size=1 flags=0
+        xSensitivity kind=float(7) off=4 cntOff=- size=4 flags=0
+        ySensitivity kind=float(7) off=8 cntOff=- size=4 flags=0
+        zSensitivity kind=float(7) off=12 cntOff=- size=4 flags=0
+        yawSensitivity kind=float(7) off=16 cntOff=- size=4 flags=0
+        pitchSensitivity kind=float(7) off=20 cntOff=- size=4 flags=0
+        rollSensitivity kind=float(7) off=24 cntOff=- size=4 flags=0
+        yawWithX kind=float(7) off=28 cntOff=- size=4 flags=0
+        pitchWithY kind=float(7) off=32 cntOff=- size=4 flags=0
+        clipBackground kind=float(7) off=36 cntOff=- size=4 flags=0
+    raceStatsId kind=u32(4) off=120 cntOff=- size=4 flags=0
+=== ForzaWebServicesOnlineProfileUpdateCarSetup_Params @82085900 kind=9
+  members: first=0x820857e0 count=8
+    carId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    name kind=string(8) off=4 cntOff=- size=0 flags=3
+    binaryVersion kind=u16(1) off=8 cntOff=- size=2 flags=0
+    isLocked kind=bool(12) off=10 cntOff=- size=1 flags=0
+    creatorName kind=string(8) off=12 cntOff=- size=0 flags=3
+    creatorXuid kind=u64(6) off=16 cntOff=- size=8 flags=0
+    installedParts kind=struct(9) off=24 cntOff=- size=180 flags=3
+      base kind=struct(9) off=0 cntOff=- size=8 flags=0
+        m_TireBrand kind=i32(3) off=0 cntOff=- size=4 flags=0
+        m_WheelStyle kind=i32(3) off=4 cntOff=- size=4 flags=0
+      m_CarParts kind=array(10) off=8 cntOff=- size=172 flags=0
+        int kind=i32(3) off=0 cntOff=- size=4 flags=0
+    tuning kind=struct(9) off=28 cntOff=- size=176 flags=3
+      base kind=struct(9) off=0 cntOff=- size=140 flags=0
+        m_FrontDownforce kind=float(7) off=0 cntOff=- size=4 flags=0
+        m_RearDownforce kind=float(7) off=4 cntOff=- size=4 flags=0
+        m_FinalDriveRatio kind=float(7) off=8 cntOff=- size=4 flags=0
+        m_BrakePressure kind=float(7) off=12 cntOff=- size=4 flags=0
+        m_BrakeBias kind=float(7) off=16 cntOff=- size=4 flags=0
+        m_HandbrakePressure kind=float(7) off=20 cntOff=- size=4 flags=0
+        m_CenterDiffTorqueSplit kind=float(7) off=24 cntOff=- size=4 flags=0
+        m_STMScale kind=float(7) off=28 cntOff=- size=4 flags=0
+        m_TCSTakeOffSlipDef kind=float(7) off=32 cntOff=- size=4 flags=0
+        m_TCSMovingSlipDef kind=float(7) off=36 cntOff=- size=4 flags=0
+        m_SteerSpeed kind=float(7) off=40 cntOff=- size=4 flags=0
+        m_SteerAmount kind=float(7) off=44 cntOff=- size=4 flags=0
+        m_FrontSuspTire kind=struct(9) off=48 cntOff=- size=44 flags=0
+          m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+          m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+          m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+          m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+          m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+          m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+          m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+          m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+          m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+          m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+          m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+        m_RearSuspTire kind=struct(9) off=92 cntOff=- size=44 flags=0
+          m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+          m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+          m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+          m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+          m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+          m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+          m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+          m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+          m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+          m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+          m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+        m_FuelLoad kind=float(7) off=136 cntOff=- size=4 flags=0
+      m_GearRatios kind=array(10) off=140 cntOff=- size=36 flags=0
+        float kind=float(7) off=0 cntOff=- size=4 flags=0
+=== ForzaWebServicesOnlineProfileUpdateCareerCalendar_Params @820857BC kind=9
+  members: first=0x82085708 count=5
+    currentYear kind=i32(3) off=0 cntOff=- size=4 flags=0
+    currentDay kind=i32(3) off=4 cntOff=- size=4 flags=0
+    calendarYear kind=array(10) off=12 cntOff=8 size=0 flags=3
+      CalendarDay kind=struct(9) off=0 cntOff=- size=4 flags=0
+        registeredEvent kind=i16(2) off=0 cntOff=- size=2 flags=0
+        raceNumber kind=u8(0) off=2 cntOff=- size=1 flags=0
+        finishPlace kind=u8(0) off=3 cntOff=- size=1 flags=0
+    calendarStats kind=struct(9) off=16 cntOff=- size=8 flags=3
+      creditsEarned kind=u32(4) off=0 cntOff=- size=4 flags=0
+      distanceDriven kind=u32(4) off=4 cntOff=- size=4 flags=0
+    raceModesSeen kind=u32(4) off=20 cntOff=- size=4 flags=0
+=== ForzaWebServicesOnlineProfileUpdateLiveryGroup_Params @82085AD4 kind=9
+  members: first=0x82085a20 count=5
+    name kind=string(8) off=0 cntOff=- size=0 flags=3
+    numLayers kind=u16(1) off=4 cntOff=- size=2 flags=0
+    isLocked kind=bool(12) off=6 cntOff=- size=1 flags=0
+    creatorXuid kind=u64(6) off=8 cntOff=- size=8 flags=0
+    data kind=bytes(15) off=20 cntOff=16 size=0 flags=3
+=== ForzaWebServicesOnlineProfileUpdateLivery_Params @82085924 kind=9
+  members: first=0x82085948 count=6
+    name kind=string(8) off=0 cntOff=- size=0 flags=3
+    carId kind=i32(3) off=4 cntOff=- size=4 flags=0
+    numLayers kind=u16(1) off=8 cntOff=- size=2 flags=0
+    isLocked kind=bool(12) off=10 cntOff=- size=1 flags=0
+    creatorXuid kind=u64(6) off=16 cntOff=- size=8 flags=0
+    data kind=bytes(15) off=28 cntOff=24 size=0 flags=3
+=== ForzaWebServicesScoreboardDownloadFile_Params @82089970 kind=9
+  members: first=0x82089928 count=2
+    id kind=i32(3) off=0 cntOff=- size=4 flags=0
+    maxSize kind=i32(3) off=4 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardDownloadFile_Results @820899B8 kind=9
+  members: first=0x82089994 count=1
+    data kind=bytes(15) off=8 cntOff=4 size=0 flags=5
+=== ForzaWebServicesScoreboardGetBestScores_Params @820899DC kind=9
+  members: first=0x82089a00 count=6
+    gameScoreboardId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    trackId kind=u16(1) off=4 cntOff=- size=2 flags=0
+    carId kind=u16(1) off=6 cntOff=- size=2 flags=0
+    carClassId kind=u8(0) off=8 cntOff=- size=1 flags=0
+    carDriveTypeId kind=u8(0) off=9 cntOff=- size=1 flags=0
+    isTimeTrial kind=bool(12) off=10 cntOff=- size=1 flags=0
+=== ForzaWebServicesScoreboardGetBestScores_Results @82089B20 kind=9
+  members: first=0x82089ad8 count=2
+    timeScore kind=struct(9) off=0 cntOff=- size=8 flags=1
+      score kind=float(7) off=0 cntOff=- size=4 flags=0
+      isClean kind=bool(12) off=4 cntOff=- size=1 flags=0
+    driftScore kind=struct(9) off=4 cntOff=- size=8 flags=1
+      score kind=float(7) off=0 cntOff=- size=4 flags=0
+      isClean kind=bool(12) off=4 cntOff=- size=1 flags=0
+=== ForzaWebServicesScoreboardGetRival_Params @82089B44 kind=9
+  members: first=0x82089b68 count=2
+    gameScoreboardId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    rivalXuid kind=u64(6) off=8 cntOff=- size=8 flags=0
+=== ForzaWebServicesScoreboardGetRival_Results @82089BD4 kind=9
+  members: first=0x82089bb0 count=1
+    rival kind=struct(9) off=0 cntOff=- size=192 flags=1
+      scoreData kind=struct(9) off=0 cntOff=- size=184 flags=0
+        position kind=i32(3) off=0 cntOff=- size=4 flags=0
+        rank kind=i32(3) off=4 cntOff=- size=4 flags=0
+        user kind=struct(9) off=8 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        score kind=float(7) off=80 cntOff=- size=4 flags=0
+        submittedTime kind=systemtime(11) off=84 cntOff=- size=16 flags=0
+        carId kind=u16(1) off=100 cntOff=- size=2 flags=0
+        carClassId kind=u8(0) off=102 cntOff=- size=1 flags=0
+        carPerformanceIndex kind=float(7) off=104 cntOff=- size=4 flags=0
+        usedSTM kind=bool(12) off=108 cntOff=- size=1 flags=0
+        usedTCS kind=bool(12) off=109 cntOff=- size=1 flags=0
+        usedABS kind=bool(12) off=110 cntOff=- size=1 flags=0
+        usedAutoBrake kind=bool(12) off=111 cntOff=- size=1 flags=0
+        usedAutoShifting kind=bool(12) off=112 cntOff=- size=1 flags=0
+        usedClutch kind=bool(12) off=113 cntOff=- size=1 flags=0
+        isClean kind=bool(12) off=114 cntOff=- size=1 flags=0
+        ghostFileId kind=i32(3) off=116 cntOff=- size=4 flags=0
+        clanData kind=struct(9) off=120 cntOff=- size=56 flags=0
+          clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+          clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+        bounty kind=i32(3) off=176 cntOff=- size=4 flags=0
+      bounty kind=i32(3) off=184 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardGetRollupRows_Params @82089CF4 kind=9
+  members: first=0x82089bf8 count=7
+    type kind=i32(3) off=0 cntOff=- size=4 flags=0
+    view kind=i32(3) off=4 cntOff=- size=4 flags=0
+    pivotId kind=i32(3) off=8 cntOff=- size=4 flags=0
+    environmentId kind=i32(3) off=12 cntOff=- size=4 flags=0
+    isClubBoard kind=bool(12) off=16 cntOff=- size=1 flags=0
+    startAt kind=i32(3) off=20 cntOff=- size=4 flags=0
+    maxResults kind=i32(3) off=24 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardGetRollupRows_Results @82089D84 kind=9
+  members: first=0x82089d18 count=3
+    rows kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ScoreboardRow kind=struct(9) off=0 cntOff=- size=184 flags=0
+        position kind=i32(3) off=0 cntOff=- size=4 flags=0
+        rank kind=i32(3) off=4 cntOff=- size=4 flags=0
+        user kind=struct(9) off=8 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        score kind=float(7) off=80 cntOff=- size=4 flags=0
+        submittedTime kind=systemtime(11) off=84 cntOff=- size=16 flags=0
+        carId kind=u16(1) off=100 cntOff=- size=2 flags=0
+        carClassId kind=u8(0) off=102 cntOff=- size=1 flags=0
+        carPerformanceIndex kind=float(7) off=104 cntOff=- size=4 flags=0
+        usedSTM kind=bool(12) off=108 cntOff=- size=1 flags=0
+        usedTCS kind=bool(12) off=109 cntOff=- size=1 flags=0
+        usedABS kind=bool(12) off=110 cntOff=- size=1 flags=0
+        usedAutoBrake kind=bool(12) off=111 cntOff=- size=1 flags=0
+        usedAutoShifting kind=bool(12) off=112 cntOff=- size=1 flags=0
+        usedClutch kind=bool(12) off=113 cntOff=- size=1 flags=0
+        isClean kind=bool(12) off=114 cntOff=- size=1 flags=0
+        ghostFileId kind=i32(3) off=116 cntOff=- size=4 flags=0
+        clanData kind=struct(9) off=120 cntOff=- size=56 flags=0
+          clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+          clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+        bounty kind=i32(3) off=176 cntOff=- size=4 flags=0
+    userRow kind=struct(9) off=12 cntOff=- size=184 flags=1
+      position kind=i32(3) off=0 cntOff=- size=4 flags=0
+      rank kind=i32(3) off=4 cntOff=- size=4 flags=0
+      user kind=struct(9) off=8 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+      score kind=float(7) off=80 cntOff=- size=4 flags=0
+      submittedTime kind=systemtime(11) off=84 cntOff=- size=16 flags=0
+      carId kind=u16(1) off=100 cntOff=- size=2 flags=0
+      carClassId kind=u8(0) off=102 cntOff=- size=1 flags=0
+      carPerformanceIndex kind=float(7) off=104 cntOff=- size=4 flags=0
+      usedSTM kind=bool(12) off=108 cntOff=- size=1 flags=0
+      usedTCS kind=bool(12) off=109 cntOff=- size=1 flags=0
+      usedABS kind=bool(12) off=110 cntOff=- size=1 flags=0
+      usedAutoBrake kind=bool(12) off=111 cntOff=- size=1 flags=0
+      usedAutoShifting kind=bool(12) off=112 cntOff=- size=1 flags=0
+      usedClutch kind=bool(12) off=113 cntOff=- size=1 flags=0
+      isClean kind=bool(12) off=114 cntOff=- size=1 flags=0
+      ghostFileId kind=i32(3) off=116 cntOff=- size=4 flags=0
+      clanData kind=struct(9) off=120 cntOff=- size=56 flags=0
+        clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+        clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+      bounty kind=i32(3) off=176 cntOff=- size=4 flags=0
+    available kind=i32(3) off=16 cntOff=- size=4 flags=1
+=== ForzaWebServicesScoreboardGetRows_Params @82089EC8 kind=9
+  members: first=0x82089da8 count=8
+    type kind=i32(3) off=0 cntOff=- size=4 flags=0
+    view kind=i32(3) off=4 cntOff=- size=4 flags=0
+    gameScoreboardId kind=i32(3) off=8 cntOff=- size=4 flags=0
+    trackId kind=i32(3) off=12 cntOff=- size=4 flags=0
+    pivotId kind=i32(3) off=16 cntOff=- size=4 flags=0
+    isClubBoard kind=bool(12) off=20 cntOff=- size=1 flags=0
+    startAt kind=i32(3) off=24 cntOff=- size=4 flags=0
+    maxResults kind=i32(3) off=28 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardGetRows_Results @82089EEC kind=9
+  members: first=0x82089f10 count=3
+    rows kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ScoreboardRow kind=struct(9) off=0 cntOff=- size=184 flags=0
+        position kind=i32(3) off=0 cntOff=- size=4 flags=0
+        rank kind=i32(3) off=4 cntOff=- size=4 flags=0
+        user kind=struct(9) off=8 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        score kind=float(7) off=80 cntOff=- size=4 flags=0
+        submittedTime kind=systemtime(11) off=84 cntOff=- size=16 flags=0
+        carId kind=u16(1) off=100 cntOff=- size=2 flags=0
+        carClassId kind=u8(0) off=102 cntOff=- size=1 flags=0
+        carPerformanceIndex kind=float(7) off=104 cntOff=- size=4 flags=0
+        usedSTM kind=bool(12) off=108 cntOff=- size=1 flags=0
+        usedTCS kind=bool(12) off=109 cntOff=- size=1 flags=0
+        usedABS kind=bool(12) off=110 cntOff=- size=1 flags=0
+        usedAutoBrake kind=bool(12) off=111 cntOff=- size=1 flags=0
+        usedAutoShifting kind=bool(12) off=112 cntOff=- size=1 flags=0
+        usedClutch kind=bool(12) off=113 cntOff=- size=1 flags=0
+        isClean kind=bool(12) off=114 cntOff=- size=1 flags=0
+        ghostFileId kind=i32(3) off=116 cntOff=- size=4 flags=0
+        clanData kind=struct(9) off=120 cntOff=- size=56 flags=0
+          clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+          clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+        bounty kind=i32(3) off=176 cntOff=- size=4 flags=0
+    userRow kind=struct(9) off=12 cntOff=- size=184 flags=1
+      position kind=i32(3) off=0 cntOff=- size=4 flags=0
+      rank kind=i32(3) off=4 cntOff=- size=4 flags=0
+      user kind=struct(9) off=8 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+      score kind=float(7) off=80 cntOff=- size=4 flags=0
+      submittedTime kind=systemtime(11) off=84 cntOff=- size=16 flags=0
+      carId kind=u16(1) off=100 cntOff=- size=2 flags=0
+      carClassId kind=u8(0) off=102 cntOff=- size=1 flags=0
+      carPerformanceIndex kind=float(7) off=104 cntOff=- size=4 flags=0
+      usedSTM kind=bool(12) off=108 cntOff=- size=1 flags=0
+      usedTCS kind=bool(12) off=109 cntOff=- size=1 flags=0
+      usedABS kind=bool(12) off=110 cntOff=- size=1 flags=0
+      usedAutoBrake kind=bool(12) off=111 cntOff=- size=1 flags=0
+      usedAutoShifting kind=bool(12) off=112 cntOff=- size=1 flags=0
+      usedClutch kind=bool(12) off=113 cntOff=- size=1 flags=0
+      isClean kind=bool(12) off=114 cntOff=- size=1 flags=0
+      ghostFileId kind=i32(3) off=116 cntOff=- size=4 flags=0
+      clanData kind=struct(9) off=120 cntOff=- size=56 flags=0
+        clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+        clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+      bounty kind=i32(3) off=176 cntOff=- size=4 flags=0
+    available kind=i32(3) off=16 cntOff=- size=4 flags=1
+=== ForzaWebServicesScoreboardGetStorefrontRows_Params @82089F7C kind=9
+  members: first=0x82089fa0 count=4
+    type kind=i32(3) off=0 cntOff=- size=4 flags=0
+    view kind=i32(3) off=4 cntOff=- size=4 flags=0
+    startAt kind=i32(3) off=8 cntOff=- size=4 flags=0
+    maxResults kind=i32(3) off=12 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardGetStorefrontRows_Results @8208A09C kind=9
+  members: first=0x8208a030 count=3
+    rows kind=array(10) off=8 cntOff=4 size=0 flags=5
+      ScoreboardRow kind=struct(9) off=0 cntOff=- size=184 flags=0
+        position kind=i32(3) off=0 cntOff=- size=4 flags=0
+        rank kind=i32(3) off=4 cntOff=- size=4 flags=0
+        user kind=struct(9) off=8 cntOff=- size=72 flags=0
+          qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+          wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+          flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+          clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+          roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+          currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+          currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+          currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+        score kind=float(7) off=80 cntOff=- size=4 flags=0
+        submittedTime kind=systemtime(11) off=84 cntOff=- size=16 flags=0
+        carId kind=u16(1) off=100 cntOff=- size=2 flags=0
+        carClassId kind=u8(0) off=102 cntOff=- size=1 flags=0
+        carPerformanceIndex kind=float(7) off=104 cntOff=- size=4 flags=0
+        usedSTM kind=bool(12) off=108 cntOff=- size=1 flags=0
+        usedTCS kind=bool(12) off=109 cntOff=- size=1 flags=0
+        usedABS kind=bool(12) off=110 cntOff=- size=1 flags=0
+        usedAutoBrake kind=bool(12) off=111 cntOff=- size=1 flags=0
+        usedAutoShifting kind=bool(12) off=112 cntOff=- size=1 flags=0
+        usedClutch kind=bool(12) off=113 cntOff=- size=1 flags=0
+        isClean kind=bool(12) off=114 cntOff=- size=1 flags=0
+        ghostFileId kind=i32(3) off=116 cntOff=- size=4 flags=0
+        clanData kind=struct(9) off=120 cntOff=- size=56 flags=0
+          clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+          clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+          clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+        bounty kind=i32(3) off=176 cntOff=- size=4 flags=0
+    userRow kind=struct(9) off=12 cntOff=- size=184 flags=1
+      position kind=i32(3) off=0 cntOff=- size=4 flags=0
+      rank kind=i32(3) off=4 cntOff=- size=4 flags=0
+      user kind=struct(9) off=8 cntOff=- size=72 flags=0
+        qwXuid kind=u64(6) off=0 cntOff=- size=8 flags=0
+        wzGamerTag kind=string(8) off=8 cntOff=- size=32 flags=0
+        flags kind=u8(0) off=40 cntOff=- size=1 flags=0
+        clanId kind=i32(3) off=44 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=48 cntOff=- size=10 flags=0
+        roleInClan kind=i32(3) off=60 cntOff=- size=4 flags=0
+        currentCareerLevel kind=u8(0) off=64 cntOff=- size=1 flags=0
+        currentBadgeId kind=i16(2) off=66 cntOff=- size=2 flags=0
+        currentPlayerTitleId kind=i16(2) off=68 cntOff=- size=2 flags=0
+      score kind=float(7) off=80 cntOff=- size=4 flags=0
+      submittedTime kind=systemtime(11) off=84 cntOff=- size=16 flags=0
+      carId kind=u16(1) off=100 cntOff=- size=2 flags=0
+      carClassId kind=u8(0) off=102 cntOff=- size=1 flags=0
+      carPerformanceIndex kind=float(7) off=104 cntOff=- size=4 flags=0
+      usedSTM kind=bool(12) off=108 cntOff=- size=1 flags=0
+      usedTCS kind=bool(12) off=109 cntOff=- size=1 flags=0
+      usedABS kind=bool(12) off=110 cntOff=- size=1 flags=0
+      usedAutoBrake kind=bool(12) off=111 cntOff=- size=1 flags=0
+      usedAutoShifting kind=bool(12) off=112 cntOff=- size=1 flags=0
+      usedClutch kind=bool(12) off=113 cntOff=- size=1 flags=0
+      isClean kind=bool(12) off=114 cntOff=- size=1 flags=0
+      ghostFileId kind=i32(3) off=116 cntOff=- size=4 flags=0
+      clanData kind=struct(9) off=120 cntOff=- size=56 flags=0
+        clanId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        clanTag kind=string(8) off=4 cntOff=- size=10 flags=0
+        clanName kind=string(8) off=14 cntOff=- size=42 flags=0
+      bounty kind=i32(3) off=176 cntOff=- size=4 flags=0
+    available kind=i32(3) off=16 cntOff=- size=4 flags=1
+=== ForzaWebServicesScoreboardGetTimeTrials_Params @8208A108 kind=9
+  members: first=0x8208a0c0 count=2
+    maxTimeTrialCategories kind=u32(4) off=0 cntOff=- size=4 flags=0
+    maxTimeTrialResults kind=u32(4) off=4 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardGetTimeTrials_Results @8208A12C kind=9
+  members: first=0x8208a150 count=2
+    timeTrialCategories kind=array(10) off=8 cntOff=4 size=0 flags=5
+      TimeTrialCategoryHeader kind=struct(9) off=0 cntOff=- size=8 flags=0
+        category kind=i32(3) off=0 cntOff=- size=4 flags=0
+        startIndex kind=i32(3) off=4 cntOff=- size=4 flags=0
+    timeTrials kind=array(10) off=20 cntOff=16 size=0 flags=5
+      TimeTrial kind=struct(9) off=0 cntOff=- size=1984 flags=0
+        id kind=u16(1) off=0 cntOff=- size=2 flags=0
+        scoreType kind=i32(3) off=4 cntOff=- size=4 flags=0
+        name kind=string(8) off=8 cntOff=- size=258 flags=0
+        description kind=string(8) off=266 cntOff=- size=1026 flags=0
+        notRegisteredMessage kind=string(8) off=1292 cntOff=- size=514 flags=0
+        trackId kind=u16(1) off=1806 cntOff=- size=2 flags=0
+        trackName kind=string(8) off=1808 cntOff=- size=130 flags=0
+        hopperId kind=i32(3) off=1940 cntOff=- size=4 flags=0
+        gameOptionsIndex kind=i32(3) off=1944 cntOff=- size=4 flags=0
+        startDate kind=systemtime(11) off=1948 cntOff=- size=16 flags=0
+        endDate kind=systemtime(11) off=1964 cntOff=- size=16 flags=0
+        userRegistered kind=bool(12) off=1980 cntOff=- size=1 flags=0
+        featured kind=bool(12) off=1981 cntOff=- size=1 flags=0
+        active kind=bool(12) off=1982 cntOff=- size=1 flags=0
+=== ForzaWebServicesScoreboardNotifyRival_Params @8208A228 kind=9
+  members: first=0x8208a198 count=4
+    gameScoreboardId kind=i32(3) off=0 cntOff=- size=4 flags=0
+    rivalXuid kind=u64(6) off=8 cntOff=- size=8 flags=0
+    type kind=i32(3) off=16 cntOff=- size=4 flags=0
+    myScoreId kind=guid(13) off=20 cntOff=- size=16 flags=0
+=== ForzaWebServicesScoreboardSubmitScoreEx_Params @8208A324 kind=9
+  members: first=0x8208a348 count=2
+    type kind=i32(3) off=0 cntOff=- size=4 flags=0
+    data kind=struct(9) off=4 cntOff=- size=412 flags=3
+      base kind=struct(9) off=0 cntOff=- size=408 flags=0
+        gameScoreboardId kind=i32(3) off=0 cntOff=- size=4 flags=0
+        score kind=float(7) off=4 cntOff=- size=4 flags=0
+        trackId kind=u16(1) off=8 cntOff=- size=2 flags=0
+        carId kind=u16(1) off=10 cntOff=- size=2 flags=0
+        garageId kind=i32(3) off=12 cntOff=- size=4 flags=0
+        carDriveTypeId kind=u8(0) off=16 cntOff=- size=1 flags=0
+        carPower kind=float(7) off=20 cntOff=- size=4 flags=0
+        carTorque kind=float(7) off=24 cntOff=- size=4 flags=0
+        carWeight kind=float(7) off=28 cntOff=- size=4 flags=0
+        carClassId kind=u8(0) off=32 cntOff=- size=1 flags=0
+        carPerformanceIndex kind=float(7) off=36 cntOff=- size=4 flags=0
+        isClean kind=bool(12) off=40 cntOff=- size=1 flags=0
+        usedSTM kind=bool(12) off=41 cntOff=- size=1 flags=0
+        usedABS kind=bool(12) off=42 cntOff=- size=1 flags=0
+        usedTCS kind=bool(12) off=43 cntOff=- size=1 flags=0
+        usedAutoBrake kind=bool(12) off=44 cntOff=- size=1 flags=0
+        usedAutoShifting kind=bool(12) off=45 cntOff=- size=1 flags=0
+        usedClutch kind=bool(12) off=46 cntOff=- size=1 flags=0
+        usedDrafting kind=bool(12) off=47 cntOff=- size=1 flags=0
+        usedMulligan kind=bool(12) off=48 cntOff=- size=1 flags=0
+        usedFullSuggestedLine kind=bool(12) off=49 cntOff=- size=1 flags=0
+        usedBrakingSuggestedLine kind=bool(12) off=50 cntOff=- size=1 flags=0
+        hadPenalty kind=bool(12) off=51 cntOff=- size=1 flags=0
+        installedParts kind=struct(9) off=52 cntOff=- size=180 flags=0
+          base kind=struct(9) off=0 cntOff=- size=8 flags=0
+            m_TireBrand kind=i32(3) off=0 cntOff=- size=4 flags=0
+            m_WheelStyle kind=i32(3) off=4 cntOff=- size=4 flags=0
+          m_CarParts kind=array(10) off=8 cntOff=- size=172 flags=0
+            int kind=i32(3) off=0 cntOff=- size=4 flags=0
+        tuning kind=struct(9) off=232 cntOff=- size=176 flags=0
+          base kind=struct(9) off=0 cntOff=- size=140 flags=0
+            m_FrontDownforce kind=float(7) off=0 cntOff=- size=4 flags=0
+            m_RearDownforce kind=float(7) off=4 cntOff=- size=4 flags=0
+            m_FinalDriveRatio kind=float(7) off=8 cntOff=- size=4 flags=0
+            m_BrakePressure kind=float(7) off=12 cntOff=- size=4 flags=0
+            m_BrakeBias kind=float(7) off=16 cntOff=- size=4 flags=0
+            m_HandbrakePressure kind=float(7) off=20 cntOff=- size=4 flags=0
+            m_CenterDiffTorqueSplit kind=float(7) off=24 cntOff=- size=4 flags=0
+            m_STMScale kind=float(7) off=28 cntOff=- size=4 flags=0
+            m_TCSTakeOffSlipDef kind=float(7) off=32 cntOff=- size=4 flags=0
+            m_TCSMovingSlipDef kind=float(7) off=36 cntOff=- size=4 flags=0
+            m_SteerSpeed kind=float(7) off=40 cntOff=- size=4 flags=0
+            m_SteerAmount kind=float(7) off=44 cntOff=- size=4 flags=0
+            m_FrontSuspTire kind=struct(9) off=48 cntOff=- size=44 flags=0
+              m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+              m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+              m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+              m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+              m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+              m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+              m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+              m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+              m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+              m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+              m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+            m_RearSuspTire kind=struct(9) off=92 cntOff=- size=44 flags=0
+              m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+              m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+              m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+              m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+              m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+              m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+              m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+              m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+              m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+              m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+              m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+            m_FuelLoad kind=float(7) off=136 cntOff=- size=4 flags=0
+          m_GearRatios kind=array(10) off=140 cntOff=- size=36 flags=0
+            float kind=float(7) off=0 cntOff=- size=4 flags=0
+      numCarsPassed kind=i32(3) off=408 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardSubmitScoreEx_Results @8208A3D8 kind=9
+  members: first=0x8208a390 count=2
+    scoreId kind=guid(13) off=0 cntOff=- size=16 flags=1
+    uploadFiles kind=bool(12) off=4 cntOff=- size=1 flags=1
+=== ForzaWebServicesScoreboardSubmitScore_Params @8208A24C kind=9
+  members: first=0x8208a270 count=2
+    type kind=i32(3) off=0 cntOff=- size=4 flags=0
+    data kind=struct(9) off=4 cntOff=- size=408 flags=3
+      gameScoreboardId kind=i32(3) off=0 cntOff=- size=4 flags=0
+      score kind=float(7) off=4 cntOff=- size=4 flags=0
+      trackId kind=u16(1) off=8 cntOff=- size=2 flags=0
+      carId kind=u16(1) off=10 cntOff=- size=2 flags=0
+      garageId kind=i32(3) off=12 cntOff=- size=4 flags=0
+      carDriveTypeId kind=u8(0) off=16 cntOff=- size=1 flags=0
+      carPower kind=float(7) off=20 cntOff=- size=4 flags=0
+      carTorque kind=float(7) off=24 cntOff=- size=4 flags=0
+      carWeight kind=float(7) off=28 cntOff=- size=4 flags=0
+      carClassId kind=u8(0) off=32 cntOff=- size=1 flags=0
+      carPerformanceIndex kind=float(7) off=36 cntOff=- size=4 flags=0
+      isClean kind=bool(12) off=40 cntOff=- size=1 flags=0
+      usedSTM kind=bool(12) off=41 cntOff=- size=1 flags=0
+      usedABS kind=bool(12) off=42 cntOff=- size=1 flags=0
+      usedTCS kind=bool(12) off=43 cntOff=- size=1 flags=0
+      usedAutoBrake kind=bool(12) off=44 cntOff=- size=1 flags=0
+      usedAutoShifting kind=bool(12) off=45 cntOff=- size=1 flags=0
+      usedClutch kind=bool(12) off=46 cntOff=- size=1 flags=0
+      usedDrafting kind=bool(12) off=47 cntOff=- size=1 flags=0
+      usedMulligan kind=bool(12) off=48 cntOff=- size=1 flags=0
+      usedFullSuggestedLine kind=bool(12) off=49 cntOff=- size=1 flags=0
+      usedBrakingSuggestedLine kind=bool(12) off=50 cntOff=- size=1 flags=0
+      hadPenalty kind=bool(12) off=51 cntOff=- size=1 flags=0
+      installedParts kind=struct(9) off=52 cntOff=- size=180 flags=0
+        base kind=struct(9) off=0 cntOff=- size=8 flags=0
+          m_TireBrand kind=i32(3) off=0 cntOff=- size=4 flags=0
+          m_WheelStyle kind=i32(3) off=4 cntOff=- size=4 flags=0
+        m_CarParts kind=array(10) off=8 cntOff=- size=172 flags=0
+          int kind=i32(3) off=0 cntOff=- size=4 flags=0
+      tuning kind=struct(9) off=232 cntOff=- size=176 flags=0
+        base kind=struct(9) off=0 cntOff=- size=140 flags=0
+          m_FrontDownforce kind=float(7) off=0 cntOff=- size=4 flags=0
+          m_RearDownforce kind=float(7) off=4 cntOff=- size=4 flags=0
+          m_FinalDriveRatio kind=float(7) off=8 cntOff=- size=4 flags=0
+          m_BrakePressure kind=float(7) off=12 cntOff=- size=4 flags=0
+          m_BrakeBias kind=float(7) off=16 cntOff=- size=4 flags=0
+          m_HandbrakePressure kind=float(7) off=20 cntOff=- size=4 flags=0
+          m_CenterDiffTorqueSplit kind=float(7) off=24 cntOff=- size=4 flags=0
+          m_STMScale kind=float(7) off=28 cntOff=- size=4 flags=0
+          m_TCSTakeOffSlipDef kind=float(7) off=32 cntOff=- size=4 flags=0
+          m_TCSMovingSlipDef kind=float(7) off=36 cntOff=- size=4 flags=0
+          m_SteerSpeed kind=float(7) off=40 cntOff=- size=4 flags=0
+          m_SteerAmount kind=float(7) off=44 cntOff=- size=4 flags=0
+          m_FrontSuspTire kind=struct(9) off=48 cntOff=- size=44 flags=0
+            m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+            m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+            m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+            m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+            m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+            m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+            m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+            m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+            m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+            m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+            m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+          m_RearSuspTire kind=struct(9) off=92 cntOff=- size=44 flags=0
+            m_Pressure kind=float(7) off=0 cntOff=- size=4 flags=0
+            m_Camber kind=float(7) off=4 cntOff=- size=4 flags=0
+            m_Toe kind=float(7) off=8 cntOff=- size=4 flags=0
+            m_Caster kind=float(7) off=12 cntOff=- size=4 flags=0
+            m_Springs kind=float(7) off=16 cntOff=- size=4 flags=0
+            m_Swaybar kind=float(7) off=20 cntOff=- size=4 flags=0
+            m_RideHeight kind=float(7) off=24 cntOff=- size=4 flags=0
+            m_DampBump kind=float(7) off=28 cntOff=- size=4 flags=0
+            m_DampRebound kind=float(7) off=32 cntOff=- size=4 flags=0
+            m_LSDTorqueAccel kind=float(7) off=36 cntOff=- size=4 flags=0
+            m_LSDTorqueDecel kind=float(7) off=40 cntOff=- size=4 flags=0
+          m_FuelLoad kind=float(7) off=136 cntOff=- size=4 flags=0
+        m_GearRatios kind=array(10) off=140 cntOff=- size=36 flags=0
+          float kind=float(7) off=0 cntOff=- size=4 flags=0
+=== ForzaWebServicesScoreboardSubmitScore_Results @8208A300 kind=9
+  members: first=0x8208a2b8 count=2
+    scoreId kind=guid(13) off=0 cntOff=- size=16 flags=1
+    uploadFiles kind=bool(12) off=4 cntOff=- size=1 flags=1
+=== ForzaWebServicesScoreboardUploadFile_Params @8208A3FC kind=9
+  members: first=0x8208a420 count=2
+    scoreId kind=guid(13) off=0 cntOff=- size=16 flags=0
+    data kind=bytes(15) off=20 cntOff=16 size=0 flags=3

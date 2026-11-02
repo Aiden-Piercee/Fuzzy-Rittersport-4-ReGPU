@@ -25,10 +25,32 @@ AUCTION_SUMMARY = [
     ("allowed_actions", "u32"),
 ]
 
+# ForzaUserLogon2_Params.loginData (110 bytes for a 6-character gamertag).
+LOGIN_DATA = [
+    ("xuid", "u64"), ("gamertag", "str"), ("userTier", "i32"), ("language", "i32"), ("region", "i32"),
+    ("locale", "i32"), ("lcid", "i32"), ("ipAddress", "u32"), ("machineId", "u64"), ("macAddress", "bytes"),
+    ("ageGroup", "u8"), ("clientProfile", [("profileId", "bytes"), ("transactionCount", "i32")]),
+    ("titleVersion", "i32"), ("careerLevel", "u8"), ("badgeId", "i16"), ("playerTitleId", "i16"),
+    ("friendXuids", ("array", "u64")), ("gameCarIds", ("array", "guid"))]
+# ForzaUserLogon2_Results.responseData: the permission table is {MethodId i32, Tier i32, IsEnabled bool, Access i32}.
+METHOD_PERMISSION = [("method_id", "i32"), ("tier", "i32"), ("enabled", "bool"), ("access", "i32")]
+LOGON_RESULT = [
+    ("isProfileValid", "bool"), ("lastOnlineProfileUpdateAllTablesTranId", "i32"),
+    ("permissions", ("array", METHOD_PERMISSION)), ("featureAreasBanMask", "u32"), ("userFlags", "u8"),
+    ("upsellOfferId", "i64"), ("upsellText", "str"), ("vipOfferIds", ("array", "i64")),
+    ("userData", [("xuid", "u64"), ("gamertag", "str"), ("flags", "u8"), ("clanId", "i32"), ("clanTag", "str"),
+                  ("roleInClan", "i32"), ("careerLevel", "u8"), ("badgeId", "i16"), ("playerTitleId", "i16")]),
+    ("notificationNonce", "u16"), ("notificationPollIntervalSeconds", "i32"),
+    ("notificationCategories", ("array", [("type", "i32"), ("name", "str"), ("description", "str"),
+                                          ("backgroundImageFileId", "i32")])),
+    ("storefrontCap", "i32"),
+    ("gameplayLogConfig", [("enabled", "bool"), ("flushInterval", "u32"), ("throttle", "bytes")]),
+    ("carsToUnshareFromGame", ("array", "guid")), ("defaultTimeoutMs", "i32"), ("defaultContentTimeoutMs", "i32")]
+
 SCHEMAS = {
-    ("User", "Logon2", "req"): [("xuid", "u64"), ("gamertag", "str"), ("lcid", "u32")],
-    ("User", "Logon2", "res"): [("profile_valid", "bool"), ("permissions", ("array", PERMISSION)),
-                                ("user", USER_DATA), ("timeout_s", "u32")],
+    # Verified: read from the game's own type descriptors (server/xtsw-layouts.txt), ForzaUserLogon2_Params and _Results.
+    ("User", "Logon2", "req"): [("loginData", LOGIN_DATA)],
+    ("User", "Logon2", "res"): [("responseData", LOGON_RESULT)],
     ("Auction", "GetGlobalConfig", "res"): [
         ("min_start_price", "u32"), ("max_start_price", "u32"), ("min_increment_pct", "u32"),
         ("fee_pct", "u32"), ("durations_hours", ("array", "u32"))],
@@ -106,26 +128,27 @@ import os
 @handler("User", "Logon2")
 @guarded
 def logon2(ctx, body):
-    if not os.environ.get("FM4_LOGON_GUESS"):
+    if os.environ.get("FM4_LOGON_ZERO"):  # the old known-safe answer, for experiments
         r = xtsw.Reader(body)
         try:
-            xuid = str(r.scalar("u64"))
-            ctx.state.store.user(xuid, r.scalar("str") or None)
+            ctx.state.store.user(str(r.scalar("u64")), r.scalar("str") or None)
         except xtsw.DecodeError:
             pass
         return bytes(64)
     try:
-        req = xtsw.decode(SCHEMAS[("User", "Logon2", "req")], body)
+        req = xtsw.decode(SCHEMAS[("User", "Logon2", "req")], body)["loginData"]
     except xtsw.DecodeError:
-        req = {"xuid": int(xuid_of(ctx)), "gamertag": ""}  # layout unverified: fall back to the header
+        req = {"xuid": int(xuid_of(ctx)), "gamertag": ""}
     xuid = str(req["xuid"] or xuid_of(ctx))
     u = ctx.state.store.user(xuid, req["gamertag"] or None)
-    return enc("User", "Logon2", {
-        "profile_valid": True,
+    return enc("User", "Logon2", {"responseData": {
+        "isProfileValid": True,
         "permissions": [{"method_id": m, "tier": 0, "enabled": True, "access": 0}
                         for m in PERMISSION_METHODS],
-        "user": {"xuid": int(xuid), "gamertag": u["gamertag"], "credits": u["credits"]},
-        "timeout_s": 3600})
+        "userData": {"xuid": int(xuid), "gamertag": u["gamertag"]},
+        "notificationPollIntervalSeconds": 300,
+        "storefrontCap": 100,
+        "defaultTimeoutMs": 30000, "defaultContentTimeoutMs": 60000}})
 
 
 # --- Auction ------------------------------------------------------------------------

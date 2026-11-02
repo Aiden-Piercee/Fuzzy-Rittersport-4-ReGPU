@@ -44,8 +44,8 @@ class Client:
 
 def demo(host, port):
     seller, buyer = Client(host, port, 1001), Client(host, port, 2002)
-    print("logon", seller.call("User", "Logon2", {"xuid": 1001, "gamertag": "Seller"})[3]["user"])
-    print("logon", buyer.call("User", "Logon2", {"xuid": 2002, "gamertag": "Buyer"})[3]["user"])
+    print("logon", seller.call("User", "Logon2", {"loginData": {"xuid": 1001, "gamertag": "Seller"}})[3]["responseData"]["userData"])
+    print("logon", buyer.call("User", "Logon2", {"loginData": {"xuid": 2002, "gamertag": "Buyer"}})[3]["responseData"]["userData"])
     st, code, msg, r = seller.call("Auction", "Create", {
         "title": "Demo car", "car_ordinal": 1234, "class": 3, "pi": 640, "year": 1999,
         "power": 300, "start_price": 20000, "buyout": 60000, "hours": 24, "car_blob": b"car-data"})

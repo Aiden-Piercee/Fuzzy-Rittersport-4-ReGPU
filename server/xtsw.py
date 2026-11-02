@@ -11,7 +11,7 @@ schema (list), or ("array", type). Licence: AGPL-3.0-or-later.
 import struct
 from datetime import datetime, timezone
 
-_FIXED = {"u8": ">B", "u16": ">H", "u32": ">I", "i32": ">i", "u64": ">Q",
+_FIXED = {"u8": ">B", "u16": ">H", "i16": ">h", "u32": ">I", "i32": ">i", "u64": ">Q",
           "i64": ">q", "f32": ">f", "f64": ">d"}
 
 
