@@ -87,6 +87,12 @@ PERMISSION_METHODS = range(1, 257)
 import os
 
 
+def _clan_fields(ctx, xuid):
+    import clan_service
+    d = clan_service.user_data(ctx, xuid)
+    return {"clanId": d["clanId"], "clanTag": d["clanTag"], "roleInClan": d["roleInClan"]}
+
+
 @handler("User", "Logon2")
 @guarded
 def logon2(ctx, body):
@@ -107,7 +113,7 @@ def logon2(ctx, body):
         "isProfileValid": True,
         "permissions": [{"method_id": m, "tier": 0, "enabled": True, "access": 0}
                         for m in PERMISSION_METHODS],
-        "userData": {"xuid": int(xuid), "gamertag": u["gamertag"]},
+        "userData": {"xuid": int(xuid), "gamertag": u["gamertag"], **_clan_fields(ctx, xuid)},
         "notificationPollIntervalSeconds": 300,
         "storefrontCap": 100,
         "defaultTimeoutMs": 30000, "defaultContentTimeoutMs": 60000}})
@@ -170,3 +176,4 @@ def string_table_info(ctx, body):
 
 
 import auction_service  # noqa: E402,F401  registers the Auction.* handlers
+import clan_service  # noqa: E402,F401  registers Clan.*, CarClub.*, notifications, GetUserData

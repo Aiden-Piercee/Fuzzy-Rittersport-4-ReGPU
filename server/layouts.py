@@ -80,11 +80,14 @@ def schema(record):
 
 
 def request(cls, method):
-    return schema(f"Forza{cls}{method}_Params")
+    for stem in _stems(cls, method):
+        if f"{stem}_Params" in table():
+            return table()[f"{stem}_Params"]
+    return []
 
 
 def result(cls, method):
-    return schema(f"Forza{cls}{method}_Results")
+    return result_for(cls, method) or []
 
 
 def fill(sch, *sources):
@@ -106,10 +109,15 @@ def fill(sch, *sources):
     return rec
 
 
+def _stems(cls, method):
+    return (f"Forza{cls}{method}", f"ForzaWebServices{cls}{method}", f"{cls}{method}",
+            f"WebServices{cls}{method}")
+
+
 def result_for(cls, method):
     """Results schema for a service call, or None. Some records carry a WebServices infix."""
     t = table()
-    for stem in (f"Forza{cls}{method}", f"ForzaWebServices{cls}{method}"):
+    for stem in _stems(cls, method):
         if f"{stem}_Results" in t:
             return t[f"{stem}_Results"]
     return None
@@ -117,4 +125,4 @@ def result_for(cls, method):
 
 def has_request(cls, method):
     t = table()
-    return any(f"{stem}_Params" in t for stem in (f"Forza{cls}{method}", f"ForzaWebServices{cls}{method}"))
+    return any(f"{stem}_Params" in t for stem in _stems(cls, method))

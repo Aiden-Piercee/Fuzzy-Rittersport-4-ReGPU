@@ -192,6 +192,42 @@ class Wire(Base):
         self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[3]["bidAmount"], 10000)
         self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[1], 42)
 
+    def test_search_ignores_no_filter_markers(self):
+        c = self.cl(1)
+        c.call("Auction", "Create", {"openingPrice": 10000, "durationMs": 24 * 3600_000, "car": CARW})
+        sp = {"PriceMin": -1, "PriceMax": -1, "MakeId": 0xFFFF, "CarId": 0xFFFF, "HasLivery": 0xFFFF,
+              "CountryId": 0xFFFF, "CarClass": 0xFFFF, "YearMin": 0xFFFF, "YearMax": 0xFFFF,
+              "DriveType": 0xFFFF, "EnginePosition": -1, "PowerMin": -1.0, "PowerMax": -7.5,
+              "ContentReviewState": 0xFFFF}
+        r = c.call("Auction", "SearchForAuction", {"searchParams": sp, "maxResultIds": 8, "maxResults": 8})[3]
+        self.assertEqual(r["totalAvailable"], 1)
+
+    def test_notifications_poll_interval_and_user_data(self):
+        c = self.cl(9)
+        r = c.call("Notifications", "RetrieveForUser", {"maxResults": 10})[3]
+        self.assertEqual((r["results"], r["nextRetrieveSeconds"]), ([], 300))
+        self.assertEqual(c.call("User", "GetUserData")[3]["userData"]["qwXuid"], 9)
+
+    def test_clan_lifecycle(self):
+        a, b = self.cl(1), self.cl(2)
+        self.logon(a, "Ann"); self.logon(b, "Bob")
+        cid = a.call("Clan", "CreateClan", {"clanTag": "ABC", "clanName": "Alpha"})[3]["clanId"]
+        self.assertEqual(a.call("Clan", "CreateClan", {"clanTag": "ABC", "clanName": "Other"})[1], 55)
+        self.assertEqual(a.call("Clan", "GetClanStatus", {"xuid": 1})[3]["clanStatus"]["clanId"], cid)
+        d = a.call("CarClub", "GetClanDetails", {"clanId": cid})[3]["clanDetails"]
+        self.assertEqual((d["clanTag"], d["clanName"], d["memberCount"]), ("ABC", "Alpha", 1))
+        self.assertEqual(b.call("Clan", "GetUsersToJoin", {"maxResults": 5})[3]["usersInClans"][0]["clanName"], "Alpha")
+        self.assertEqual(b.call("Clan", "RequestJoiningClan", {"clanId": cid})[0], 0)  # open club: joins
+        m = a.call("Clan", "GetClanMembers", {"clanId": cid, "maxMembers": 10})[3]
+        self.assertEqual(m["totalMembers"], 2)
+        self.assertEqual(m["clanMembers"][0]["user"]["wzGamerTag"], "Ann")
+        self.assertEqual(b.call("Clan", "RemoveFromClan", {"userToRemove": 1})[1], 53)  # members can't remove others
+        a.call("Clan", "RemoveFromClan", {"userToRemove": 2})
+        self.assertEqual(a.call("Clan", "GetClanMembers", {"clanId": cid, "maxMembers": 10})[3]["totalMembers"], 1)
+        # club fields reach the next logon
+        ud = self.logon(a, "Ann")[3]["responseData"]["userData"]
+        self.assertEqual((ud["clanTag"], ud["roleInClan"]), ("ABC", 3))
+
     def test_known_call_without_reply_fields_is_plain_success(self):
         st, code, msg, tail = self.cl(1).raw("User", "ValidateProfileCheckpoint", bytes(36))
         self.assertEqual((st, tail), (0, b""))

@@ -110,7 +110,9 @@ def get_auctions(ctx, body):
 @guarded
 def search_auction(ctx, body):
     r = dec("Auction", "SearchForAuction", body)
-    p = r["searchParams"]
+    # The game sends -1 / 0xFFFF / -1.0 for "no filter"; any such or negative value is unset.
+    p = {k: (0 if (isinstance(v, (int, float)) and not isinstance(v, bool) and (v < 0 or v == 0xFFFF)) else v)
+         for k, v in r["searchParams"].items()}
     s, x = ctx.state.store, xuid_of(ctx)
     rows = s.search(
         seller=str(r["xuidOwner"]) if r["xuidOwner"] else None,
