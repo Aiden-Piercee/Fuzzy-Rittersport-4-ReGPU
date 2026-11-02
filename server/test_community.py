@@ -174,6 +174,9 @@ class Scores(Base):
         rv = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 1})[3]["rival"]["scoreData"]
         self.assertEqual((rv["score"], rv["ghostFileId"]), (95.5, gid))
         self.assertEqual(b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 9})[1], 67)
+        gr = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 0})[3]["rival"]["scoreData"]
+        self.assertEqual(gr["ghostFileId"], gid)          # rival 0 races the stored ghost
+        self.assertEqual(b.call("Scoreboard", "DownloadFile", {"id": 0, "maxSize": 100})[3]["data"], b"GHOST")
         r0 = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 44, "rivalXuid": 0})   # no seeding, empty board
         self.assertEqual(r0[1], 0)
         self.assertTrue(r0[3]["rival"]["scoreData"]["score"] > 0)

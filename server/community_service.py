@@ -710,7 +710,28 @@ def upload_ghost(ctx, body):
 def download_ghost(ctx, body):
     r = dec("Scoreboard", "DownloadFile", body)
     f = _db(ctx).execute("SELECT payload FROM files WHERE id=? AND kind='Ghost'", (r["id"],)).fetchone()
+    if not f:                                          # id 0 / unknown: the caller's newest ghost
+        f = _db(ctx).execute("SELECT payload FROM files WHERE kind='Ghost' ORDER BY (owner=?) DESC, id DESC LIMIT 1",
+                             (xuid_of(ctx),)).fetchone()
     return enc("Scoreboard", "DownloadFile", {"data": bytes(f["payload"])[:r["maxSize"] or None] if f else b""})
+
+
+def _stored_ghost(ctx, board, track=None):
+    """The best ghost someone really uploaded on this board (the caller's own first), as a scores row.
+    A ghost only fits the track it was driven on, so pass `track` to insist on it."""
+    q, a = "SELECT * FROM scores WHERE ghost>0 AND seeded=0 AND board=?", [board]
+    if track is not None:
+        q += " AND track=?"
+        a.append(track)
+    return _db(ctx).execute(q + " ORDER BY (owner=?) DESC, score ASC, id DESC LIMIT 1", a + [xuid_of(ctx)]).fetchone()
+
+
+def _with_ghost(ctx, s):
+    """An invented row (no ghost) gets a real ghost from the same board and track, when one exists."""
+    if s["ghost"] or not s["seeded"]:
+        return s
+    g = _stored_ghost(ctx, s["board"], s["track"])
+    return {**dict(s), "ghost": g["ghost"]} if g else s
 
 
 def score_row(ctx, s, position, rank):
@@ -763,7 +784,7 @@ def _rows(ctx, board, track, start, count, club=False):
         args += mem
     best = {}
     for s in db.execute(f"SELECT * FROM scores WHERE {where} ORDER BY score ASC, id ASC", args):
-        best.setdefault(s["owner"], s)
+        best.setdefault(s["owner"], _with_ghost(ctx, s))
     ordered = sorted(best.values(), key=lambda s: (s["score"], s["id"]))
     rows = [score_row(ctx, s, i + 1, i + 1) for i, s in enumerate(ordered)]
     mine = next((r for r in rows if r["user"]["qwXuid"] == int(x)), None)
@@ -785,6 +806,11 @@ def _stand_in(ctx, board, around=None):
     score = round((around or 90.0) * rng.uniform(1.0, 1.04), 3)
     s = {"owner": xuid, "score": score, "submitted": ctx.state.store.clock() - 7200, "car": 0, "class": 0, "pi": 0,
          "flags": 0, "clean": 1, "ghost": 0}
+    g = _stored_ghost(ctx, board)
+    if g:                                              # drive against the real ghost, a little slower
+        s.update(score=round(g["score"] * rng.uniform(1.0, 1.04), 3), car=g["car"], pi=g["pi"], ghost=g["ghost"],
+                 **{"class": g["class"]})
+        return s
     cars = ctx.state.gamedb.sellable_cars() if ctx.state.gamedb else []
     if cars:
         c = rng.choice(cars)
@@ -841,10 +867,14 @@ def get_rival(ctx, body):
     if r["rivalXuid"]:
         s = db.execute("SELECT * FROM scores WHERE board=? AND owner=? ORDER BY score ASC LIMIT 1",
                        (r["gameScoreboardId"], str(r["rivalXuid"]))).fetchone()
+    if s is None and not r["rivalXuid"] and _stored_ghost(ctx, r["gameScoreboardId"]):
+        s = _stand_in(ctx, r["gameScoreboardId"])      # a real ghost exists: race it
     if s is None and ctx.state.seed_scores and ctx.state.gamedb:
         _seed_board(ctx, r["gameScoreboardId"], 0)
         s = db.execute("SELECT * FROM scores WHERE board=? AND owner<>? ORDER BY score ASC LIMIT 1",
                        (r["gameScoreboardId"], x)).fetchone()
+        if s is not None:
+            s = _with_ghost(ctx, s)
     if s is None and r["rivalXuid"]:
         raise ServiceError(67, "no score from that rival")
     if s is None:                                      # rival 0 is a normal ask: answer with a near-your-time stand-in

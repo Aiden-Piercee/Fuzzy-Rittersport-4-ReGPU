@@ -73,6 +73,23 @@ def default_reply(ctx):
     return EMPTY_TAIL
 
 
+def _keep_blob(log_path, ctx, body):
+    """Any request whose layout carries a bytes field is also written whole to blobs/ next to the log,
+    so a play session leaves every upload (ghosts, liveries, tunes, photos) on disk for study."""
+    try:
+        import layouts
+        if len(body) < 64 or "bytes" not in repr(layouts.request(short_class(ctx.class_name), ctx.method)):
+            return None
+        d = os.path.join(os.path.dirname(os.path.abspath(log_path)), "blobs")
+        os.makedirs(d, exist_ok=True)
+        name = f"{int(time.time() * 1000)}_{short_class(ctx.class_name)}_{ctx.method}.bin"
+        with open(os.path.join(d, name), "wb") as f:
+            f.write(body)
+        return {"file": name, "size": len(body), "head": body[:64].hex()}
+    except Exception:
+        return None
+
+
 def make_app(log_path, state=None):
     state = state or State()
 
@@ -100,11 +117,15 @@ def make_app(log_path, state=None):
                 out, note = envelope(status=2, code=e.code, message=e.message), e.message
             except Exception as e:  # report to the game as a service failure
                 out, note = envelope(status=2, code=1, message=str(e)), repr(e)
+            saved = _keep_blob(log_path, ctx, body)
             with LOG_LOCK, open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({"t": time.time(), "class": ctx.class_name,
-                                    "method": ctx.method, "xuid": ctx.xuid,
-                                    "handled": handled, "len": len(body),
-                                    "error": note, "body": body[:4096].hex()}) + "\n")
+                rec = {"t": time.time(), "class": ctx.class_name,
+                       "method": ctx.method, "xuid": ctx.xuid,
+                       "handled": handled, "len": len(body),
+                       "error": note, "body": body[:4096].hex()}
+                if saved:
+                    rec["blob"] = saved
+                f.write(json.dumps(rec) + "\n")
             self.send_response(200)
             self.send_header("Content-Type", "bin/xtsw")
             self.send_header("Content-Length", str(len(out)))
