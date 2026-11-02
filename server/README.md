@@ -18,12 +18,29 @@ Python 3.8+, standard library only.
   payments, relisting). No wire details in it.
 - `client.py`: test client.
 
+## Options (all off by default)
+
+| Option | Effect |
+|---|---|
+| `--gamedb PATH` / `FM4_GAMEDB` | the game's `gamedb.slt`, read from a temporary copy |
+| `--seed-auctions N` / `FM4_SEED_AUCTIONS` | keep N invented Auction House listings open (stock cars from the game database, 12 fake sellers, random prices and expiry, topped up as they end) |
+| `--seed-leaderboards N` / `FM4_SEED_LEADERBOARDS` | invent N rows the first time a leaderboard is opened, and list time trials from the game's tracks (no ghost files) |
+| `FM4_ALLOW_SELF_BID=1` | one profile may bid on its own auction (solo testing) |
+| `FM4_GRANT_CREDITS=N` | one-off credit grant per profile through the daily bonus |
+
+Credits live in the player's profile, as on the console: the server reports amounts and never
+refuses a bid for lack of credits (`track_credits` in `auction_store.DEFAULT_CONFIG` turns server-side
+balances on). Sale proceeds and outbid refunds are collected through the auction payment calls or
+`Storefront.RetrieveOnlineCredit`, whichever the game calls first.
+
 ## Status of the byte layouts
 
-Auction House rules are tested. The **wire layouts are not yet verified against the game**:
-no FM4 server source exists, so `SCHEMAS` in `services.py` follows forza-live's conventions and
-the method names found in the game. A request that does not decode is answered with a service
-error and logged. Fix a layout by editing its line in `SCHEMAS`.
+Every request and reply layout is read from `xtsw-layouts.txt`, the game's own type descriptors
+(`layouts.py` turns them into schemas). A call with no handler but a known reply record gets an
+empty record in the right layout; a request that does not decode gets a service error and is
+logged with its body in hex. Still unconfirmed against the game: systemtime fields are sent as
+ISO text (forza-live convention), and the numbers the descriptors do not explain (file types,
+club roles, gift types, scoreboard types, score direction).
 
 The server listens on localhost by default. Do not expose it to the internet as it is: there is no
 authentication beyond the user id header, and no rate or upload limits.
