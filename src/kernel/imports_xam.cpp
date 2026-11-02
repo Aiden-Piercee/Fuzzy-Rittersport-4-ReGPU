@@ -1002,7 +1002,15 @@ GUEST_EXPORT(XamEnumerate)
         }
     }
     StoreIfNonNull(ctx.r7.u32, count);
-    FinishUi(ctx, ctx.r8.u32, count ? X_ERROR_SUCCESS : X_ERROR_NO_MORE_FILES);
+    const uint32_t result = count ? X_ERROR_SUCCESS : X_ERROR_NO_MORE_FILES;
+    if (ctx.r8.u32)
+    {
+        // Overlapped: the item count comes back in the overlapped's length (InternalHigh).
+        CompleteOverlapped(ctx.r8.u32, result, 0, count);
+        Return(ctx, X_ERROR_IO_PENDING);
+    }
+    else
+        Return(ctx, result);
 }
 
 // Tasks ----------------------------------------------------------------------------
