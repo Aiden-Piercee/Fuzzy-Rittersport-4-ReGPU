@@ -181,6 +181,11 @@ _no_file_info("GetStringTableInfo", "stringTableInfo")
 _no_file_info("GetDBPatchFileInfo", "patchInfo")
 
 
+@handler("DLC", "GetFeaturedOfferIds")
+def featured_offers(ctx, body):
+    return xtsw.encode(layouts.result("DLC", "GetFeaturedOfferIds"), {"offerIds": []})   # count 0
+
+
 import auction_service  # noqa: E402,F401  registers the Auction.* handlers
 import clan_service  # noqa: E402,F401
 import community_service  # noqa: E402,F401  Storefront, Content, Gifting, SharedCar, Scoreboard  registers Clan.*, CarClub.*, notifications, GetUserData
