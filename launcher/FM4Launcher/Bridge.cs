@@ -13,12 +13,46 @@ public sealed class Bridge
     static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     readonly PhotinoWindow _window;
     Updater.Release? _latest;
+    bool _dragging;
+    long _lastOver;
 
     public Bridge(PhotinoWindow window)
     {
         _window = window;
         window.RegisterWebMessageReceivedHandler((_, text) => OnMessage(text));
+        // Windows: drops from Explorer give the real paths (DropTarget.cs). The window's child windows exist a moment
+        // after the page loads, so the drop target is taken over a few times. Elsewhere the page's own drop is used.
+        if (OperatingSystem.IsWindows())
+            _ = Task.Run(async () =>
+            {
+                foreach (var wait in new[] { 1500, 2000, 4000, 8000 })
+                {
+                    await Task.Delay(wait);
+                    // RegisterDragDrop must run on the window's own (STA) thread, not this pool thread.
+                    try { window.Invoke(() => DropTarget.Install(window.WindowHandle, OnDropped, OnHover)); }
+                    catch { }
+                }
+            });
     }
+
+    /// <summary>A file drag over the window (x, y: client pixels): lights the page's hint and, at most every 50 ms, tells it where the pointer is.</summary>
+    void OnHover(bool on, int x, int y)
+    {
+        if (!on)
+        {
+            _dragging = false;
+            Push("dragging", false);
+            return;
+        }
+        if (!_dragging) { _dragging = true; Push("dragging", true); }
+        var now = Environment.TickCount64;
+        if (now - _lastOver < 50) return;
+        _lastOver = now;
+        Push("over", new { x, y });
+    }
+
+    /// <summary>Files dropped: the page works out which tile is under the point and asks for them to be used ("drop.paths").</summary>
+    void OnDropped(string[] paths, int x, int y) => Push("dropped-at", new { paths, x, y });
 
     async void OnMessage(string text)
     {
@@ -75,7 +109,21 @@ public sealed class Bridge
                     var (added, errors) = await Task.Run(() => Import.Dlc(files));
                     return new { added, errors, state = State() };
                 }
-            // A drop: the page sends each file in pieces (the window can't give a dropped file's path), then asks for it
+            // A drop from Explorer (Windows): the paths are known, so things are used where they are, nothing is staged.
+            case "drop.paths":
+                {
+                    var kind = Str(a, "kind");
+                    var paths = a!["paths"]!.AsArray().Select(p => p!.GetValue<string>()).ToArray();
+                    if (kind == "dlc")
+                    {
+                        var (added, errors) = await Task.Run(() => Import.Dlc(paths));
+                        return new { added, errors, state = State() };
+                    }
+                    if (paths.Length != 1) throw new InvalidOperationException("Drop the disc image (.iso) or one game folder on the Game tile.");
+                    var msg = await Task.Run(() => Import.Game(paths[0], s => Push("status", s)));
+                    return new { message = msg, state = State() };
+                }
+            // A drop in the page (Linux): the page sends each file in pieces (the window can't give a dropped file's path), then asks for it
             // to be used. begin -> write (many) -> finish.
             case "drop.begin": return Import.Begin();
             case "drop.write":

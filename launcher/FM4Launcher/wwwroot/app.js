@@ -14,6 +14,9 @@ if (host) host.addEventListener("message", (e) => {
   const m = e.data
   if (m.event === "progress") return onProgress(m.data)
   if (m.event === "status") return tileProgress(m.data)
+  if (m.event === "dragging") { veil.hidden = !m.data; if (!m.data) setHot(null); return }
+  if (m.event === "over") return setHot(tileAt(m.data.x, m.data.y))
+  if (m.event === "dropped-at") return droppedAt(m.data)
   const p = pending.get(m.id)
   if (!p) return
   pending.delete(m.id)
@@ -500,6 +503,23 @@ async function dropOn(kind, items) {
       if (id) call("drop.finish", { id, kind: "none" }).catch(() => {})
       throw e
     }
+  })
+}
+// Drops from Explorer on Windows (DropTarget.cs): the host sends the real paths and the pointer in device pixels.
+function tileAt(x, y) {
+  const t = document.elementFromPoint(x / devicePixelRatio, y / devicePixelRatio)?.closest("[data-drop]")
+  return t ? t.dataset.drop : null
+}
+function droppedAt(d) {
+  veil.hidden = true
+  setHot(null)
+  const kind = tileAt(d.x, d.y)
+  if (!kind) return toast("Drop it on a tile: Game or DLC.")
+  runTile(kind, async () => {
+    const r = await call("drop.paths", { kind, paths: d.paths })
+    state = r.state
+    render()
+    outcome(kind, r)
   })
 }
 const veil = $("drop")
