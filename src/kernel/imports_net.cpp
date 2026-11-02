@@ -120,19 +120,6 @@ uint32_t LocalAddr()
     return addr;
 }
 
-// The title talks HTTP on port 80 of the title server; ours listens on FM2_SERVER_PORT (8080).
-void RedirectTitleServer(sockaddr_in& a)
-{
-    if (a.sin_addr.s_addr != ServerAddr() || ntohs(a.sin_port) != 80)
-        return;
-    static const unsigned short port = [] {
-        const char* e = getenv("FM2_SERVER_PORT");
-        const int p = e ? atoi(e) : 8080;
-        return (unsigned short)(p > 0 && p < 65536 ? p : 8080);
-    }();
-    a.sin_port = htons(port);
-}
-
 uint32_t ServerAddr()
 {
     static const uint32_t addr = [] {
@@ -145,6 +132,19 @@ uint32_t ServerAddr()
         return uint32_t(htonl(INADDR_LOOPBACK));
     }();
     return addr;
+}
+
+// The title talks HTTP on port 80 of the title server; ours listens on FM2_SERVER_PORT (8080).
+void RedirectTitleServer(sockaddr_in& a)
+{
+    if (a.sin_addr.s_addr != ServerAddr() || ntohs(a.sin_port) != 80)
+        return;
+    static const unsigned short port = [] {
+        const char* e = getenv("FM2_SERVER_PORT");
+        const int p = e ? atoi(e) : 8080;
+        return (unsigned short)(p > 0 && p < 65536 ? p : 8080);
+    }();
+    a.sin_port = htons(port);
 }
 
 void StoreRaw32(uint32_t guest, uint32_t networkOrder)
