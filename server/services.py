@@ -95,9 +95,25 @@ def guarded(fn):
 PERMISSION_METHODS = range(1, 257)
 
 
+# Real request seen from the game (110 bytes): u64 xuid, string gamertag, then 66 bytes we have not
+# decoded yet (u32 words 1, 1, 0xffff, 36, 9, 0, then small fields, a 20-byte hash-like blob and
+# flags). The reply layout is unknown; until it is, the default answer is a success header with a
+# zero tail (what the game received on its first contact). FM4_LOGON_GUESS=1 sends the guessed
+# full layout instead, for experiments only.
+import os
+
+
 @handler("User", "Logon2")
 @guarded
 def logon2(ctx, body):
+    if not os.environ.get("FM4_LOGON_GUESS"):
+        r = xtsw.Reader(body)
+        try:
+            xuid = str(r.scalar("u64"))
+            ctx.state.store.user(xuid, r.scalar("str") or None)
+        except xtsw.DecodeError:
+            pass
+        return bytes(64)
     try:
         req = xtsw.decode(SCHEMAS[("User", "Logon2", "req")], body)
     except xtsw.DecodeError:

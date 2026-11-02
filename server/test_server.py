@@ -59,7 +59,14 @@ class Codec(unittest.TestCase):
 
 
 class Logon(Base):
+    def test_default_reply_is_zero_tail_and_registers_user(self):
+        st, code, msg, tail = self.cl(5).raw("User", "Logon2", xtsw.encode(
+            [("x", "u64"), ("g", "str")], {"x": 5, "g": "Tag"}))
+        self.assertEqual((st, tail), (0, bytes(64)))
+        self.assertEqual(self.store.user("5")["gamertag"], "Tag")
+
     def test_logon_permissions_and_credits(self):
+        os.environ["FM4_LOGON_GUESS"] = "1"; self.addCleanup(os.environ.pop, "FM4_LOGON_GUESS")
         st, _, _, r = self.cl(5).call("User", "Logon2", {"xuid": 5, "gamertag": "Tag"})
         self.assertEqual(st, 0)
         self.assertTrue(r["profile_valid"]); self.assertEqual(r["user"]["gamertag"], "Tag")
