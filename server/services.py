@@ -145,6 +145,24 @@ def get_payout(ctx, body):
     return enc("DailyCreditBonus", "GetPayout", {"amount": amount})
 
 
+@handler("User", "RetrieveOnlineCredits")
+def retrieve_online_credits(ctx, body):
+    # Credits earned online, collected by the game after a daily-bonus poll. With FM4_GRANT_CREDITS=<amount> the
+    # amount is paid here once per XUID as well (a separate record from the GetPayout grant), for testing.
+    amount = 0
+    try:
+        grant = int(os.environ.get("FM4_GRANT_CREDITS", "0") or 0)
+    except ValueError:
+        grant = 0
+    if grant > 0:
+        db = ctx.state.store.db
+        db.execute("CREATE TABLE IF NOT EXISTS online_grants(xuid TEXT PRIMARY KEY, amount INTEGER)")
+        xuid = str(int(ctx.xuid, 0)) if ctx.xuid else ""
+        if xuid and db.execute("INSERT OR IGNORE INTO online_grants VALUES(?,?)", (xuid, grant)).rowcount:
+            amount = grant
+    return enc("User", "RetrieveOnlineCredits", {"credit": amount})
+
+
 @handler("DLCMetadata", "GetStringTableInfo")
 def string_table_info(ctx, body):
     # No string-table patch available: an all-empty record (empty path and digest, id 0).
