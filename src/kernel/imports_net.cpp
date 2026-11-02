@@ -465,9 +465,10 @@ GUEST_EXPORT(NetDll_getsockopt)
 // fd_set on the console: { u32 count; u32 handles[64] }, big-endian.
 GUEST_EXPORT(NetDll___WSAFDIsSet)
 {
-    const uint32_t set = ctx.r5.u32, n = LoadBE32(set);
+    // (socket, fd_set*): __WSAFDIsSet has no caller argument.
+    const uint32_t set = ctx.r4.u32, n = set ? LoadBE32(set) : 0;
     for (uint32_t i = 0; i < n && i < 64; i++)
-        if (LoadBE32(set + 4 + i * 4) == ctx.r4.u32)
+        if (LoadBE32(set + 4 + i * 4) == ctx.r3.u32)
         {
             Return(ctx, 1);
             return;
