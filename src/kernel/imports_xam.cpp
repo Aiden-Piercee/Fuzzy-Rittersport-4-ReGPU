@@ -425,6 +425,29 @@ GUEST_EXPORT(XamShowKeyboardUI)
             GuestPtr<uint16_t>(out)[i] = c;
         }
         GuestPtr<uint16_t>(out)[i] = 0;
+        if (i == 0)
+        {
+            // There is no on-screen keyboard here: a title that asks for a name (a car club, a tune) with an empty
+            // default gets a generated one, or it would take the empty answer as "nothing entered".
+            static std::atomic<uint32_t> counter{ 0 };
+            char text[32];
+            snprintf(text, sizeof(text), "Test%u", ++counter);
+            for (i = 0; text[i] && i + 1 < max; i++)
+                GuestPtr<uint16_t>(out)[i] = __builtin_bswap16(uint16_t(uint8_t(text[i])));
+            GuestPtr<uint16_t>(out)[i] = 0;
+        }
+        auto wide = [](uint32_t p) {
+            std::string r;
+            for (uint32_t k = 0; p && k < 80; k++)
+            {
+                const uint16_t c = __builtin_bswap16(GuestPtr<uint16_t>(p)[k]);
+                if (!c)
+                    break;
+                r += c < 0x80 ? char(c) : '?';
+            }
+            return r;
+        };
+        Log("keyboard: title '%s', description '%s', max %u -> '%s'", wide(ctx.r6.u32).c_str(), wide(ctx.r7.u32).c_str(), max, wide(out).c_str());
     }
     FinishUi(ctx, ctx.r10.u32);
 }
