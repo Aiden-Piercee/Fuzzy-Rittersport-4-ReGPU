@@ -176,4 +176,5 @@ def string_table_info(ctx, body):
 
 
 import auction_service  # noqa: E402,F401  registers the Auction.* handlers
-import clan_service  # noqa: E402,F401  registers Clan.*, CarClub.*, notifications, GetUserData
+import clan_service  # noqa: E402,F401
+import community_service  # noqa: E402,F401  Storefront, Content, Gifting, SharedCar, Scoreboard  registers Clan.*, CarClub.*, notifications, GetUserData

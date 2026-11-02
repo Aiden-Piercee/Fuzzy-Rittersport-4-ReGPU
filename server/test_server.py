@@ -14,7 +14,7 @@ class Base(unittest.TestCase):
     def setUp(self):
         self.log = os.path.join(tempfile.mkdtemp(), "c.jsonl")
         self.clock = Clock()
-        self.store = Store(clock=self.clock)
+        self.store = Store(clock=self.clock, config={"track_credits": True})
         self.srv = s.serve("127.0.0.1", 0, self.log, s.State(self.store))
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
         self.port = self.srv.server_address[1]
@@ -81,7 +81,7 @@ CAR = {"title": "T", "car_ordinal": 9, "class": 2, "pi": 500, "power": 250, "car
 
 class Rules(unittest.TestCase):
     def setUp(self):
-        self.c = Clock(); self.s = Store(clock=self.c)
+        self.c = Clock(); self.s = Store(clock=self.c, config={"track_credits": True})
 
     def listed(self, **kw):
         return self.s.create("1", "Seller", CAR, kw.get("start", 10000), kw.get("buyout", 0), 24)
@@ -94,7 +94,7 @@ class Rules(unittest.TestCase):
         self.assertEqual(self.s.credits("2"), 1_000_000 - 10000)  # held until refunded
         self.assertEqual(self.s.retrieve_payment(a, "2", "lost"), 10000)
         self.assertEqual(self.s.credits("2"), 1_000_000)
-        with self.assertRaises(AuctionError): self.s.retrieve_payment(a, "2", "lost")  # once
+        self.assertEqual(self.s.retrieve_payment(a, "2", "lost"), 0)  # once
         self.c.t += 24 * 3600 + 1
         self.assertEqual(self.s.get(a)["status"], "sold")
         self.assertEqual(self.s.viewer_status(self.s.get(a), "3"), "won")
@@ -190,7 +190,7 @@ class Wire(Base):
         self.assertEqual(s["LiveryThumbnail"], b"T"); self.assertEqual(s["base"]["status"], 6)  # outbid
         self.assertTrue(s["base"]["allowedActions"] & auction_service.RECV_REFUND)
         self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[3]["bidAmount"], 10000)
-        self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[1], 42)
+        self.assertEqual(a.call("Auction", "RetrievePaymentsForAuctionLost", {"auctionId": aid})[3]["bidAmount"], 0)
 
     def test_search_ignores_no_filter_markers(self):
         c = self.cl(1)
@@ -250,9 +250,9 @@ class Wire(Base):
         self.assertEqual(c.raw("OnlineProfile", "UpdateAll", b"junk")[:3], (0, 0, ""))
         self.assertEqual(c.call("DailyCreditBonus", "GetPayout")[3], {"amount": 0})
         # unhandled call with a known reply record: empty lists in the right layout, not bare zeros
-        st, _, _, tail = c.raw("Scoreboard", "GetRollupRows")
+        st, _, _, tail = c.raw("Hopper", "GetList")
         self.assertEqual(st, 0)
-        self.assertEqual(xtsw.decode(layouts.result_for("Scoreboard", "GetRollupRows"), tail) is not None, True)
+        self.assertEqual(xtsw.decode(layouts.result_for("Hopper", "GetList"), tail) is not None, True)
         self.assertEqual(c.call("DLCMetadata", "GetStringTableInfo", {"language": "EN"})[0], 0)
 
 

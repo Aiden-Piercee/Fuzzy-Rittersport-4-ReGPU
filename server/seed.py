@@ -9,14 +9,15 @@ fixed slots; -1 where a slot is empty), tuning is left at its "unset" value (-1.
 Listings belong to a few fake sellers, have random prices and expiry times, and are topped up
 as they expire. Fake bidders sometimes hold the top bid. Licence: AGPL-3.0-or-later.
 """
-import os, random, sqlite3, struct, tempfile, shutil, threading
+import random, struct, threading
 import layouts, xtsw
+from gamedb import GameDb
 
 FAKE_TAGS = ["TurboTessa", "DriftKing99", "GarageGuru", "Apex Alley", "NurburgNick", "LeMansLou",
              "BoostedBen", "ClutchKicker", "RoadsterRita", "V8Vince", "HairpinHal", "SlipstreamSam"]
 FAKE_BASE = 0xE0000000_00001000   # fake XUIDs: well away from real profiles
 # (carId*1000, (carId-540)*1000 or (carId-596)*1000, -1) per slot, 0/1/2 -> family, None -> empty
-SLOTS = [None, None, 0, 0, 0, None] + [0] * 8 + [1] * 10 + [None] + [1] + [None] * 7 + [2] * 4 + [0] * 8 + [None]
+SLOTS = [None, None, 0, 0, 0, None] + [0] * 8 + [1] * 10 + [None] + [1] + [None] * 6 + [2] * 4 + [0] * 8 + [None]
 assert len(SLOTS) == 45
 
 
@@ -35,22 +36,20 @@ def display_pi(pi, classes):
     return int(lo_d)
 
 
+def _fake_user(i):
+    return str(FAKE_BASE + i % len(FAKE_TAGS)), FAKE_TAGS[i % len(FAKE_TAGS)] + (str(i // len(FAKE_TAGS) + 1) if i >= len(FAKE_TAGS) else "")
+
+
 class Seeder:
+    fake_user = staticmethod(_fake_user)
+
     def __init__(self, store, gamedb, count, rng=None, interval=15.0):
         self.store, self.count, self.rng = store, count, rng or random.Random()
         self.interval, self.last = interval, -1e9
         self.lock = threading.Lock()
-        tmp = tempfile.mkdtemp()  # a copy: the game's file stays untouched, even by SQLite
-        path = os.path.join(tmp, "g.db")
-        shutil.copy(gamedb, path)
-        g = sqlite3.connect(path)
-        g.row_factory = sqlite3.Row
-        self.cars = [dict(r) for r in g.execute(
-            "SELECT * FROM Data_Car WHERE IsDrivable=1 AND IsArcade=0 AND BaseCost>0")]
-        self.classes = [(r[0], r[1]) for r in g.execute(
-            "SELECT MaxPerformanceIndex, MaxDisplayPerformanceIndex FROM CarClasses ORDER BY Id")]
-        g.close()
-        shutil.rmtree(tmp, ignore_errors=True)
+        self.db = gamedb if not isinstance(gamedb, str) else GameDb(gamedb)
+        self.cars = self.db.sellable_cars()
+        self.classes = self.db.classes
         self.sellers = [(str(FAKE_BASE + i), t) for i, t in enumerate(FAKE_TAGS)]
         for x, t in self.sellers:
             store.user(x, t)
@@ -114,9 +113,10 @@ class Seeder:
                 return 0
             self.last = now
             self.store.settle()
+            ids = [x for x, _ in self.sellers]
             n = self.store.db.execute(
-                "SELECT COUNT(*) FROM auctions WHERE status='active' AND CAST(seller AS INTEGER) BETWEEN ? AND ?",
-                (FAKE_BASE, FAKE_BASE + len(FAKE_TAGS))).fetchone()[0]
+                f"SELECT COUNT(*) FROM auctions WHERE status='active' AND seller IN ({','.join('?' * len(ids))})",
+                ids).fetchone()[0]
             made = 0
             for _ in range(max(0, self.count - n)):
                 self.one()

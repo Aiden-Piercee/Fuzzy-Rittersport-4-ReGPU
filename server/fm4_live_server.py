@@ -54,8 +54,10 @@ class Ctx:
 
 class State:
     """Everything handlers share. `store` is the Auction House database."""
-    def __init__(self, store=None, seeder=None):
+    def __init__(self, store=None, seeder=None, gamedb=None, seed_scores=0):
         self.store, self.seeder = store, seeder
+        self.gamedb = gamedb          # GameDb or None
+        self.seed_scores = seed_scores  # leaderboard rows to invent per board (0 = none)
 
 
 def default_reply(ctx):
@@ -126,6 +128,8 @@ def main(argv=None):
     ap.add_argument("--db", default="fm4_live.sqlite")
     ap.add_argument("--gamedb", default=os.environ.get("FM4_GAMEDB"),
                     help="the game's gamedb.slt (read only), needed for seeded listings")
+    ap.add_argument("--seed-leaderboards", type=int, default=int(os.environ.get("FM4_SEED_LEADERBOARDS", "0") or 0),
+                    help="invent this many leaderboard rows per board and a list of time trials (0 = off)")
     ap.add_argument("--seed-auctions", type=int, default=int(os.environ.get("FM4_SEED_AUCTIONS", "0") or 0),
                     help="keep this many seeded listings open (0 = off)")
     a = ap.parse_args(argv)
@@ -138,7 +142,14 @@ def main(argv=None):
         from seed import Seeder
         seeder = Seeder(store, a.gamedb, a.seed_auctions)
         print(f"seeding {a.seed_auctions} auction listings from {len(seeder.cars)} cars")
-    srv = serve(a.host, a.port, a.log, State(store, seeder))
+    gdb = seeder.db if seeder else None
+    if a.seed_leaderboards:
+        if not a.gamedb:
+            ap.error("--seed-leaderboards needs --gamedb (or FM4_GAMEDB)")
+        if gdb is None:
+            from gamedb import GameDb
+            gdb = GameDb(a.gamedb)
+    srv = serve(a.host, a.port, a.log, State(store, seeder, gdb, a.seed_leaderboards))
     print(f"FM4 title server on {a.host}:{a.port}, calls logged to {a.log}, data in {a.db}")
     try: srv.serve_forever()
     except KeyboardInterrupt: pass

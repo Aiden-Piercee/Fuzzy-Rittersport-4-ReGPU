@@ -22,6 +22,9 @@ DEFAULT_CONFIG = {
     "durations_hours": [24, 72, 168],
     "starting_credits": 1_000_000,
     "max_active_per_seller": 20,
+    # The console keeps credits in the player's profile (the game adds and subtracts them itself);
+    # the server only reports amounts. True makes the server hold a balance per XUID and enforce it.
+    "track_credits": False,
     "fees": {24: 2000, 72: 5000, 168: 10000},   # listing fee in credits, by duration in hours
 }
 
@@ -127,9 +130,10 @@ class Store:
                 raise AuctionError(13, "too many active auctions")
             now = self.clock()
             fee = c["fees"].get(hours, 0)
-            if self.credits(seller) < fee:
-                raise AuctionError(14, "not enough credits for the listing fee")
-            self._add_credits(seller, -fee)
+            if self.cfg["track_credits"]:
+                if self.credits(seller) < fee:
+                    raise AuctionError(14, "not enough credits for the listing fee")
+                self._add_credits(seller, -fee)
             cur = self.db.execute(
                 "INSERT INTO auctions(seller,seller_tag,title,car_ordinal,class,pi,year,make,"
                 "country,drive,power,car_blob,textures,start_price,buyout,created,ends,status,top_bid,"
@@ -170,9 +174,10 @@ class Store:
                 amount = a["buyout"]
             elif amount < self.min_next_bid(a):
                 raise AuctionError(23, "bid too low")
-            if self.credits(bidder) < amount:
-                raise AuctionError(24, "not enough credits")
-            self._add_credits(bidder, -amount)
+            if self.cfg["track_credits"]:
+                if self.credits(bidder) < amount:
+                    raise AuctionError(24, "not enough credits")
+                self._add_credits(bidder, -amount)
             if a["top_bidder"]:  # refund the previous top bidder as a pending payment
                 self.db.execute("INSERT INTO payments(xuid,auction,kind,amount) VALUES(?,?,?,?)",
                                 (a["top_bidder"], a["id"], "lost", a["top_bid"]))
@@ -211,9 +216,10 @@ class Store:
             if bo and bo < sp:
                 raise AuctionError(11, "buyout below start price")
             fee = self.cfg["fees"].get(hours, 0)
-            if self.credits(seller) < fee:
-                raise AuctionError(14, "not enough credits for the listing fee")
-            self._add_credits(seller, -fee)
+            if self.cfg["track_credits"]:
+                if self.credits(seller) < fee:
+                    raise AuctionError(14, "not enough credits for the listing fee")
+                self._add_credits(seller, -fee)
             self.db.execute("UPDATE auctions SET status=?, created=?, ends=?, car_collected=0,"
                             " start_price=?, buyout=? WHERE id=?",
                             (ACTIVE, now, now + hours * 3600, sp, bo, a["id"]))
@@ -252,12 +258,25 @@ class Store:
                 "SELECT * FROM payments WHERE auction=? AND xuid=? AND kind=? AND collected=0",
                 (auction_id, xuid, kind)).fetchall()
             if not rows:
-                raise AuctionError(42, "no payment waiting")
+                return 0  # already collected (for instance through the online-credit call): nothing more to pay
             total = sum(r["amount"] for r in rows)
             self.db.execute("UPDATE payments SET collected=1 WHERE auction=? AND xuid=? AND kind=?",
                             (auction_id, xuid, kind))
-            self._add_credits(xuid, total)
+            if self.cfg["track_credits"]:
+                self._add_credits(xuid, total)
             return total
+
+    def pending_payments(self, xuid):
+        """Credits waiting for `xuid` from auctions (sold proceeds and outbid refunds)."""
+        self.settle()
+        return self.db.execute("SELECT COALESCE(SUM(amount),0) FROM payments WHERE xuid=? AND collected=0",
+                               (xuid,)).fetchone()[0]
+
+    def collect_all_payments(self, xuid):
+        with self.lock:
+            n = self.pending_payments(xuid)
+            self.db.execute("UPDATE payments SET collected=1 WHERE xuid=? AND collected=0", (xuid,))
+            return n
 
     # -- queries --------------------------------------------------------------
     def search(self, status=ACTIVE, **f):
