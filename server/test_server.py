@@ -228,6 +228,20 @@ class Wire(Base):
         ud = self.logon(a, "Ann")[3]["responseData"]["userData"]
         self.assertEqual((ud["clanTag"], ud["roleInClan"]), ("ABC", 3))
 
+    def test_leave_club_and_founder_leaving_deletes_it(self):
+        a, b = self.cl(1), self.cl(2)
+        self.logon(a, "Ann"); self.logon(b, "Bob")
+        cid = a.call("Clan", "CreateClan", {"clanTag": "T", "clanName": "Test1"})[3]["clanId"]
+        b.call("Clan", "RequestJoiningClan", {"clanId": cid})
+        self.assertEqual(b.raw("Clan", "LeaveClan")[:3], (0, 0, ""))
+        self.assertEqual(a.call("Clan", "GetClanMembers", {"clanId": cid, "maxMembers": 9})[3]["totalMembers"], 1)
+        b.call("Clan", "RequestJoiningClan", {"clanId": cid})
+        self.assertEqual(a.raw("Clan", "LeaveClan")[0], 0)           # founder leaves: club is gone for everyone
+        self.assertEqual(b.call("Clan", "GetClanStatus", {"xuid": 2})[3]["clanStatus"]["clanId"], 0)
+        self.assertEqual(a.call("Clan", "GetUsersToJoin", {"maxResults": 9})[3]["usersInClans"], [])
+        self.assertEqual(a.call("Clan", "CreateClan", {"clanTag": "T", "clanName": "Test1"})[0], 0)   # name is free again
+        self.assertEqual(a.call("User", "GetUserData")[3]["userData"]["clanTag"], "T")
+
     def test_known_call_without_reply_fields_is_plain_success(self):
         st, code, msg, tail = self.cl(1).raw("User", "ValidateProfileCheckpoint", bytes(36))
         self.assertEqual((st, tail), (0, b""))

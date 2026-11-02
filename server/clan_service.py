@@ -71,19 +71,23 @@ def _join(ctx, xuid, clan_id, role=MEMBER):
 
 
 def _leave(ctx, xuid):
+    """A member leaves. When the founder leaves, or the last member does, the club is deleted."""
     db, s = _db(ctx), ctx.state.store
     m = db.execute("SELECT * FROM clan_members WHERE xuid=?", (xuid,)).fetchone()
     if not m:
         return
     c = clan_row(db, m["clan"])
-    db.execute("DELETE FROM clan_members WHERE xuid=?", (xuid,))
-    db.execute("INSERT INTO clan_history(xuid,clan_name,at,role,action) VALUES(?,?,?,?,?)",
-               (xuid, c["name"], s.clock(), m["role"], ACTION["left"]))
-    left = db.execute("SELECT xuid FROM clan_members WHERE clan=? ORDER BY role DESC, since", (c["id"],)).fetchone()
-    if left is None:
+    leaving = [xuid] if m["role"] != FOUNDER else [r["xuid"] for r in db.execute(
+        "SELECT xuid FROM clan_members WHERE clan=?", (c["id"],))]
+    for x in leaving:
+        r = db.execute("SELECT role FROM clan_members WHERE xuid=?", (x,)).fetchone()
+        db.execute("DELETE FROM clan_members WHERE xuid=?", (x,))
+        db.execute("INSERT INTO clan_history(xuid,clan_name,at,role,action) VALUES(?,?,?,?,?)",
+                   (x, c["name"], s.clock(), r["role"], ACTION["left"]))
+    if m["role"] == FOUNDER or not db.execute("SELECT 1 FROM clan_members WHERE clan=?", (c["id"],)).fetchone():
         db.execute("DELETE FROM clans WHERE id=?", (c["id"],))
-    elif m["role"] == FOUNDER:
-        db.execute("UPDATE clan_members SET role=? WHERE xuid=?", (FOUNDER, left["xuid"]))
+        db.execute("DELETE FROM clan_invites WHERE clan=?", (c["id"],))
+        db.execute("DELETE FROM clan_requests WHERE clan=?", (c["id"],))
 
 
 def _my_clan(ctx, xuid, need_role=OFFICER):
@@ -312,3 +316,25 @@ def notifications(ctx, body):
     # Nothing to deliver. nextRetrieveSeconds is how long the game waits before asking again:
     # 0 makes it poll in a tight loop.
     return enc("Notifications", "RetrieveForUser", {"nextRetrieveSeconds": 300})
+
+
+@handler("Clan", "LeaveClan")
+def leave(ctx, body):
+    # No record for this call in the descriptors (no fields assumed); it leaves the caller's own club.
+    _leave(ctx, xuid_of(ctx))
+    return b""
+
+
+@handler("Clan", "DisbandClan")
+def disband(ctx, body):
+    _my_clan(ctx, xuid_of(ctx), FOUNDER)
+    _leave(ctx, xuid_of(ctx))
+    return b""
+
+
+@handler("Clan", "RecommendMemberForRemoval")
+@guarded
+def recommend_removal(ctx, body):
+    dec("Clan", "RecommendMemberForRemoval", body)   # a vote with no effect on its own: accepted
+    _my_clan(ctx, xuid_of(ctx), MEMBER)
+    return b""
