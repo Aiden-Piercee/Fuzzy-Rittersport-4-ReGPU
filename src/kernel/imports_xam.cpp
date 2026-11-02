@@ -962,6 +962,21 @@ GUEST_EXPORT(XamCreateEnumeratorHandle)
     Return(ctx, X_ERROR_SUCCESS);
 }
 
+GUEST_EXPORT(XamGetPrivateEnumStructureFromHandle)
+{
+    // (handle, void** structure): the title fills a zeroed block per enumerator (filter string, counts, buffer).
+    if (!NetOnline())
+    {
+        StoreIfNonNull(ctx.r4.u32, 0);
+        Return(ctx, 0);
+        return;
+    }
+    const uint32_t block = GuestAlloc(Heap::Virtual, 0x400);
+    memset(GuestPtr(block), 0, 0x400);
+    StoreIfNonNull(ctx.r4.u32, block);
+    Return(ctx, X_ERROR_SUCCESS);
+}
+
 GUEST_EXPORT(XamEnumerate)
 {
     // (handle, flags, buffer, size, itemsReturned*, overlapped)
@@ -1009,8 +1024,9 @@ GUEST_EXPORT(XamEnumerate)
     const uint32_t result = count ? X_ERROR_SUCCESS : X_ERROR_NO_MORE_FILES;
     if (ctx.r8.u32)
     {
-        // Overlapped: the item count comes back in the overlapped's length (InternalHigh).
-        CompleteOverlapped(ctx.r8.u32, result, 0, count);
+        // Overlapped: the item count comes back in the overlapped's length (InternalHigh). Online, a failure
+        // carries HRESULT_FROM_WIN32 in the extended error (the title tells "no more files" by 0x80070012).
+        CompleteOverlapped(ctx.r8.u32, result, NetOnline() && result ? 0x80070000 | result : 0, count);
         Return(ctx, X_ERROR_IO_PENDING);
     }
     else

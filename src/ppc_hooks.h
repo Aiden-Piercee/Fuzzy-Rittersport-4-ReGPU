@@ -66,12 +66,12 @@ using PPCHostFunc = void(PPCContext&, uint8_t*);
 constexpr uint32_t kIndirectLow = 0x82000000;  // lowest guest code address of any image
 constexpr uint32_t kIndirectHigh = 0x8C000000; // end of the range the table covers
 extern PPCHostFunc** g_indirectTable;          // one entry per instruction; only image code is committed
-[[noreturn]] void PPCIndirectMiss(uint32_t address);
-inline PPCHostFunc* PPCLookupIndirect(uint32_t address)
+[[noreturn]] void PPCIndirectMiss(uint32_t address, PPCContext& ctx);
+inline PPCHostFunc* PPCLookupIndirect(uint32_t address, PPCContext& ctx)
 {
     PPCHostFunc* f = address - kIndirectLow < kIndirectHigh - kIndirectLow ? g_indirectTable[(address - kIndirectLow) >> 2] : nullptr;
     if (!f) [[unlikely]]
-        PPCIndirectMiss(address);
+        PPCIndirectMiss(address, ctx);
     return f;
 }
-#define PPC_CALL_INDIRECT_FUNC(x) (PPCLookupIndirect(uint32_t(x)))(ctx, base)
+#define PPC_CALL_INDIRECT_FUNC(x) (PPCLookupIndirect(uint32_t(x), ctx))(ctx, base)

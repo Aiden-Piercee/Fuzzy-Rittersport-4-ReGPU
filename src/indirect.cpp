@@ -13,8 +13,11 @@
 
 PPCHostFunc** g_indirectTable = nullptr;
 
-void PPCIndirectMiss(uint32_t address)
+void PPCIndirectMiss(uint32_t address, PPCContext& ctx)
 {
+    // What the guest had in hand: the caller's return address and the registers a vtable or function-pointer call uses.
+    Log("indirect miss: lr %08llX r1 %08X r3 %08X r4 %08X r11 %08X r29 %08X r30 %08X r31 %08X", (unsigned long long)ctx.lr, ctx.r1.u32, ctx.r3.u32,
+        ctx.r4.u32, ctx.r11.u32, ctx.r29.u32, ctx.r30.u32, ctx.r31.u32);
     Fatal("indirect call to %08X: no recompiled function there", address);
 }
 
