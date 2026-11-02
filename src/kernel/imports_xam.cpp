@@ -1097,7 +1097,19 @@ GUEST_EXPORT(XamSessionRefObjByHandle)
     // (handle, object*): online, the handle itself is the (opaque, non-null) object the title passes on.
     if (NetOnline() && GetHandle(ctx.r3.u32))
     {
-        StoreIfNonNull(ctx.r4.u32, ctx.r3.u32);
+        // The title's session code calls through the object's vtable, so it has to point at readable memory:
+        // a zeroed block whose vtable slots all answer E_NOTIMPL (sub_82790920).
+        static const uint32_t object = [] {
+            const uint32_t vtable = GuestAlloc(Heap::Virtual, 0x80);
+            for (uint32_t i = 0; i < 32; i++)
+                StoreBE32(vtable + i * 4, 0x82790920);
+            const uint32_t block = GuestAlloc(Heap::Virtual, 0x100);
+            memset(GuestPtr(block), 0, 0x100);
+            StoreBE32(block, vtable);
+            return block;
+        }();
+        Log("session: handle %08X -> object %08X", ctx.r3.u32, object);
+        StoreIfNonNull(ctx.r4.u32, object);
         Return(ctx, X_ERROR_SUCCESS);
         return;
     }
