@@ -2,9 +2,9 @@
 """FM4 title server: stand-in for the Turn 10 web services (Forza.WebServices.*).
 
 The game POSTs /<service path>/o.xtsw with Content-Type bin/xtsw and the call
-named in X-ClassName / X-Method. Bodies are big-endian packed records. Replies
-start with a 12-byte header: u32 status (0 ok), u32 code, u32 message length
-(+ UTF-8 message when status != 0).
+named in X-ClassName / X-Method. Bodies are big-endian packed records (see
+xtsw.py). Replies start with a 12-byte header: u32 status (0 ok), u32 code,
+u32 message length (+ UTF-8 message when status != 0).
 
 Methods without a handler get an empty success reply and are written to the
 call log (calls.jsonl, with the request body in hex), so one play session
@@ -12,8 +12,10 @@ shows exactly which methods and layouts a feature needs.
 
 Licence: AGPL-3.0-or-later (see LICENSE and NOTICE.md).
 """
-import argparse, json, struct, sys, threading, time
+import argparse, json, struct, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+from xtsw import Reader  # noqa: F401  (re-exported for handlers)
 
 EMPTY_TAIL = bytes(64)  # trailing zeros read as empty result fields
 HANDLERS = {}           # (short class name, method) -> fn(ctx, body) -> bytes
@@ -37,29 +39,28 @@ def envelope(results=b"", status=0, code=0, message=""):
     return struct.pack(">III", status, code, len(msg)) + msg + results
 
 
+class ServiceError(Exception):
+    """Raise from a handler to answer the game with a service failure."""
+    def __init__(self, code, message=""):
+        super().__init__(message)
+        self.code, self.message = code, message
+
+
 class Ctx:
-    def __init__(self, title_id, class_name, method, xuid, txn):
+    def __init__(self, title_id, class_name, method, xuid, txn, state):
         self.title_id, self.class_name, self.method = title_id, class_name, method
-        self.xuid, self.txn = xuid, txn
+        self.xuid, self.txn, self.state = xuid, txn, state
 
 
-class Reader:
-    """Big-endian field reader for request bodies."""
-    def __init__(self, b): self.b, self.i = b, 0
-    def take(self, n):
-        v = self.b[self.i:self.i + n]; self.i += n; return v
-    def u8(self): return self.take(1)[0]
-    def u32(self): return struct.unpack(">I", self.take(4))[0]
-    def i32(self): return struct.unpack(">i", self.take(4))[0]
-    def u64(self): return struct.unpack(">Q", self.take(8))[0]
-    def string(self): return self.take(self.u32()).decode("utf-8", "replace")
+class State:
+    """Everything handlers share. `store` is the Auction House database."""
+    def __init__(self, store=None):
+        self.store = store
 
 
-def pack_string(s):
-    b = s.encode("utf-8"); return struct.pack(">I", len(b)) + b
+def make_app(log_path, state=None):
+    state = state or State()
 
-
-def make_app(log_path):
     class H(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
         def log_message(self, *a): pass
@@ -71,19 +72,22 @@ def make_app(log_path):
                       self.headers.get("X-ClassName", ""),
                       self.headers.get("X-Method", ""),
                       self.headers.get("X-UserId", ""),
-                      self.headers.get("X-TransactionId"))
+                      self.headers.get("X-TransactionId"), state)
             key = (short_class(ctx.class_name), ctx.method)
             fn = HANDLERS.get(key)
             handled = fn is not None
+            note = ""
             try:
                 out = envelope(fn(ctx, body) if fn else EMPTY_TAIL)
+            except ServiceError as e:
+                out, note = envelope(status=2, code=e.code, message=e.message), e.message
             except Exception as e:  # report to the game as a service failure
-                out = envelope(status=2, code=1, message=str(e))
+                out, note = envelope(status=2, code=1, message=str(e)), repr(e)
             with LOG_LOCK, open(log_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps({"t": time.time(), "class": ctx.class_name,
                                     "method": ctx.method, "xuid": ctx.xuid,
                                     "handled": handled, "len": len(body),
-                                    "body": body[:4096].hex()}) + "\n")
+                                    "error": note, "body": body[:4096].hex()}) + "\n")
             self.send_response(200)
             self.send_header("Content-Type", "bin/xtsw")
             self.send_header("Content-Length", str(len(out)))
@@ -92,8 +96,9 @@ def make_app(log_path):
     return H
 
 
-def serve(host, port, log_path):
-    srv = ThreadingHTTPServer((host, port), make_app(log_path))
+def serve(host, port, log_path, state=None):
+    import services  # noqa: F401  registers the handlers
+    srv = ThreadingHTTPServer((host, port), make_app(log_path, state))
     srv.daemon_threads = True
     return srv
 
@@ -103,9 +108,11 @@ def main(argv=None):
     ap.add_argument("--host", default="127.0.0.1")  # local only unless asked
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--log", default="calls.jsonl")
+    ap.add_argument("--db", default="fm4_live.sqlite")
     a = ap.parse_args(argv)
-    srv = serve(a.host, a.port, a.log)
-    print(f"FM4 title server on {a.host}:{a.port}, calls logged to {a.log}")
+    from auction_store import Store
+    srv = serve(a.host, a.port, a.log, State(Store(a.db)))
+    print(f"FM4 title server on {a.host}:{a.port}, calls logged to {a.log}, data in {a.db}")
     try: srv.serve_forever()
     except KeyboardInterrupt: pass
 
