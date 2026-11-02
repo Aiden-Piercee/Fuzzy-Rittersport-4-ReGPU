@@ -1056,18 +1056,8 @@ GUEST_EXPORT(XeKeysConsoleSignatureVerification)
     Return(ctx, 1);
 }
 
-// Network: no link. Every call fails cleanly ------------------------------------------
+// Network: the NetDll_* imports live in imports_net.cpp; XNetRandom stays here ------------------------------------------
 
-GUEST_EXPORT(NetDll_XNetStartup) { Return(ctx, 0); }
-GUEST_EXPORT(NetDll_XNetCleanup) { Return(ctx, 0); }
-GUEST_EXPORT(NetDll_WSAStartup) { Return(ctx, 0); }
-GUEST_EXPORT(NetDll_WSACleanup) { Return(ctx, 0); }
-GUEST_EXPORT(NetDll_WSAGetLastError) { Return(ctx, 10050); } // WSAENETDOWN
-GUEST_EXPORT(NetDll_XNetGetEthernetLinkStatus) { Return(ctx, 0); }
-GUEST_EXPORT(NetDll_XNetGetTitleXnAddr) { Return(ctx, 1); } // XNET_GET_XNADDR_NONE
-GUEST_EXPORT(NetDll_XNetGetConnectStatus) { Return(ctx, 3); } // lost
-GUEST_EXPORT(NetDll_socket) { Return(ctx, 0xFFFFFFFF); }
-GUEST_EXPORT(NetDll_closesocket) { Return(ctx, 0); }
 GUEST_EXPORT(NetDll_XNetRandom)
 {
     // (caller, buffer, length)
