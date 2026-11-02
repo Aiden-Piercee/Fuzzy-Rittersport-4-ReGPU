@@ -112,7 +112,7 @@ GUEST_EXPORT(XamUserGetXUID)
     // (user, type, xuid*)
     if (!IsSignedIn(ctx.r3.u32))
     {
-        Return(ctx, X_ERROR_NO_SUCH_USER);
+        Return(ctx, NetOnline() ? 0x80070525 : X_ERROR_NO_SUCH_USER); // HRESULT_FROM_WIN32 online: the title reads r3 < 0 as failure
         return;
     }
     StoreBE64(ctx.r5.u32, Xuid());
@@ -159,7 +159,7 @@ GUEST_EXPORT(XamUserGetSigninInfo)
         memset(GuestPtr(info), 0, 0x20);
     if (!IsSignedIn(ctx.r3.u32))
     {
-        Return(ctx, X_ERROR_NO_SUCH_USER);
+        Return(ctx, NetOnline() ? 0x80070525 : X_ERROR_NO_SUCH_USER);
         return;
     }
     if (info)
@@ -228,7 +228,7 @@ GUEST_EXPORT(XamUserCreateStatsEnumerator)
 GUEST_EXPORT(XGetAVPack) { Return(ctx, 6); }        // HDMI
 GUEST_EXPORT(XGetGameRegion) { Return(ctx, 0xFFFF); }
 GUEST_EXPORT(XGetLanguage) { Return(ctx, GetSettings().language); } // settings.ini language
-GUEST_EXPORT(XamGetSystemVersion) { Return(ctx, 0x20004B07); }
+GUEST_EXPORT(XamGetSystemVersion) { Return(ctx, NetOnline() ? 0x20096B00 : 0x20004B07); } // online: past the title's legacy privilege gate
 GUEST_EXPORT(XNetLogonGetTitleID) { Return(ctx, g_title.titleId); }
 
 GUEST_EXPORT(XamGetExecutionId)
@@ -1043,6 +1043,15 @@ GUEST_EXPORT(XMsgInProcessCall)
         // XLiveBase: the title's profile manager starts with a request here (00058004) and
         // gives up if it fails: no sign-in tracking, so "No Gamer Profiles" and no saves.
         LOG_ONCE("XLiveBase message %08X answered with success", message);
+        if (NetOnline() && (message == 0x00058004 || message == 0x00058006))
+            StoreBE32(args, 1); // the caller reads one u32 from the buffer
+        Return(ctx, 0);
+        return;
+    }
+    if (app == 0xFE && NetOnline())
+    {
+        // XLiveInitialize registers its callbacks here (0x2C009) and returns early if this fails.
+        LOG_ONCE("XLive (app FE) message %08X answered with success", message);
         Return(ctx, 0);
         return;
     }
@@ -1078,11 +1087,27 @@ GUEST_EXPORT(XMsgInProcessCall)
     }
     Return(ctx, 0);
 }
-GUEST_EXPORT(XMsgStartIORequest) { FinishUi(ctx, ctx.r5.u32, X_ERROR_FUNCTION_FAILED); }
-GUEST_EXPORT(XMsgStartIORequestEx) { FinishUi(ctx, ctx.r5.u32, X_ERROR_FUNCTION_FAILED); }
+// Online, the Live apps (0xFB XGI user/session, 0xFE XLive) complete every request with success.
+GUEST_EXPORT(XMsgStartIORequest) { FinishUi(ctx, ctx.r5.u32, NetOnline() && ctx.r3.u32 != 0xFA ? X_ERROR_SUCCESS : X_ERROR_FUNCTION_FAILED); }
+GUEST_EXPORT(XMsgStartIORequestEx) { FinishUi(ctx, ctx.r5.u32, NetOnline() && ctx.r3.u32 != 0xFA ? X_ERROR_SUCCESS : X_ERROR_FUNCTION_FAILED); }
 GUEST_EXPORT(XMsgCancelIORequest) { Return(ctx, X_ERROR_SUCCESS); }
 GUEST_EXPORT(XamSessionCreateHandle) { StoreIfNonNull(ctx.r3.u32, CreateHandle(std::make_shared<EnumeratorObject>())); Return(ctx, X_ERROR_SUCCESS); }
-GUEST_EXPORT(XamSessionRefObjByHandle) { StoreIfNonNull(ctx.r4.u32, 0); Return(ctx, X_ERROR_FUNCTION_FAILED); }
+GUEST_EXPORT(XamSessionRefObjByHandle)
+{
+    // (handle, object*): online, the handle itself is the (opaque, non-null) object the title passes on.
+    if (NetOnline() && GetHandle(ctx.r3.u32))
+    {
+        StoreIfNonNull(ctx.r4.u32, ctx.r3.u32);
+        Return(ctx, X_ERROR_SUCCESS);
+        return;
+    }
+    StoreIfNonNull(ctx.r4.u32, 0);
+    Return(ctx, X_ERROR_FUNCTION_FAILED);
+}
+
+// Stats and leaderboard enumerators read these two; online, a US Gold member.
+GUEST_EXPORT(XamUserGetOnlineCountryFromXUID) { Return(ctx, NetOnline() ? 1 : 0); }
+GUEST_EXPORT(XamUserGetMembershipTierFromXUID) { Return(ctx, NetOnline() ? 6 : 0); }
 GUEST_EXPORT(XamVoiceCreate) { Return(ctx, X_ERROR_DEVICE_NOT_CONNECTED); }
 GUEST_EXPORT(XamVoiceClose) { Return(ctx, 0); }
 GUEST_EXPORT(XamVoiceHeadsetPresent) { Return(ctx, 0); }
