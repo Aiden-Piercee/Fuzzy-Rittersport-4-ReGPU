@@ -118,4 +118,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    # Run through the importable module: services.py imports handler from fm4_live_server, and under
+    # __main__ that is a second copy with its own HANDLERS, so no handler would ever be found.
+    import fm4_live_server
+    fm4_live_server.main()
