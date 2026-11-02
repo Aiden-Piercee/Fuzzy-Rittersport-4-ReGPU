@@ -169,10 +169,16 @@ def retrieve_online_credits(ctx, body):
     return enc("User", "RetrieveOnlineCredits", {"credit": amount})
 
 
-@handler("DLCMetadata", "GetStringTableInfo")
-def string_table_info(ctx, body):
-    # No string-table patch available: an all-empty record (empty path and digest, id 0).
-    return xtsw.encode(layouts.result("DLCMetadata", "GetStringTableInfo"), {})
+def _no_file_info(method, key):
+    """"Nothing to download": a file record with Id -1 (the game then finishes without a download)."""
+    @handler("DLCMetadata", method)
+    def h(ctx, body):
+        return xtsw.encode(layouts.result("DLCMetadata", method), {key: {"base": {"Id": -1}}})
+    return h
+
+
+_no_file_info("GetStringTableInfo", "stringTableInfo")
+_no_file_info("GetDBPatchFileInfo", "patchInfo")
 
 
 import auction_service  # noqa: E402,F401  registers the Auction.* handlers

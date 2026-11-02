@@ -87,6 +87,19 @@ class Storefront(Base):
         self.assertEqual((r2["downloadData"], r2["isLastBuffer"]), (b"ef", True))
 
 
+class Dlc(Base):
+    def test_no_marketplace_downloads(self):
+        c = self.cl(1)
+        for m, k in (("GetStringTableInfo", "stringTableInfo"), ("GetDBPatchFileInfo", "patchInfo")):
+            r = c.call("DLCMetadata", m, {"language": "EN"})[3][k]
+            self.assertEqual((r["base"]["Id"], r["base"]["Size"], r["Digest"]), (-1, 0, b""))
+        self.assertEqual(c.call("DLCMetadata", "GetThumbnailInfo", {"maxThumbnails": 5})[3], {"thumbnailInfo": []})
+        self.assertEqual(c.raw("DLC", "GetFeaturedOfferIds", bytes(4))[3], bytes(4))
+        self.assertEqual(c.raw("DLC", "GetUpsellOfferId")[3], bytes(8))
+        st, code, _, _ = c.raw("Content", "DownloadContent", bytes(13))
+        self.assertEqual((st, code), (2, 6))
+
+
 class Gifts(Base):
     def test_credits_and_file_gift(self):
         a, b = self.cl(1), self.cl(2)

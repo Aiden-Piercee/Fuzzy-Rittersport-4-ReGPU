@@ -453,8 +453,8 @@ def upload_content(ctx, body):
 def download_content(ctx, body):
     r = dec("Content", "DownloadContent", body)
     f = _db(ctx).execute("SELECT * FROM files WHERE id=?", (r["contentId"],)).fetchone()
-    if not f:   # unknown id (the string-table "patch" we do not have): an empty, complete file
-        return enc("Content", "DownloadContent", {"isLastBuffer": True, "downloadData": b"", "totalSize": 0})
+    if not f:   # unknown id: the game's own "content not found" code (0x80510006), which ends its retry loop
+        raise ServiceError(6, "no such content")
     data = bytes(f["payload"] or b"")
     chunk = data[r["payloadOffset"]:r["payloadOffset"] + (r["requestedSize"] or len(data))]
     return enc("Content", "DownloadContent", {
