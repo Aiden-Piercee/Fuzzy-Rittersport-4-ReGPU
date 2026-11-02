@@ -769,7 +769,27 @@ def _rows(ctx, board, track, start, count, club=False):
     mine = next((r for r in rows if r["user"]["qwXuid"] == int(x)), None)
     empty = score_row(ctx, {"owner": x, "score": 0, "submitted": 0, "car": 0, "class": 0, "pi": 0, "flags": 0,
                             "clean": 0, "ghost": 0}, 0, 0)
-    return rows[start:start + (count or 50)], (mine or empty), len(rows)
+    page = rows[start:start + (count or 50)]
+    if not page and rows:                              # asked past the end: give the last page, not nothing
+        page = rows[-(count or 50):]
+    return page, (mine or empty), len(rows)
+
+
+def _stand_in(ctx, board, around=None):
+    """One invented row for a board nobody has scored on: a fake player with a time near `around`."""
+    import seed
+    db = _db(ctx)
+    xuid, tag = seed.Seeder.fake_user(board % 12)
+    ctx.state.store.user(xuid, tag)
+    rng = random.Random(board * 7919 + 1)
+    score = round((around or 90.0) * rng.uniform(1.0, 1.04), 3)
+    s = {"owner": xuid, "score": score, "submitted": ctx.state.store.clock() - 7200, "car": 0, "class": 0, "pi": 0,
+         "flags": 0, "clean": 1, "ghost": 0}
+    cars = ctx.state.gamedb.sellable_cars() if ctx.state.gamedb else []
+    if cars:
+        c = rng.choice(cars)
+        s.update(car=c["Id"], **{"class": c["ClassID"]}, pi=c["PerformanceIndex"])
+    return s
 
 
 @handler("Scoreboard", "GetRows")
@@ -789,6 +809,8 @@ def get_rollup(ctx, body):
     board = r["pivotId"]
     _seed_board(ctx, board, 0)
     rows, mine, n = _rows(ctx, board, None, max(0, r["startAt"] - 1), r["maxResults"], r["isClubBoard"])
+    if not rows:                                       # never an empty list with a count the game will chase
+        rows, n = [score_row(ctx, _stand_in(ctx, board), 1, 1)], 1
     return enc("Scoreboard", "GetRollupRows", {"rows": rows, "userRow": mine, "available": n})
 
 
@@ -823,8 +845,11 @@ def get_rival(ctx, body):
         _seed_board(ctx, r["gameScoreboardId"], 0)
         s = db.execute("SELECT * FROM scores WHERE board=? AND owner<>? ORDER BY score ASC LIMIT 1",
                        (r["gameScoreboardId"], x)).fetchone()
-    if s is None:
+    if s is None and r["rivalXuid"]:
         raise ServiceError(67, "no score from that rival")
+    if s is None:                                      # rival 0 is a normal ask: answer with a near-your-time stand-in
+        mine = db.execute("SELECT MIN(score) m FROM scores WHERE owner=? AND board=?", (x, r["gameScoreboardId"])).fetchone()["m"]
+        s = _stand_in(ctx, r["gameScoreboardId"], mine)
     return enc("Scoreboard", "GetRival", {"rival": {"scoreData": score_row(ctx, s, 1, 1), "bounty": 0}})
 
 

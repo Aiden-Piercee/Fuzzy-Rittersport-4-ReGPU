@@ -174,6 +174,11 @@ class Scores(Base):
         rv = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 1})[3]["rival"]["scoreData"]
         self.assertEqual((rv["score"], rv["ghostFileId"]), (95.5, gid))
         self.assertEqual(b.call("Scoreboard", "GetRival", {"gameScoreboardId": 3, "rivalXuid": 9})[1], 67)
+        r0 = b.call("Scoreboard", "GetRival", {"gameScoreboardId": 44, "rivalXuid": 0})   # no seeding, empty board
+        self.assertEqual(r0[1], 0)
+        self.assertTrue(r0[3]["rival"]["scoreData"]["score"] > 0)
+        ru = b.call("Scoreboard", "GetRollupRows", {"pivotId": 55, "startAt": 1, "maxResults": 10})[3]
+        self.assertEqual((len(ru["rows"]), ru["available"]), (1, 1))
         r1 = a.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "startAt": 1, "maxResults": 50})[3]
         self.assertEqual(len(r1["rows"]), 2)   # startAt is 1-based: position 1 is the first row
         self.assertEqual(a.call("Scoreboard", "GetBestScores", {"gameScoreboardId": 3, "trackId": 0})[3]["timeScore"]["score"], 95.5)
