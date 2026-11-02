@@ -218,6 +218,16 @@ GUEST_EXPORT(XamUserReadProfileSettings)
     Return(ctx, X_ERROR_SUCCESS);
 }
 
+GUEST_EXPORT(XamUserCreateAchievementEnumerator)
+{
+    // (titleId, user, xuid, flags, offset, count, bufferSize*, handle*): an empty list; the size out-parameter
+    // has to be written or the title allocates whatever was on its stack.
+    const uint32_t count = std::max(ctx.r8.u32, 1u);
+    StoreIfNonNull(ctx.r9.u32, count * 0x180);
+    StoreIfNonNull(ctx.r10.u32, CreateHandle(std::make_shared<EnumeratorObject>()));
+    Return(ctx, X_ERROR_SUCCESS);
+}
+
 GUEST_EXPORT(XamUserCreateStatsEnumerator)
 {
     Return(ctx, X_ERROR_FUNCTION_FAILED);
