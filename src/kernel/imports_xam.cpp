@@ -1,6 +1,7 @@
 // XAM: users, profiles, system UI, content packages, input, notifications.
 // The port runs headless: one signed-in local profile, every system dialog
 // answered with its default.
+#include <set>
 #include <atomic>
 #include <chrono>
 #include <deque>
@@ -414,40 +415,46 @@ GUEST_EXPORT(XamShowKeyboardUI)
 {
     // (user, flags, default text, title, description, result buffer, max length, overlapped)
     const uint32_t def = ctx.r5.u32, out = ctx.r8.u32, max = ctx.r9.u32;
-    if (out && max)
-    {
-        uint32_t i = 0;
-        for (; def && i + 1 < max; i++)
+    auto wide = [](uint32_t p) {
+        std::string r;
+        for (uint32_t k = 0; p && k < 80; k++)
         {
-            const uint16_t c = GuestPtr<uint16_t>(def)[i];
+            const uint16_t c = __builtin_bswap16(GuestPtr<uint16_t>(p)[k]);
             if (!c)
                 break;
-            GuestPtr<uint16_t>(out)[i] = c;
+            r += c < 0x80 ? char(c) : '?';
         }
-        GuestPtr<uint16_t>(out)[i] = 0;
-        if (i == 0)
+        return r;
+    };
+    if (out && max)
+    {
+        // The result starts as the default text. There is no on-screen keyboard here, so a title that asks for a
+        // name (a car club, a tag, a tune) would get its own previous answer back, or an empty one, and a name
+        // that is empty or already taken is refused. An empty default, or one that is an earlier generated name,
+        // is answered with a fresh one that fits the length the game allows (its last characters carry the count).
+        static std::mutex mutex;
+        static std::set<std::string> generated;
+        static uint32_t counter = 0;
+        std::string text = wide(def);
+        std::lock_guard lock(mutex);
+        if (text.empty() || generated.count(text))
         {
-            // There is no on-screen keyboard here: a title that asks for a name (a car club, a tune) with an empty
-            // default gets a generated one, or it would take the empty answer as "nothing entered".
-            static std::atomic<uint32_t> counter{ 0 };
-            char text[32];
-            snprintf(text, sizeof(text), "Test%u", ++counter);
-            for (i = 0; text[i] && i + 1 < max; i++)
-                GuestPtr<uint16_t>(out)[i] = __builtin_bswap16(uint16_t(uint8_t(text[i])));
-            GuestPtr<uint16_t>(out)[i] = 0;
+            // base-36 of the time plus a count: unique across runs, and the last characters (what a short field keeps) vary
+            static const uint32_t seed = uint32_t(time(nullptr));
+            uint32_t n = seed + ++counter;
+            std::string token;
+            for (int k = 0; k < 4; k++, n /= 36)
+                token.insert(token.begin(), "0123456789abcdefghijklmnopqrstuvwxyz"[n % 36]);
+            text = "Club" + token;
+            if (text.size() + 1 > max)
+                text = text.substr(text.size() + 1 - max);
+            generated.insert(text);
         }
-        auto wide = [](uint32_t p) {
-            std::string r;
-            for (uint32_t k = 0; p && k < 80; k++)
-            {
-                const uint16_t c = __builtin_bswap16(GuestPtr<uint16_t>(p)[k]);
-                if (!c)
-                    break;
-                r += c < 0x80 ? char(c) : '?';
-            }
-            return r;
-        };
-        Log("keyboard: title '%s', description '%s', max %u -> '%s'", wide(ctx.r6.u32).c_str(), wide(ctx.r7.u32).c_str(), max, wide(out).c_str());
+        uint32_t i = 0;
+        for (; i < text.size() && i + 1 < max; i++)
+            GuestPtr<uint16_t>(out)[i] = __builtin_bswap16(uint16_t(uint8_t(text[i])));
+        GuestPtr<uint16_t>(out)[i] = 0;
+        Log("keyboard: title '%s', description '%s', max %u -> '%s'", wide(ctx.r6.u32).c_str(), wide(ctx.r7.u32).c_str(), max, text.c_str());
     }
     FinishUi(ctx, ctx.r10.u32);
 }
