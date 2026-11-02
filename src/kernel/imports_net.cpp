@@ -120,6 +120,19 @@ uint32_t LocalAddr()
     return addr;
 }
 
+// The title talks HTTP on port 80 of the title server; ours listens on FM2_SERVER_PORT (8080).
+void RedirectTitleServer(sockaddr_in& a)
+{
+    if (a.sin_addr.s_addr != ServerAddr() || ntohs(a.sin_port) != 80)
+        return;
+    static const unsigned short port = [] {
+        const char* e = getenv("FM2_SERVER_PORT");
+        const int p = e ? atoi(e) : 8080;
+        return (unsigned short)(p > 0 && p < 65536 ? p : 8080);
+    }();
+    a.sin_port = htons(port);
+}
+
 uint32_t ServerAddr()
 {
     static const uint32_t addr = [] {
@@ -371,6 +384,7 @@ GUEST_EXPORT(NetDll_connect)
     SOCKET s = Host(ctx.r4.u32);
     if (s == INVALID_SOCKET) { Fail(ctx, WSAENOTSOCK); return; }
     sockaddr_in a = ToHost(ctx.r5.u32);
+    RedirectTitleServer(a);
     if (connect(s, reinterpret_cast<sockaddr*>(&a), sizeof a) != 0) { Fail(ctx); return; }
     Return(ctx, 0);
 }
@@ -512,6 +526,7 @@ GUEST_EXPORT(NetDll_WSASendTo)
     SOCKET s = Host(ctx.r4.u32);
     if (s == INVALID_SOCKET) { Fail(ctx, WSAENOTSOCK); return; }
     sockaddr_in to = ToHost(ctx.r9.u32);
+    RedirectTitleServer(to);
     uint32_t total = 0;
     for (uint32_t i = 0; i < ctx.r6.u32; i++)
     {

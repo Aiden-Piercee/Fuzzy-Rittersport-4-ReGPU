@@ -978,6 +978,10 @@ GUEST_EXPORT(XamEnumerate)
             memcpy(GuestPtr(buffer), &addr, 4);
             StoreBE32(buffer + 4, 0);
         }
+        // The title keeps the servers whose description matches its service mask (Turn10.*).
+        static const char kServerInfo[] = "Turn10.F4Release";
+        if (size >= 8 + sizeof kServerInfo)
+            memcpy(GuestPtr(buffer + 8), kServerInfo, sizeof kServerInfo);
         std::string hex;
         char b[4];
         for (uint32_t i = 0; i < std::min(size, 48u); i++)
