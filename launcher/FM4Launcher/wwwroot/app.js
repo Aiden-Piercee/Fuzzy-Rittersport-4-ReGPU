@@ -14,6 +14,7 @@ if (host) host.addEventListener("message", (e) => {
   const m = e.data
   if (m.event === "progress") return onProgress(m.data)
   if (m.event === "status") return tileProgress(m.data)
+  if (m.event === "recheck") { guarded(async () => { state = await call("state"); render() }); return }
   if (m.event === "dragging") { veil.hidden = !m.data; if (!m.data) setHot(null); return }
   if (m.event === "over") return setHot(tileAt(m.data.x, m.data.y))
   if (m.event === "dropped-at") return droppedAt(m.data)
@@ -455,7 +456,12 @@ function renderTiles() {
     e.textContent = text
     e.className = "tile-status " + (ok ? "ok" : "bad")
   }
-  set("game", s.checks.game, s.checks.game ? "✓ Game files found (default.xex)" : "No game files yet: drop the disc or its files here")
+  const x = s.checks.xex
+  set("game", s.checks.game && x === "ok", !s.checks.game ? "No game files yet: drop the disc or its files here"
+    : x === "ok" ? "✓ Game of the Year ✓"
+    : x === "mismatch" ? "⚠ default.xex doesn't match the Game of the Year disc"
+    : "Checking default.xex…")
+  if (!tileState.game && s.checks.game && x === "mismatch") $("tile-game-status").className = "tile-status err"
   const n = s.dlc.length, on = s.dlc.filter((d) => d.enabled).length
   set("dlc", n > 0, n ? `✓ ${n} package${n > 1 ? "s" : ""} installed (${on} on)` : "None installed")
 }

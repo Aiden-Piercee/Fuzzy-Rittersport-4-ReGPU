@@ -20,6 +20,7 @@ public sealed class Bridge
     {
         _window = window;
         window.RegisterWebMessageReceivedHandler((_, text) => OnMessage(text));
+        Import.XexChecked += () => Push("recheck", true);
         // Windows: drops from Explorer give the real paths (DropTarget.cs). The window's child windows exist a moment
         // after the page loads, so the drop target is taken over a few times. Elsewhere the page's own drop is used.
         if (OperatingSystem.IsWindows())
@@ -169,6 +170,7 @@ public sealed class Bridge
                         Directory.Exists(current) ? current : null, false);
                     if (picked is { Length: > 0 })
                     {
+                        if (which == "game") Import.RequireGoty(picked[0]);
                         if (which == "game") settings.GameFolder = picked[0]; else settings.TitleUpdateFolder = picked[0];
                         settings.Save();
                     }
@@ -321,6 +323,7 @@ public sealed class Bridge
             {
                 exe = File.Exists(Paths.Exe),
                 game = File.Exists(Path.Combine(Paths.GameDir, "default.xex")),
+                xex = Import.XexStatus(Paths.GameDir) ?? "checking",
                 running = Game.Running,
             },
             options = new

@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace FM4Launcher;
@@ -67,6 +68,32 @@ public static class XIso
             progress?.Invoke(++n, done, total);
         }
         return n;
+    }
+
+    /// <summary>The sha256 (upper-case hex) of one file at the top of the image, read from the image without unpacking it;
+    /// null when the image has no such file.</summary>
+    public static string? FileSha256(string iso, string name)
+    {
+        using var f = File.OpenRead(iso);
+        if (!FindBase(f, out var b, out var root)) throw new InvalidDataException($"{Path.GetFileName(iso)} isn't an Xbox 360 disc image.");
+        var files = new List<(string Path, long Offset, uint Size)>();
+        Walk(f, b, root.Sector, root.Size, "", files, 0);
+        foreach (var (rel, off, size) in files)
+        {
+            if (!string.Equals(rel, name, StringComparison.OrdinalIgnoreCase)) continue;
+            using var h = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            var buf = new byte[1 << 20];
+            f.Seek(off, SeekOrigin.Begin);
+            for (long left = size; left > 0;)
+            {
+                int k = f.Read(buf, 0, (int)Math.Min(buf.Length, left));
+                if (k <= 0) throw new EndOfStreamException($"{Path.GetFileName(iso)} ends inside {rel}.");
+                h.AppendData(buf, 0, k);
+                left -= k;
+            }
+            return Convert.ToHexString(h.GetHashAndReset());
+        }
+        return null;
     }
 
     static void Walk(FileStream f, long b, uint sector, uint size, string prefix, List<(string, long, uint)> files, int depth)

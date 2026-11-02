@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Text;
 using SharpCompress.Archives;
 
@@ -100,6 +102,53 @@ public static class Import
 
     // ---- game
 
+    /// <summary>The default.xex of the supported disc (Europe, Game of the Year): sha256, as in config/fm4.toml.</summary>
+    public const string GotyXexSha256 = "B34DFB88978819CCCDA6DAFD755E7139970A58FBF6707DFBCBA06846857F52BD";
+    public const string NotGoty = "This isn't the Game of the Year disc (its default.xex doesn't match).";
+    public const string FolderNotGoty = "That folder's default.xex doesn't match the Game of the Year disc.";
+
+    public static bool IsGoty(string? sha256) => string.Equals(sha256, GotyXexSha256, StringComparison.OrdinalIgnoreCase);
+
+    static string HashFile(string path)
+    {
+        using var f = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(f));
+    }
+
+    // What the Game tile shows for the game folder: "ok" / "mismatch" / "missing" (no default.xex), or null while the
+    // hash is still being worked out on a worker thread. Kept per file (path, size, date), so it re-checks when the
+    // folder changes and costs nothing otherwise. XexChecked fires when a new answer is ready.
+    static readonly ConcurrentDictionary<string, string> XexCache = new();
+    static readonly ConcurrentDictionary<string, bool> XexBusy = new();
+    public static event Action? XexChecked;
+
+    public static string? XexStatus(string gameDir)
+    {
+        var xex = Path.Combine(gameDir, "default.xex");
+        FileInfo fi;
+        try { fi = new FileInfo(xex); } catch { return "missing"; }
+        if (!fi.Exists) return "missing";
+        var key = $"{fi.FullName}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}";
+        if (XexCache.TryGetValue(key, out var done)) return done;
+        if (XexBusy.TryAdd(key, true))
+            _ = Task.Run(() =>
+            {
+                string r;
+                try { r = IsGoty(HashFile(xex)) ? "ok" : "mismatch"; } catch { r = "mismatch"; }
+                XexCache[key] = r;
+                XexBusy.TryRemove(key, out _);
+                XexChecked?.Invoke();
+            });
+        return null;
+    }
+
+    /// <summary>Throws unless the default.xex in that folder (when there is one) is the supported one.</summary>
+    public static void RequireGoty(string folder)
+    {
+        var xex = Path.Combine(folder, "default.xex");
+        if (File.Exists(xex) && !IsGoty(HashFile(xex))) throw new InvalidDataException(FolderNotGoty);
+    }
+
     /// <summary>A disc image or a folder with the extracted disc (default.xex at its top, or one level inside). Goes into
     /// the chosen game folder (the launcher's default one when none is chosen). Returns the message to show.</summary>
     public static string Game(string path, Action<string>? status = null)
@@ -109,11 +158,16 @@ public static class Import
         if (File.Exists(path))
         {
             if (!XIso.Looks(path)) throw new InvalidDataException($"{Path.GetFileName(path)} isn't a game disc image (.iso).");
+            status?.Invoke("Checking the disc…");
+            var disc = XIso.FileSha256(path, "default.xex") ?? throw new InvalidDataException("The disc has no default.xex: is it Forza Motorsport 4?");
+            if (!IsGoty(disc)) throw new InvalidDataException(NotGoty);
             var n = XIso.Extract(path, dest, (i, done, total) => status?.Invoke($"Unpacking the disc: {done * 100 / Math.Max(1, total)}%"));
             if (!File.Exists(Path.Combine(dest, "default.xex"))) throw new InvalidDataException("The disc unpacked, but has no default.xex: is it Forza Motorsport 4?");
             return $"Disc unpacked: {n} files.";
         }
         var root = FindUp(path, "default.xex") ?? throw new InvalidDataException("That folder has no default.xex: pick the extracted disc.");
+        status?.Invoke("Checking default.xex…");
+        RequireGoty(root);
         if (string.Equals(Path.GetFullPath(root).TrimEnd('\\', '/'), Path.GetFullPath(dest).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase))
             return "The game is already in the game folder.";
         if (path.StartsWith(Incoming, StringComparison.OrdinalIgnoreCase))
