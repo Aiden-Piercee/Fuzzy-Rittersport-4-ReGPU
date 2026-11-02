@@ -1147,9 +1147,50 @@ GUEST_EXPORT(XMsgInProcessCall)
     }
     Return(ctx, 0);
 }
-// Online, the Live apps (0xFB XGI user/session, 0xFE XLive) complete every request with success.
-GUEST_EXPORT(XMsgStartIORequest) { FinishUi(ctx, ctx.r5.u32, NetOnline() && ctx.r3.u32 != 0xFA ? X_ERROR_SUCCESS : X_ERROR_FUNCTION_FAILED); }
-GUEST_EXPORT(XMsgStartIORequestEx) { FinishUi(ctx, ctx.r5.u32, NetOnline() && ctx.r3.u32 != 0xFA ? X_ERROR_SUCCESS : X_ERROR_FUNCTION_FAILED); }
+// Online, the Live apps (0xFB XGI user/session, 0xFC XOnline, 0xFE XLive) complete every request with success.
+static void LiveStartIORequest(PPCContext& ctx, uint8_t* base)
+{
+    const uint32_t app = ctx.r3.u32, message = ctx.r4.u32, overlapped = ctx.r5.u32, descriptor = ctx.r6.u32;
+    if (!NetOnline() || app == 0xFA)
+    {
+        FinishUi(ctx, overlapped, X_ERROR_FUNCTION_FAILED);
+        return;
+    }
+    if (app == 0xFC)
+    {
+        if (!overlapped)
+        {
+            // A synchronous request reports through the thread's last error: the title returns failure when it is
+            // non-zero (XStringVerify wrapper sub_827585E8 does), so it is cleared like a console's would be.
+            const uint32_t kthread = LoadBE32(ctx.r13.u32 + kpcr::CurrentThread);
+            if (kthread)
+                StoreBE32(kthread + kthread::LastError, 0);
+        }
+        if (message == 0x0005000C && descriptor)
+        {
+            // XStringVerify (service 0x801): the descriptor points at the request block; its results buffer pointer
+            // is at +44 and its length at +48. STRING_VERIFY_RESPONSE: u16 count, then a pointer (at +2, unaligned)
+            // to one HRESULT per string. S_OK for every string means "nothing objectionable".
+            const uint32_t block = LoadBE32(descriptor);
+            if (block && LoadBE32(block) == 0x801 && LoadBE32(block + 8) == 0xC)
+            {
+                const uint32_t results = LoadBE32(block + 44), length = LoadBE32(block + 48);
+                if (results && length >= 10)
+                {
+                    const uint32_t count = (length - 6) / 4;
+                    *GuestPtr<uint16_t>(results) = __builtin_bswap16(uint16_t(count));
+                    StoreBE32(results + 2, results + 6);
+                    for (uint32_t i = 0; i < count; i++)
+                        StoreBE32(results + 6 + 4 * i, 0);
+                    Log("live: string verify request answered clean (%u strings)", count);
+                }
+            }
+        }
+    }
+    FinishUi(ctx, overlapped, X_ERROR_SUCCESS);
+}
+GUEST_EXPORT(XMsgStartIORequest) { LiveStartIORequest(ctx, base); }
+GUEST_EXPORT(XMsgStartIORequestEx) { LiveStartIORequest(ctx, base); }
 GUEST_EXPORT(XMsgCancelIORequest) { Return(ctx, X_ERROR_SUCCESS); }
 GUEST_EXPORT(XamSessionCreateHandle) { StoreIfNonNull(ctx.r3.u32, CreateHandle(std::make_shared<EnumeratorObject>())); Return(ctx, X_ERROR_SUCCESS); }
 GUEST_EXPORT(XamSessionRefObjByHandle)
