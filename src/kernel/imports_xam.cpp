@@ -134,8 +134,8 @@ GUEST_EXPORT(XamUserGetName)
 
 GUEST_EXPORT(XamUserCheckPrivilege)
 {
-    // (user, mask, result*)
-    if (!IsSignedIn(ctx.r3.u32))
+    // (user, mask, result*); 0xFF is "any user" and asks about the signed-in one
+    if (!IsSignedIn(ctx.r3.u32) && !(NetOnline() && ctx.r3.u32 == 0xFF))
     {
         StoreIfNonNull(ctx.r5.u32, 0);
         Return(ctx, X_ERROR_NO_SUCH_USER);
@@ -943,7 +943,9 @@ GUEST_EXPORT(XamContentCreateEnumerator)
 
 GUEST_EXPORT(XamCreateEnumeratorHandle)
 {
-    StoreIfNonNull(StackArg(ctx, 8), CreateHandle(std::make_shared<EnumeratorObject>()));
+    // (user, app, openMessage, closeMessage, extraSize, itemCount, flags, handle*): the handle goes out
+    // through the eighth argument, r10.
+    StoreIfNonNull(ctx.r10.u32, CreateHandle(std::make_shared<EnumeratorObject>()));
     Return(ctx, X_ERROR_SUCCESS);
 }
 
