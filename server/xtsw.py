@@ -9,7 +9,7 @@ A schema is a list of (name, type). A type is a scalar name below, a nested
 schema (list), or ("array", type). Licence: AGPL-3.0-or-later.
 """
 import struct
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 _FIXED = {"u8": ">B", "u16": ">H", "i16": ">h", "u32": ">I", "i32": ">i", "u64": ">Q",
           "i64": ">q", "f32": ">f", "f64": ">d"}
@@ -111,7 +111,8 @@ def _default(t):
 
 
 def iso(ts):
-    return datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # datetime.fromtimestamp raises OSError for a negative timestamp on Windows; adding a delta works everywhere.
+    return (datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(seconds=ts)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def parse_iso(s):
