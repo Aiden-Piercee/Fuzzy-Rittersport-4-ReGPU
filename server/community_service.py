@@ -747,18 +747,42 @@ def score_row(ctx, s, position, rank):
             "bounty": 0}
 
 
+def _trial_track(ctx, board):
+    """Time-trial boards use the trial id as their board id (seen in play: board 402 = trial 402)."""
+    if not ctx.state.gamedb:
+        return None
+    _, entries = _trials(ctx, 7, 5)
+    e = next((x for x in entries if x["id"] == board), None)
+    return e["trackId"] if e else None
+
+
+TRIAL_LAPS = 3      # Hopper.GetGameOptions sets 3 laps; a time-trial score is the whole race time
+
+
 def _seed_board(ctx, board, track):
-    """Invent rows for a board the first time it is asked for (FM4_SEED_LEADERBOARDS=<rows per board>)."""
+    """Invent rows for a board the first time it is asked for (FM4_SEED_LEADERBOARDS=<rows per board>).
+    A time-trial board is seeded on its own track, for the whole 3-lap race; when real scores exist on the
+    board the invented ones are spread around (mostly behind) the best real one."""
     st = ctx.state
     if not (st.seed_scores and st.gamedb):
         return
     db = _db(ctx)
-    if db.execute("INSERT OR IGNORE INTO seeded_boards VALUES(?,?)", (board, track)).rowcount == 0:
+    tt = _trial_track(ctx, board)
+    if tt is not None:
+        track = tt
+        # rows seeded before boards were tied to their trial's track: drop and reseed them
+        if db.execute("SELECT 1 FROM scores WHERE board=? AND seeded=1 AND track<>? LIMIT 1", (board, track)).fetchone():
+            db.execute("DELETE FROM scores WHERE board=? AND seeded=1", (board,))
+            db.execute("DELETE FROM seeded_boards WHERE board=?", (board,))
+    if db.execute("SELECT 1 FROM seeded_boards WHERE board=? AND track=?", (board, track)).fetchone():
         return
+    db.execute("INSERT OR IGNORE INTO seeded_boards VALUES(?,?)", (board, track))
     import seed
     rng = random.Random(board * 100003 + track)       # same board always gets the same rows
     length = (st.gamedb.tracks.get(track) or {}).get("Length") or 3000
-    base = length / rng.uniform(34, 46)                # a lap at an average speed of 120-165 km/h
+    laps = TRIAL_LAPS if tt is not None else 1
+    real = db.execute("SELECT MIN(score) m FROM scores WHERE board=? AND seeded=0", (board,)).fetchone()["m"]
+    base = real * 0.98 if real else laps * length / rng.uniform(30, 42)   # 108-151 km/h average
     cars = st.gamedb.sellable_cars()
     for i in range(st.seed_scores):
         xuid, tag = seed.Seeder.fake_user(i)
@@ -766,7 +790,7 @@ def _seed_board(ctx, board, track):
         c = rng.choice(cars)
         db.execute("INSERT INTO scores(guid,kind,board,track,owner,score,car,class,pi,flags,clean,submitted,seeded) "
                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1)",
-                   (uuid.uuid4().hex, 0, board, track, xuid, round(base * rng.uniform(0.92, 1.35), 3), c["Id"],
+                   (uuid.uuid4().hex, 0, board, track, xuid, round(base * rng.uniform(0.95, 1.35), 3), c["Id"],
                     c["ClassID"], c["PerformanceIndex"], 0, int(rng.random() < 0.8),
                     st.store.clock() - rng.uniform(3600, 86400 * 30)))
 
@@ -796,6 +820,14 @@ def _rows(ctx, board, track, start, count, club=False):
     return page, (mine or empty), len(rows)
 
 
+def _first_target(ctx, board):
+    """A rival time for a board nobody has driven yet: deliberately easy to beat (3 laps at 50 km/h on the time
+    trial's track), so the first real race wins and its score and ghost become what later rivals are built on."""
+    track = _trial_track(ctx, board)
+    length = (ctx.state.gamedb.tracks.get(track) or {}).get("Length", 0) if track is not None else 0
+    return round(TRIAL_LAPS * length / 13.9, 3) if length else 600.0
+
+
 def _stand_in(ctx, board, around=None):
     """One invented row for a board nobody has scored on: a fake player with a time near `around`."""
     import seed
@@ -803,7 +835,9 @@ def _stand_in(ctx, board, around=None):
     xuid, tag = seed.Seeder.fake_user(board % 12)
     ctx.state.store.user(xuid, tag)
     rng = random.Random(board * 7919 + 1)
-    score = round((around or 90.0) * rng.uniform(1.0, 1.04), 3)
+    if around is None:
+        around = _first_target(ctx, board)
+    score = round(around * rng.uniform(1.0, 1.04), 3)
     s = {"owner": xuid, "score": score, "submitted": ctx.state.store.clock() - 7200, "car": 0, "class": 0, "pi": 0,
          "flags": 0, "clean": 1, "ghost": 0}
     g = _stored_ghost(ctx, board)
@@ -859,27 +893,22 @@ def best_scores(ctx, body):
 @handler("Scoreboard", "GetRival")
 @guarded
 def get_rival(ctx, body):
-    """The named player's best score on the board. The game also asks with rival xuid 0 (no one chosen
-    yet); then, if leaderboards are seeded, the best invented row stands in as the rival (no ghost)."""
+    """The named player's best score on the board. Rival xuid 0 (no one chosen yet) gets an invented rival:
+    racing a real uploaded ghost when there is one, else a little slower than the caller's own best, else an
+    easy first target. Seeded leaderboard times are never used here: they are guesses and could be unbeatable."""
     r = dec("Scoreboard", "GetRival", body)
-    db, x = _db(ctx), xuid_of(ctx)
-    s = None
+    db, x, board = _db(ctx), xuid_of(ctx), r["gameScoreboardId"]
     if r["rivalXuid"]:
         s = db.execute("SELECT * FROM scores WHERE board=? AND owner=? ORDER BY score ASC LIMIT 1",
-                       (r["gameScoreboardId"], str(r["rivalXuid"]))).fetchone()
-    if s is None and not r["rivalXuid"] and _stored_ghost(ctx, r["gameScoreboardId"]):
-        s = _stand_in(ctx, r["gameScoreboardId"])      # a real ghost exists: race it
-    if s is None and ctx.state.seed_scores and ctx.state.gamedb:
-        _seed_board(ctx, r["gameScoreboardId"], 0)
-        s = db.execute("SELECT * FROM scores WHERE board=? AND owner<>? ORDER BY score ASC LIMIT 1",
-                       (r["gameScoreboardId"], x)).fetchone()
-        if s is not None:
-            s = _with_ghost(ctx, s)
-    if s is None and r["rivalXuid"]:
-        raise ServiceError(67, "no score from that rival")
-    if s is None:                                      # rival 0 is a normal ask: answer with a near-your-time stand-in
-        mine = db.execute("SELECT MIN(score) m FROM scores WHERE owner=? AND board=?", (x, r["gameScoreboardId"])).fetchone()["m"]
-        s = _stand_in(ctx, r["gameScoreboardId"], mine)
+                       (board, str(r["rivalXuid"]))).fetchone()
+        if s is None:
+            raise ServiceError(67, "no score from that rival")
+    elif _stored_ghost(ctx, board):
+        s = _stand_in(ctx, board)
+    else:
+        mine = db.execute("SELECT MIN(score) m FROM scores WHERE owner=? AND board=? AND seeded=0",
+                          (x, board)).fetchone()["m"]
+        s = _stand_in(ctx, board, mine)
     return enc("Scoreboard", "GetRival", {"rival": {"scoreData": score_row(ctx, s, 1, 1), "bounty": 0}})
 
 

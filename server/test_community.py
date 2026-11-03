@@ -41,6 +41,14 @@ class Storefront(Base):
                                                             "uploadData": b"def"})[3]["payloadUploadedSize"], 6)
         return fid
 
+    def test_tune_upload_as_its_own_class(self):
+        c = self.cl(1)
+        fid = c.call("StorefrontTuning", "Create", {"fileHeader": dict(HDR), "tuningDesc": {"base": {"MakeId": 7}},
+                                                   "payloadSize": 6})[3]["contentFileId"]
+        self.assertTrue(fid > 0)
+        self.assertEqual(c.call("Content", "UploadContent", {"contentId": fid, "payloadOffset": 0, "payloadTotalSize": 6,
+                                                            "uploadData": b"tune!!"})[3]["payloadUploadedSize"], 6)
+
     def test_upload_search_purchase_credit(self):
         seller, buyer = self.cl(1), self.cl(2)
         fid = self.upload(seller)
@@ -198,7 +206,7 @@ class Scores(Base):
         r = c.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "pivotId": -1, "maxResults": 10})[3]
         self.assertEqual(r["available"], 6)
         scores = [x["score"] for x in r["rows"]]
-        self.assertEqual(scores, sorted(scores)); self.assertTrue(60 < scores[0] < 200)
+        self.assertEqual(scores, sorted(scores)); self.assertTrue(150 < scores[0] < 600)   # board 3 is time trial 3: a 3-lap race
         again = c.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "pivotId": -1, "maxResults": 10})[3]
         self.assertEqual([x["score"] for x in again["rows"]], scores)    # stable, not re-invented
         tt = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 2, "maxTimeTrialResults": 10})[3]

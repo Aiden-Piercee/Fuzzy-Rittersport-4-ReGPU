@@ -73,6 +73,18 @@ def default_reply(ctx):
     return EMPTY_TAIL
 
 
+def _split_class(cls, method):
+    """Some services are their own class: StorefrontTuning.Create is the record ForzaStorefrontTuningCreate,
+    which is registered here as Storefront.TuningCreate. Try the base class with the suffix moved to the method."""
+    for base in sorted({c for c, _ in HANDLERS}, key=len, reverse=True):
+        if cls.startswith(base) and len(cls) > len(base):
+            rest = cls[len(base):]
+            fn = HANDLERS.get((base, rest + method)) or HANDLERS.get((base, method + rest))
+            if fn:
+                return fn
+    return None
+
+
 def _keep_blob(log_path, ctx, body):
     """Any request whose layout carries a bytes field is also written whole to blobs/ next to the log,
     so a play session leaves every upload (ghosts, liveries, tunes, photos) on disk for study."""
@@ -108,7 +120,7 @@ def make_app(log_path, state=None):
             if state.seeder:
                 state.seeder.tick()
             key = (short_class(ctx.class_name), ctx.method)
-            fn = HANDLERS.get(key)
+            fn = HANDLERS.get(key) or _split_class(*key)
             handled = fn is not None
             note = ""
             try:
