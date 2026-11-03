@@ -70,3 +70,19 @@ LIVE_TRACE_ENTRY(82622C08, "tuning upload sub_82622C08")
 LIVE_TRACE_ENTRY(825BEFC0, "upload row handler sub_825BEFC0")
 LIVE_TRACE_ENTRY(826B50D8, "storefront upload manager sub_826B50D8")
 LIVE_TRACE_ENTRY(825A8A98, "multiplayer join-failure popup sub_825A8A98")
+
+// The winnings / predicted payout formula (event details and the race result): length x laps x rate x bounty x scalar.
+// Log what it is called with and what it returns, to see which factor makes a Rival payout 0.
+PPC_FUNC_IMPL(__imp__sub_824872F8);
+PPC_FUNC(sub_824872F8)
+{
+    const uint64_t lr = ctx.lr;
+    const uint32_t r3 = ctx.r3.u32, r4 = ctx.r4.u32, r5 = ctx.r5.u32;
+    const double f1 = ctx.f1.f64, f2 = ctx.f2.f64;
+    const uint32_t bountyHolder = LoadBE32(0x82DC386C);
+    const int32_t bounty = bountyHolder ? int32_t(LoadBE32(bountyHolder + 0x384)) : 0;
+    __imp__sub_824872F8(ctx, base);
+    if (g_traceXam)
+        Log("winnings: sub_824872F8(r3 %08X r4 %08X r5 %08X f1 %g f2 %g, bounty %d) = r3 %08X f1 %g (lr %08llX)", r3, r4, r5, f1, f2, bounty,
+            ctx.r3.u32, ctx.f1.f64, (unsigned long long)lr);
+}
