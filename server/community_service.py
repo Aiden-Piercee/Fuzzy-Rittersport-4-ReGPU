@@ -976,7 +976,7 @@ def time_trials(ctx, body):
         return enc("Scoreboard", "GetTimeTrials", {})
     # Categories follow the game's own order (see CAT_* above), sorted by category as the game expects.
     ncat = max(1, min(r["maxTimeTrialCategories"] or 1, 7))
-    per = max(1, min(5, (r["maxTimeTrialResults"] or 5) // ncat))
+    per = max(1, min(PER_TAB, (r["maxTimeTrialResults"] or PER_TAB) // ncat))
     cats, entries = _trials(ctx, ncat, per)
     ctx.note = {"categories": {c["category"]: [x["id"] for x in entries[c["startIndex"]:]
                                              if x["id"] // 100 - 10 == c["category"]] for c in cats}}
@@ -990,12 +990,13 @@ def time_trials(ctx, body):
 CAT_TIME, CAT_SPEC, CAT_TRAFFIC, CAT_DRIFT, CAT_TOPGEAR, CAT_WEEKLY, CAT_AUTOX = range(7)
 TRIAL_CLASSES = (2, 3, 4, 5, 6)                       # D, C, B, A, S (CarClasses ids)
 CLASS_LETTER = {0: "F", 1: "E", 2: "D", 3: "C", 4: "B", 5: "A", 6: "S", 7: "R3", 8: "R2", 9: "R1", 10: "X"}
-CLASS_SPEED = {2: 31.0, 3: 34.0, 4: 37.0, 5: 41.0, 6: 45.0, 7: 48.0}   # m/s race average for invented times
-CLASS_BOUNTY = {2: 1500, 3: 2500, 4: 4000, 5: 6000, 6: 9000, 7: 12000}  # CR for beating an invented rival
+CLASS_SPEED = {1: 28.0, 2: 31.0, 3: 34.0, 4: 37.0, 5: 41.0, 6: 45.0, 7: 48.0}   # m/s race average for invented times
+CLASS_BOUNTY = {1: 1000, 2: 1500, 3: 2500, 4: 4000, 5: 6000, 6: 9000, 7: 12000}  # CR for beating an invented rival
 HOT_LAP_TRACKS = ("RoadAtlanta", "Suzuka", "LagunaSeca", "Silverstone", "Catalunya", "Sebring", "MapleValley",
                   "Mugello", "Hockenheim", "Alps", "RoadAmerica", "NurburgringF1")
 DRIFT_TRACKS = ("Tsukuba", "TopGear", "Alps", "RoadAtlanta", "Suzuka")
 TOPGEAR_TRACK = "TopGear"
+TOPGEAR_CLASSES = (1, 2, 3, 4, 5, 6, 7)               # E to R3: one power lap per class on the one track
 RWD = 2                                               # List_DriveType id used by the game's drift preset
 
 HUD_SOLO = '<HUDOptions ForceOffPlace="1"/>'
@@ -1009,78 +1010,99 @@ def _track_named(g, media):
                  if t["Active"] and t["MediaName"] == media), None)
 
 
-def _trial_entry(st, c, i, t, cls, laps, name, desc, kind, **extra):
-    now = st.store.clock()
-    tid = 1000 + c * 100 + i + 1                       # board id = trial id = hopperId (1001 and up)
-    e = {"id": tid, "scoreType": 1 if kind == "drift" else 0, "name": name, "description": desc,
-         "notRegisteredMessage": "", "trackId": t["id"], "trackName": t["MediaName"], "hopperId": tid,
-         "gameOptionsIndex": 0, "startDate": xtsw.iso(now - 86400),
-         "endDate": xtsw.iso(now + 86400 * (7 if c == CAT_WEEKLY else 365)),
-         "userRegistered": True, "featured": c == CAT_WEEKLY or i == 0, "active": True,
+def _trial_entry(st, c, idx, t, cls, laps, name, desc, kind, **extra):
+    week = int(st.store.clock() // WEEK)
+    tid = 1000 + c * 100 + idx                         # board id = trial id = hopperId; fixed per event, so an
+    e = {"id": tid, "scoreType": 1 if kind == "drift" else 0, "name": name, "description": desc,   # event keeps its
+         "notRegisteredMessage": "", "trackId": t["id"], "trackName": t["MediaName"], "hopperId": tid,  # leaderboard
+         "gameOptionsIndex": 0, "startDate": xtsw.iso(week * WEEK), "endDate": xtsw.iso((week + 1) * WEEK),
+         "userRegistered": True, "featured": False, "active": True,
          "laps": laps, "carClass": cls, "kind": kind, "bigger": kind == "drift"}
     e.update(extra)
     return e
 
 
-def _trials(ctx, ncat=7, per=5):
-    """The trial list, all seven categories, five trials each (Weekly three)."""
+WEEK = 7 * 86400
+PER_TAB = 12                                          # events on show per tab each week (Weekly: 3)
+
+
+def _pools(ctx):
+    """Every event each tab can draw from. Event ids never change, so a leaderboard stays with its event."""
     st = ctx.state
     g = st.gamedb
-    week = int(st.store.clock() // (7 * 86400))
     active = sorted((t for t in g.tracks.values() if t["Active"]), key=lambda t: t["id"])
     hot = [t for t in (_track_named(g, m) for m in HOT_LAP_TRACKS) if t] or active
     drift = [t for t in (_track_named(g, m) for m in DRIFT_TRACKS) if t] or hot
     tday = [g.tracks[x] for x in getattr(g, "trackday_tracks", []) if x in g.tracks] or hot
     tg = _track_named(g, TOPGEAR_TRACK) or hot[0]
     spec = [g.cars[x] for x in getattr(g, "spec_cars", []) if x in g.cars] or \
-        sorted(g.sellable_cars(), key=lambda c: c["Id"])[:per]
+        sorted(g.sellable_cars(), key=lambda c: c["Id"])[:12]
     autox = [a for a in getattr(g, "autocross", []) if a["track"] in g.tracks]
     L = CLASS_LETTER
-    out = {c: [] for c in range(7)}
-    for i in range(per):
-        cls = TRIAL_CLASSES[i % 5]
-        t = hot[i % len(hot)]
-        out[CAT_TIME].append(_trial_entry(st, CAT_TIME, i, t, cls, 3, f"{L[cls]} Class Hot Lap",
-            f"{t['MediaName']}, 3 laps in a {L[cls]} class car. Beat your rival's time.", "time"))
-        car = spec[(week + i) % len(spec)]
-        t = hot[(i + 3) % len(hot)]
-        out[CAT_SPEC].append(_trial_entry(st, CAT_SPEC, i, t, car["ClassID"], 3, "Spec Car Hot Lap",
+    P = {c: [] for c in range(7)}
+    for ti, t in enumerate(hot[:19]):
+        for ci, cls in enumerate(TRIAL_CLASSES):
+            idx = ti * 5 + ci + 1
+            P[CAT_TIME].append(_trial_entry(st, CAT_TIME, idx, t, cls, 3, f"{L[cls]} Class Hot Lap",
+                f"{t['MediaName']}, 3 laps in a {L[cls]} class car. Beat your rival's time.", "time"))
+            P[CAT_WEEKLY].append(_trial_entry(st, CAT_WEEKLY, idx, t, cls, 3, f"Weekly: {L[cls]} Class Hot Lap",
+                f"{t['MediaName']}, 3 laps in a {L[cls]} class car. This week only.", "time"))
+    for k, car in enumerate(spec[:99]):
+        t = hot[(k + 3) % len(hot)]
+        P[CAT_SPEC].append(_trial_entry(st, CAT_SPEC, k + 1, t, car["ClassID"], 3, "Spec Car Hot Lap",
             f"{t['MediaName']}, 3 laps in a stock {car.get('MediaName') or 'spec car'}. Everyone drives the same car.",
             "spec", specCar=car["Id"]))
-        t = tday[i % len(tday)]
-        out[CAT_TRAFFIC].append(_trial_entry(st, CAT_TRAFFIC, i, t, cls, 1, f"{L[cls]} Class Traffic Lap",
-            f"{t['MediaName']}, 1 lap through traffic in a {L[cls]} class car. Beat your rival's time.", "traffic"))
-        t = drift[i % len(drift)]
-        out[CAT_DRIFT].append(_trial_entry(st, CAT_DRIFT, i, t, cls, 1, f"{L[cls]} Class Drift",
-            f"{t['MediaName']}, 1 lap in a rear-wheel-drive {L[cls]} class car. Beat your rival's drift score.",
-            "drift"))
-        out[CAT_TOPGEAR].append(_trial_entry(st, CAT_TOPGEAR, i, tg, cls, 1, f"{L[cls]} Class Power Lap",
+    for ti, t in enumerate(tday[:19]):
+        for ci, cls in enumerate(TRIAL_CLASSES):
+            P[CAT_TRAFFIC].append(_trial_entry(st, CAT_TRAFFIC, ti * 5 + ci + 1, t, cls, 1,
+                f"{L[cls]} Class Traffic Lap",
+                f"{t['MediaName']}, 1 lap through traffic in a {L[cls]} class car. Beat your rival's time.", "traffic"))
+    for ti, t in enumerate(drift[:19]):
+        for ci, cls in enumerate(TRIAL_CLASSES):
+            P[CAT_DRIFT].append(_trial_entry(st, CAT_DRIFT, ti * 5 + ci + 1, t, cls, 1, f"{L[cls]} Class Drift",
+                f"{t['MediaName']}, 1 lap in a rear-wheel-drive {L[cls]} class car. Beat your rival's drift score.",
+                "drift"))
+    for k, cls in enumerate(TOPGEAR_CLASSES):
+        P[CAT_TOPGEAR].append(_trial_entry(st, CAT_TOPGEAR, k + 1, tg, cls, 1, f"{L[cls]} Class Power Lap",
             f"{tg['MediaName']}, 1 lap in a {L[cls]} class car. Beat your rival's time.", "time"))
-        if i < 3:
-            t = hot[(week + 5 + i) % len(hot)]
-            wc = TRIAL_CLASSES[(week + i) % 5]
-            out[CAT_WEEKLY].append(_trial_entry(st, CAT_WEEKLY, i, t, wc, 3, f"Weekly: {L[wc]} Class Hot Lap",
-                f"{t['MediaName']}, 3 laps in a {L[wc]} class car. Changes every week.", "time"))
-        if autox:
-            a = autox[(i * 5) % len(autox)]
-            t = g.tracks[a["track"]]
-            out[CAT_AUTOX].append(_trial_entry(st, CAT_AUTOX, i, t, a["cls"], a["laps"] or 1,
-                f"{L.get(a['cls'], '?')} Class Autocross",
-                f"{t['MediaName']} cone course in a {L.get(a['cls'], '?')} class car. Missed gates add time.",
-                "autocross", layout=a["layout"], easy=a["easy"], pro=a["pro"]))
+    for k, a in enumerate(autox[:99]):
+        t = g.tracks[a["track"]]
+        P[CAT_AUTOX].append(_trial_entry(st, CAT_AUTOX, k + 1, t, a["cls"], a["laps"] or 1,
+            f"{L.get(a['cls'], '?')} Class Autocross",
+            f"{t['MediaName']} cone course in a {L.get(a['cls'], '?')} class car. Missed gates add time.",
+            "autocross", layout=a["layout"], easy=a["easy"], pro=a["pro"]))
+    return P
+
+
+def _week_picks(ctx, c, pool):
+    """This week's events for a tab: a random draw from its pool, the same all week, new each Monday-ish."""
+    week = int(ctx.state.store.clock() // WEEK)
+    n = min(3 if c == CAT_WEEKLY else PER_TAB, len(pool))
+    picks = random.Random(week * 1009 + c).sample(pool, n)
+    picks.sort(key=lambda e: (e["carClass"], e["trackName"], e["id"]))
+    if picks:
+        picks[0] = dict(picks[0], featured=True)
+    return picks
+
+
+def _trials(ctx, ncat=7, per=PER_TAB):
+    """This week's trial list: every tab in the game's category order, up to `per` events each."""
+    P = _pools(ctx)
     cats, entries = [], []
     for c in range(min(ncat, 7)):
-        if not out[c]:
+        picks = _week_picks(ctx, c, P[c])[:per]
+        if not picks:
             continue
         cats.append({"category": c, "startIndex": len(entries)})
-        entries += out[c]
+        entries += picks
     return cats, entries
 
 
 def _trial(ctx, board):
-    if not ctx.state.gamedb:
+    """Any event by id, this week's or not (a leaderboard or a late race can still ask for an old one)."""
+    if not ctx.state.gamedb or not 1000 < board < 1700:
         return None
-    return next((x for x in _trials(ctx)[1] if x["id"] == board), None)
+    return next((x for x in _pools(ctx).get((board - 1000) // 100, []) if x["id"] == board), None)
 
 
 def _bigger(ctx, board):
