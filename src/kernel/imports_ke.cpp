@@ -2,6 +2,7 @@
 #include <atomic>
 #include <map>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -206,12 +207,35 @@ GUEST_EXPORT(KeSetAffinityThread)
 
 GUEST_EXPORT(KeQueryBasePriorityThread)
 {
-    Return(ctx, 0);
+    // (KTHREAD*): the increment the title last set.
+    auto object = ThreadObjectFromKthread(ctx.r3.u32);
+    Return(ctx, object ? object->thread->basePriority : 0);
 }
 
 GUEST_EXPORT(KeSetBasePriorityThread)
 {
-    Return(ctx, 0);
+    // (KTHREAD*, signed increment): returns the previous increment. The console runs the title's mixer, streaming and
+    // decoder-feeding threads above its workers; the host thread gets the matching priority.
+    auto object = ThreadObjectFromKthread(ctx.r3.u32);
+    if (!object)
+    {
+        Return(ctx, 0);
+        return;
+    }
+    GuestThread& t = *object->thread;
+    const int previous = t.basePriority, increment = int32_t(ctx.r4.u32);
+    t.basePriority = increment;
+    ApplyGuestThreadPriority(t);
+    static std::mutex logMutex;
+    static std::set<std::pair<uint32_t, int>> logged;
+    bool first;
+    {
+        std::lock_guard lock(logMutex);
+        first = logged.insert({ t.id, increment }).second;
+    }
+    if (first)
+        Log("thread %u %s (entry %08X) base priority %d -> %d", t.id, t.name.c_str(), t.entry, previous, increment);
+    Return(ctx, previous);
 }
 
 void LogAllHostThreadStacks(const char* why); // hang.cpp
