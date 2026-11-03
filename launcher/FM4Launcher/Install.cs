@@ -340,13 +340,18 @@ public static class Game
             psi.Environment["REGPU_SMAA"] = "0";
         }
         var game = Process.Start(psi);
-        if (game is null || !Platform.Linux) return;
+        if (game is null) return;
         // Under Proton the game's stderr never reaches the log (only Proton's own lines do): add its fm4.log.
-        game.EnableRaisingEvents = true;
-        game.Exited += (_, _) =>
+        if (Platform.Linux)
         {
-            try { File.AppendAllText(log, File.ReadAllText(Path.Combine(Paths.Root, "fm4.log"))); } catch (IOException) { }
-        };
+            game.EnableRaisingEvents = true;
+            game.Exited += (_, _) =>
+            {
+                try { File.AppendAllText(log, File.ReadAllText(Path.Combine(Paths.Root, "fm4.log"))); } catch (IOException) { }
+            };
+        }
+        // The session's log goes up as soon as the game closes (not only at the launcher's next start)
+        _ = Reports.SendAfterExitAsync(game);
     }
 
     // robocopy /XC /XN /XO in install-content.cmd: what is already there is left alone. A DLC package the game has
