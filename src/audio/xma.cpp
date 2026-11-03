@@ -40,6 +40,7 @@ extern "C"
 }
 
 #include "kernel/imports.h"
+#include "audio/capture.h"
 #include "live_switch.h"
 #include "log.h"
 
@@ -90,6 +91,23 @@ void XmaLogCallback(void* avcl, int level, const char* fmt, va_list vl)
 uint32_t Field(uint32_t ctx, int dword, int lo, int bits)
 {
     return (LoadBE32(ctx + dword * 4) >> lo) & ((1u << bits) - 1);
+}
+
+// FM2_AUDIO_CAPTURE_DIR: a line in ctx_events.csv for this context (see audio/capture.h); a test of one bool when it is off.
+#define CAP_EVENT(ctx, event, ...)                                                          \
+    do                                                                                      \
+    {                                                                                       \
+        if (audiocap::On())                                                                 \
+            audiocap::Event((ctx), (event), Field((ctx), 0, 27, 5), __VA_ARGS__);           \
+    } while (0)
+
+// 64-bit FNV-1a, to name a packet in the capture without storing it.
+uint64_t CapHash(const uint8_t* p, size_t n)
+{
+    uint64_t h = 0xCBF29CE484222325ull;
+    for (size_t i = 0; i < n; i++)
+        h = (h ^ p[i]) * 0x100000001B3ull;
+    return h;
 }
 
 void SetField(uint32_t ctx, int dword, int lo, int bits, uint32_t value)
@@ -420,6 +438,8 @@ struct Decoder
     // Bits of the last frame fed that are still to come in the packets after it (a no-frame-start packet takes a whole packet of them);
     // -1 when unknown. The next packet must start its first frame exactly there.
     int pendingBits = -1;
+    // (capture) what the context showed at the last step: the output ring read index and the input buffers valid bits
+    int capRead = -1, capValid = -1;
 
     void Close()
     {
@@ -468,6 +488,7 @@ struct Decoder
         lastBuffer = -1;
         pendingBits = -1;
         g_codecReopens++;
+        CAP_EVENT(ctx, "codec_replaced", "ch=%u;rate=%u", channels, rate);
         return true;
     }
 
@@ -555,6 +576,8 @@ struct Decoder
         av_packet_unref(packet);
         if (sent < 0)
         {
+            CAP_EVENT(info.ctx, "packet_failed", "hdr=%08X;hash=%016llX;buf=%08X;bi=%u;pkt=%u;off=%u", uint32_t(data[0]) << 24 | uint32_t(data[1]) << 16 | uint32_t(data[2]) << 8 | data[3],
+                      (unsigned long long)(audiocap::On() ? CapHash(data, kPacketBytes) : 0), info.bufferAddr, info.bufferIndex, info.packetIndex, info.readOffset);
             noteErrors();
             decodeErrors++, g_decodeErrors++;
             flush = true;
@@ -575,6 +598,7 @@ struct Decoder
             }
             av_frame_unref(frame);
         }
+        const bool hadMessage = t_errorSeen;
         noteErrors();
         const bool failed = received != AVERROR(EAGAIN) && received != AVERROR_EOF;
         if (failed)
@@ -589,6 +613,10 @@ struct Decoder
                 peak = std::max(peak, std::abs(int(pcm[i])));
             Log("xma: decoded a packet: %zu frames (flush %d, peak %d)", (pcm.size() - pcmBefore) / channels, int(wasFlush), peak);
         }
+        CAP_EVENT(info.ctx, "packet", "hdr=%08X;hash=%016llX;buf=%08X;bi=%u;pkt=%u;off=%u;samples_out=%zu;message=%d;fresh=%d;pending=%d",
+                  uint32_t(data[0]) << 24 | uint32_t(data[1]) << 16 | uint32_t(data[2]) << 8 | data[3],
+                  (unsigned long long)(audiocap::On() ? CapHash(data, kPacketBytes) : 0), info.bufferAddr, info.bufferIndex, info.packetIndex, info.readOffset,
+                  (pcm.size() - pcmBefore) / std::max<uint32_t>(channels, 1), int(hadMessage), int(ring[(ringNext - 1) % kRingPackets].fresh), pendingBits);
         return !failed;
     }
 };
@@ -616,6 +644,13 @@ bool WriteBlock(uint32_t ctx, Decoder& d)
     const bool mute = d.music && DealerMutesMusic();
     for (size_t i = 0; i < perBlock; i++)
         out[i] = mute ? 0 : __builtin_bswap16(uint16_t(d.pcm[d.pcmRead + i]));
+    if (audiocap::On())
+    {
+        int16_t host[kBlockBytes / 2];
+        for (size_t i = 0; i < perBlock; i++)
+            host[i] = mute ? 0 : d.pcm[d.pcmRead + i];
+        audiocap::Pcm(ctx, host, perBlock);
+    }
     d.pcmRead += perBlock;
     d.framesWritten += perBlock / std::max<uint32_t>(d.channels, 1);
     if (d.pcmRead > (1u << 16))
@@ -644,9 +679,27 @@ bool Step(uint32_t ctx)
     static const uint32_t kRates[4] = { 24000, 32000, 44100, 48000 };
     const uint32_t channels = Field(ctx, 1, 29, 1) ? 2 : 1, rate = kRates[Field(ctx, 1, 27, 2)];
     Decoder& d = g_decoders[ctx];
-    if (!d.av || d.channels != channels || d.rate != rate)
+    if (audiocap::On())
+    {
+        const int valid = int(Field(ctx, 0, 20, 2));
+        if (int(read) != d.capRead)
+        {
+            CAP_EVENT(ctx, "out_read", "read=%u;write=%u;blocks=%u", read, write, blocks);
+            d.capRead = int(read);
+        }
+        if (valid != d.capValid)
+        {
+            CAP_EVENT(ctx, "in_valid", "in0=%u;in1=%u;packets0=%u;packets1=%u;cur=%u", valid & 1, valid >> 1, Field(ctx, 0, 0, 12), Field(ctx, 1, 0, 12), Field(ctx, 4, 31, 1));
+            d.capValid = valid;
+        }
+    }
+    const bool opening = !d.av || d.channels != channels || d.rate != rate;
+    if (opening)
         if (!CodecReady(ctx, channels, rate) || !d.Open(channels, rate))
             return false;
+    if (opening)
+        CAP_EVENT(ctx, "open", "ch=%u;rate=%u", channels, rate);
+
     if (WriteBlock(ctx, d))
         return true;
 
@@ -708,6 +761,7 @@ bool Step(uint32_t ctx)
             if (d.lastAddr[current] && d.lastAddr[current] != bufferAddr)
             {
                 g_bufferChanges++;
+                CAP_EVENT(ctx, "buffer_moved", "bi=%u;from=%08X;to=%08X;packets=%u", current, d.lastAddr[current], bufferAddr, packets);
                 if (g_idBudget.fetch_sub(1) > 0)
                     Log("xma: id %08X: input buffer %u moved %08X -> %08X (%u packets)", ctx, current, d.lastAddr[current], bufferAddr, packets);
             }
@@ -722,6 +776,7 @@ bool Step(uint32_t ctx)
             if (d.haveExpected && offsetNow != d.expectedOffset)
             {
                 g_offsetWrites++;
+                CAP_EVENT(ctx, "title_offset_write", "offset=%u;expected=%u;bi=%u;pkt=%u", offsetNow, d.expectedOffset, current, packet);
                 if (g_idBudget.fetch_sub(1) > 0)
                     Log("xma: id %08X: read offset written by the title: %u (expected %u), buffer %u packet %u", ctx, offsetNow, d.expectedOffset, current, packet);
             }
@@ -757,6 +812,8 @@ bool Step(uint32_t ctx)
             {
                 d.flush = true;
                 d.guardFlushes++, g_guardFlushes++;
+                CAP_EVENT(ctx, "reset_guard", "pending=%d;first=%u;no_frame_start=%d;bi=%u;pkt=%u;last_bi=%d;last_pkt=%u", d.pendingBits, FirstFrameOffset(thisPacket),
+                          int(NoFrameStart(thisPacket)), current, packet, d.lastBuffer, d.lastPacket);
                 if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
                     Log("xma: %08X discontinuity: buffer %u packet %u after buffer %d packet %u of %u (seeked %d): codec flushed", ctx, current, packet,
                         d.lastBuffer, d.lastPacket, d.lastCount, int(d.seeked));
@@ -772,6 +829,8 @@ bool Step(uint32_t ctx)
         {
             // A new codec has no frame for this packet to continue, and would carry its "skip 32767 bits" into the next packet.
             d.pendingBits = -1;
+            CAP_EVENT(ctx, "skip_no_frame_start", "buf=%08X;bi=%u;pkt=%u;hash=%016llX", bufferAddr, current, packet,
+                      (unsigned long long)(audiocap::On() ? CapHash(fed, kPacketBytes) : 0));
         }
         else
         {
@@ -802,6 +861,7 @@ bool Step(uint32_t ctx)
         SetField(ctx, 2, 0, 26, Field(ctx, 3, 0, 26));
         d.expectedOffset = Field(ctx, 2, 0, 26), d.haveExpected = true;
         d.flush = true;
+        CAP_EVENT(ctx, "loop", "end_packet=%u;loop_start=%u;loops_left=%u", packet, Field(ctx, 3, 0, 26), loops);
         return true;
     }
     const uint32_t offset = (packet + 1) * kPacketBits + 32;
@@ -884,6 +944,7 @@ void ClearContext(uint32_t ctx)
     SetField(ctx, 1, 31, 1, 0);  // output buffer not valid
     SetField(ctx, 2, 0, 26, 32); // read offset: past the first packet's header
     SetField(ctx, 9, 0, 5, 0);   // output read offset
+    CAP_EVENT(ctx, "clear", "dword0=%08X;dword1=%08X;dword2=%08X", LoadBE32(ctx), LoadBE32(ctx + 4), LoadBE32(ctx + 8));
     SetField(ctx, 0, 27, 5, 0);  // output write offset
     ResetDecoder(ctx);
 }
