@@ -25,7 +25,7 @@ Earlier notes follow.
 
 # 2026-11-02 and earlier
 
-Branch `multiplayer`. Nothing here is pushed. Online behaviour is behind `FM2_ONLINE=1`; offline behaviour is unchanged except
+Branch `multiplayer`, not merged to `main`. Online behaviour is behind `FM2_ONLINE=1`; offline behaviour is unchanged except
 for the two items marked (always).
 
 ## Working (tested by hand in the game)
