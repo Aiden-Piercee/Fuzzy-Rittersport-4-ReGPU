@@ -210,12 +210,21 @@ class Scores(Base):
         again = c.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "pivotId": -1, "maxResults": 10})[3]
         self.assertEqual([x["score"] for x in again["rows"]], scores)    # stable, not re-invented
         tt = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 7, "maxTimeTrialResults": 150})[3]
-        # only the categories the server can set up: 0 hot lap, 4 Top Gear, 5 weekly (game's category order)
-        self.assertEqual([c["category"] for c in tt["timeTrialCategories"]], [0, 4, 5])
-        self.assertEqual([c["startIndex"] for c in tt["timeTrialCategories"]], [0, 5, 10])
+        # the game's category order; this small database has no autocross courses, so category 6 is left out
+        self.assertEqual([c["category"] for c in tt["timeTrialCategories"]], [0, 1, 2, 3, 4, 5])
+        self.assertEqual([c["startIndex"] for c in tt["timeTrialCategories"]], [0, 5, 10, 15, 20, 25])
         self.assertTrue(all(x["active"] and x["userRegistered"] for x in tt["timeTrials"]))
-        self.assertEqual(len({x["id"] for x in tt["timeTrials"]}), 13)
-        tgl = tt["timeTrials"][5]
+        self.assertEqual(len({x["id"] for x in tt["timeTrials"]}), 28)
+        opts = lambda tr: c.call("Hopper", "GetGameOptions", {"hopperId": tr["hopperId"], "roundNum": 0,
+                                                              "cchOptionXmlMax": 0x8000})[3]["gameOptionsXml"]
+        self.assertIn(b'<CarRestrictions ModelId="', opts(tt["timeTrials"][5]))              # spec car
+        self.assertIn(b'<Bucket Name=""/>', opts(tt["timeTrials"][10]))                      # traffic bucket
+        dr = tt["timeTrials"][15]
+        self.assertIn(b'Type="Drift" BiggerIsBetter="1"', opts(dr))
+        drows = [x["score"] for x in c.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": dr["id"],
+                 "trackId": dr["trackId"], "pivotId": -1, "maxResults": 10})[3]["rows"]]
+        self.assertEqual(drows, sorted(drows, reverse=True))                                 # drift: bigger first
+        tgl = tt["timeTrials"][20]
         self.assertEqual((tgl["trackName"], tgl["name"]), ("TopGear", "D Class Power Lap"))
         rt = c.call("Scoreboard", "GetRival", {"gameScoreboardId": tgl["id"], "rivalXuid": 0})[3]["rival"]
         self.assertEqual((rt["bounty"], rt["scoreData"]["carClassId"]), (1500, 2))        # class D rival, class bounty
@@ -228,7 +237,7 @@ class Scores(Base):
         go = c.call("Hopper", "GetGameOptions", {"hopperId": tt1["hopperId"], "roundNum": 0, "cchOptionXmlMax": 0x8000})[3]["gameOptionsXml"]
         self.assertIn(b'TrackId="%d"' % tt1["trackId"], go)
         self.assertIn(b'NumLaps="3"', go)
-        self.assertIn(b'RestrictionCarClassId="2"', go)
+        self.assertIn(b'<CarRestrictions CarClassId="2"/>', go)
 
 
 class SeededAuctions(unittest.TestCase):

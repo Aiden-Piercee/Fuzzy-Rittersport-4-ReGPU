@@ -137,6 +137,8 @@ def make_app(log_path, state=None):
                        "error": note, "body": body[:4096].hex()}
                 if saved:
                     rec["blob"] = saved
+                if getattr(ctx, "note", None):        # a handler's short summary of what it answered
+                    rec["note"] = ctx.note
                 f.write(json.dumps(rec) + "\n")
             self.send_response(200)
             self.send_header("Content-Type", "bin/xtsw")

@@ -723,7 +723,8 @@ def _stored_ghost(ctx, board, track=None):
     if track is not None:
         q += " AND track=?"
         a.append(track)
-    return _db(ctx).execute(q + " ORDER BY (owner=?) DESC, score ASC, id DESC LIMIT 1", a + [xuid_of(ctx)]).fetchone()
+    return _db(ctx).execute(q + f" ORDER BY (owner=?) DESC, score {_order(_bigger(ctx, board))}, id DESC LIMIT 1",
+                            a + [xuid_of(ctx)]).fetchone()
 
 
 def _with_ghost(ctx, s):
@@ -766,10 +767,28 @@ def _class_cars(ctx, cls):
 
 
 def _trial_pace(ctx, e):
-    """A believable race time for a trial: its laps at its class's average speed (slower on the Top Gear track)."""
+    """A believable score for a trial: a time at its class's average speed (slower on the Top Gear track), the
+    middle of the game's own target times for autocross, or a drift score that grows with track and class."""
     length = (ctx.state.gamedb.tracks.get(e["trackId"]) or {}).get("Length") or 3000
+    if e["kind"] == "autocross":
+        return (e["easy"] + e["pro"]) / 2
+    if e["kind"] == "drift":
+        return e["laps"] * length * (10 + 2 * e["carClass"])
     speed = CLASS_SPEED.get(e["carClass"], 36.0) * (0.8 if e["trackName"] == TOPGEAR_TRACK else 1.0)
     return e["laps"] * length / speed
+
+
+def _best(big):
+    return "MAX" if big else "MIN"
+
+
+def _order(big):
+    return "DESC" if big else "ASC"
+
+
+def _a_bit_worse(v, big, rng):
+    """A score just behind `v`: up to 4% slower, or up to 4% fewer drift points."""
+    return round(v * (rng.uniform(0.96, 1.0) if big else rng.uniform(1.0, 1.04)), 3)
 
 
 def _seed_board(ctx, board, track):
@@ -794,9 +813,10 @@ def _seed_board(ctx, board, track):
     import seed
     rng = random.Random(board * 100003 + track)       # same board always gets the same rows
     length = (st.gamedb.tracks.get(track) or {}).get("Length") or 3000
-    real = db.execute("SELECT MIN(score) m FROM scores WHERE board=? AND seeded=0", (board,)).fetchone()["m"]
+    big = bool(e and e["bigger"])
+    real = db.execute(f"SELECT {_best(big)}(score) m FROM scores WHERE board=? AND seeded=0", (board,)).fetchone()["m"]
     if real:
-        base = real * 0.98
+        base = real * (1.02 if big else 0.98)
     elif e:
         base = _trial_pace(ctx, e)                    # the trial's laps at its class's pace
     else:
@@ -808,7 +828,7 @@ def _seed_board(ctx, board, track):
         c = rng.choice(cars)
         db.execute("INSERT INTO scores(guid,kind,board,track,owner,score,car,class,pi,flags,clean,submitted,seeded) "
                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1)",
-                   (uuid.uuid4().hex, 0, board, track, xuid, round(base * rng.uniform(0.95, 1.35), 3), c["Id"],
+                   (uuid.uuid4().hex, 0, board, track, xuid, round(base * (rng.uniform(0.6, 1.05) if big else rng.uniform(0.95, 1.35)), 3), c["Id"],
                     c["ClassID"], c["PerformanceIndex"], 0, int(rng.random() < 0.8),
                     st.store.clock() - rng.uniform(3600, 86400 * 30)))
 
@@ -825,9 +845,10 @@ def _rows(ctx, board, track, start, count, club=False):
         where += f" AND owner IN ({','.join('?' * len(mem))})"
         args += mem
     best = {}
-    for s in db.execute(f"SELECT * FROM scores WHERE {where} ORDER BY score ASC, id ASC", args):
+    big = _bigger(ctx, board)
+    for s in db.execute(f"SELECT * FROM scores WHERE {where} ORDER BY score {_order(big)}, id ASC", args):
         best.setdefault(s["owner"], _with_ghost(ctx, s))
-    ordered = sorted(best.values(), key=lambda s: (s["score"], s["id"]))
+    ordered = sorted(best.values(), key=lambda s: (-s["score"] if big else s["score"], s["id"]))
     rows = [score_row(ctx, s, i + 1, i + 1) for i, s in enumerate(ordered)]
     mine = next((r for r in rows if r["user"]["qwXuid"] == int(x)), None)
     empty = score_row(ctx, {"owner": x, "score": 0, "submitted": 0, "car": 0, "class": 0, "pi": 0, "flags": 0,
@@ -842,6 +863,10 @@ def _first_target(ctx, board):
     """A rival time for a board nobody has driven yet: deliberately easy to beat (the trial's laps at 50 km/h),
     so the first real race wins and its score and ghost become what later rivals are built on."""
     e = _trial(ctx, board)
+    if e and e["kind"] == "autocross":
+        return round(e["easy"] * 1.15, 3)              # slower than the game's own easiest target
+    if e and e["kind"] == "drift":
+        return round(_trial_pace(ctx, e) * 0.2, 3)     # a small drift score
     length = (ctx.state.gamedb.tracks.get(e["trackId"]) or {}).get("Length", 0) if e else 0
     return round(e["laps"] * length / 13.9, 3) if length else 600.0
 
@@ -855,13 +880,14 @@ def _stand_in(ctx, board, around=None):
     rng = random.Random(board * 7919 + 1)
     if around is None:
         around = _first_target(ctx, board)
-    score = round(around * rng.uniform(1.0, 1.04), 3)
     e = _trial(ctx, board)
+    big = bool(e and e["bigger"])
+    score = _a_bit_worse(around, big, rng)
     s = {"owner": xuid, "score": score, "submitted": ctx.state.store.clock() - 7200, "car": 0, "class": 0, "pi": 0,
-         "flags": 0, "clean": 1, "ghost": 0, "bounty": CLASS_BOUNTY.get(e["carClass"], 0) if e else 0}
+         "flags": 0, "clean": 1, "ghost": 0, "bounty": CLASS_BOUNTY.get(e["carClass"], 3000) if e else 0}
     g = _stored_ghost(ctx, board)
     if g:                                              # drive against the real ghost, a little slower
-        s.update(score=round(g["score"] * rng.uniform(1.0, 1.04), 3), car=g["car"], pi=g["pi"], ghost=g["ghost"],
+        s.update(score=_a_bit_worse(g["score"], big, rng), car=g["car"], pi=g["pi"], ghost=g["ghost"],
                  **{"class": g["class"]})
         return s
     cars = _class_cars(ctx, e["carClass"]) if e else (ctx.state.gamedb.sellable_cars() if ctx.state.gamedb else [])
@@ -904,7 +930,8 @@ def get_storefront_rows(ctx, body):
 @guarded
 def best_scores(ctx, body):
     r = dec("Scoreboard", "GetBestScores", body)
-    s = _db(ctx).execute("SELECT MIN(score) m FROM scores WHERE owner=? AND board=? AND track=?",
+    s = _db(ctx).execute(f"SELECT {_best(_bigger(ctx, r['gameScoreboardId']))}(score) m FROM scores"
+                         " WHERE owner=? AND board=? AND track=?",
                          (xuid_of(ctx), r["gameScoreboardId"], r["trackId"])).fetchone()
     return enc("Scoreboard", "GetBestScores", {"timeScore": {"score": s["m"] or 0.0, "isClean": s["m"] is not None}})
 
@@ -918,14 +945,15 @@ def get_rival(ctx, body):
     r = dec("Scoreboard", "GetRival", body)
     db, x, board = _db(ctx), xuid_of(ctx), r["gameScoreboardId"]
     if r["rivalXuid"]:
-        s = db.execute("SELECT * FROM scores WHERE board=? AND owner=? ORDER BY score ASC LIMIT 1",
-                       (board, str(r["rivalXuid"]))).fetchone()
+        s = db.execute(f"SELECT * FROM scores WHERE board=? AND owner=? ORDER BY score {_order(_bigger(ctx, board))}"
+                       " LIMIT 1", (board, str(r["rivalXuid"]))).fetchone()
         if s is None:
             raise ServiceError(67, "no score from that rival")
     elif _stored_ghost(ctx, board):
         s = _stand_in(ctx, board)
     else:
-        mine = db.execute("SELECT MIN(score) m FROM scores WHERE owner=? AND board=? AND seeded=0",
+        mine = db.execute(f"SELECT {_best(_bigger(ctx, board))}(score) m FROM scores WHERE owner=? AND board=?"
+                          " AND seeded=0",
                           (x, board)).fetchone()["m"]
         s = _stand_in(ctx, board, mine)
     return enc("Scoreboard", "GetRival", {"rival": {"scoreData": score_row(ctx, s, 1, 1),
@@ -950,21 +978,30 @@ def time_trials(ctx, body):
     ncat = max(1, min(r["maxTimeTrialCategories"] or 1, 7))
     per = max(1, min(5, (r["maxTimeTrialResults"] or 5) // ncat))
     cats, entries = _trials(ctx, ncat, per)
+    ctx.note = {"categories": {c["category"]: [x["id"] for x in entries[c["startIndex"]:]
+                                             if x["id"] // 100 - 10 == c["category"]] for c in cats}}
     return enc("Scoreboard", "GetTimeTrials", {"timeTrialCategories": cats, "timeTrials": entries})
 
 
-# Rivals (time trials). The game's own category order (its IDS_Category_* table): 0 Time (hot lap), 1 TimeSpec,
-# 2 Time_Traffic, 3 Drift, 4 TopGear, 5 Weekly, 6 Autocross. Only the categories the server can set up properly
-# are listed: Drift, Autocross, Traffic and spec-car trials need race options we have not decoded yet.
-# FM4_ALL_TRIAL_CATEGORIES=1 lists all seven again (each as a plain hot lap), for testing the menu.
-CAT_TIME, CAT_TOPGEAR, CAT_WEEKLY = 0, 4, 5
+# Rivals (time trials). The game's own category order (its IDS_Category_* table): 0 Time (hot lap), 1 TimeSpec
+# (spec car), 2 Time_Traffic, 3 Drift, 4 TopGear, 5 Weekly, 6 Autocross. The race set-up for each comes from the
+# game's own files: CareerRaceModes.xml (Time Attack Solo, Time Attack Advanced = traffic, Drift Trial, Autocross)
+# and GameOptionPresets.xml (car restrictions sit in <Buckets><Bucket><CarRestrictions .../></Bucket></Buckets>).
+CAT_TIME, CAT_SPEC, CAT_TRAFFIC, CAT_DRIFT, CAT_TOPGEAR, CAT_WEEKLY, CAT_AUTOX = range(7)
 TRIAL_CLASSES = (2, 3, 4, 5, 6)                       # D, C, B, A, S (CarClasses ids)
 CLASS_LETTER = {0: "F", 1: "E", 2: "D", 3: "C", 4: "B", 5: "A", 6: "S", 7: "R3", 8: "R2", 9: "R1", 10: "X"}
-CLASS_SPEED = {2: 31.0, 3: 34.0, 4: 37.0, 5: 41.0, 6: 45.0}   # m/s race average for invented times, by class
-CLASS_BOUNTY = {2: 1500, 3: 2500, 4: 4000, 5: 6000, 6: 9000}  # CR for beating an invented rival (unverified use)
+CLASS_SPEED = {2: 31.0, 3: 34.0, 4: 37.0, 5: 41.0, 6: 45.0, 7: 48.0}   # m/s race average for invented times
+CLASS_BOUNTY = {2: 1500, 3: 2500, 4: 4000, 5: 6000, 6: 9000, 7: 12000}  # CR for beating an invented rival
 HOT_LAP_TRACKS = ("RoadAtlanta", "Suzuka", "LagunaSeca", "Silverstone", "Catalunya", "Sebring", "MapleValley",
                   "Mugello", "Hockenheim", "Alps", "RoadAmerica", "NurburgringF1")
+DRIFT_TRACKS = ("Tsukuba", "TopGear", "Alps", "RoadAtlanta", "Suzuka")
 TOPGEAR_TRACK = "TopGear"
+RWD = 2                                               # List_DriveType id used by the game's drift preset
+
+HUD_SOLO = '<HUDOptions ForceOffPlace="1"/>'
+TRAFFIC_FIELD = ('<StartingGridOptions ClusterHumansAtIndex="6"/><FieldWindowOptions Enabled="1" BucketId="1" '
+                 'ForwardCarCount="6" ReverseCarCount="5" TargetDistance="60" ForwardSafeDistance="330" '
+                 'ReverseSafeDistance="200"/>')
 
 
 def _track_named(g, media):
@@ -972,42 +1009,71 @@ def _track_named(g, media):
                  if t["Active"] and t["MediaName"] == media), None)
 
 
+def _trial_entry(st, c, i, t, cls, laps, name, desc, kind, **extra):
+    now = st.store.clock()
+    tid = 1000 + c * 100 + i + 1                       # board id = trial id = hopperId (1001 and up)
+    e = {"id": tid, "scoreType": 1 if kind == "drift" else 0, "name": name, "description": desc,
+         "notRegisteredMessage": "", "trackId": t["id"], "trackName": t["MediaName"], "hopperId": tid,
+         "gameOptionsIndex": 0, "startDate": xtsw.iso(now - 86400),
+         "endDate": xtsw.iso(now + 86400 * (7 if c == CAT_WEEKLY else 365)),
+         "userRegistered": True, "featured": c == CAT_WEEKLY or i == 0, "active": True,
+         "laps": laps, "carClass": cls, "kind": kind, "bigger": kind == "drift"}
+    e.update(extra)
+    return e
+
+
 def _trials(ctx, ncat=7, per=5):
-    """The trial list. Board id = trial id = hopperId, so every later call can find its trial again."""
+    """The trial list, all seven categories, five trials each (Weekly three)."""
     st = ctx.state
     g = st.gamedb
-    now = st.store.clock()
-    week = int(now // (7 * 86400))
-    hot = [t for t in (_track_named(g, m) for m in HOT_LAP_TRACKS) if t] or \
-        sorted((t for t in g.tracks.values() if t["Active"]), key=lambda t: t["id"])
-    tg = _track_named(g, TOPGEAR_TRACK)
-    plan = []                                          # (category, [(track, class, laps, kind)])
-    if os.environ.get("FM4_ALL_TRIAL_CATEGORIES") == "1":
-        for c in range(ncat):
-            plan.append((c, [(hot[(c * 5 + i) % len(hot)], TRIAL_CLASSES[i % 5], 3, "Hot Lap") for i in range(per)]))
-    else:
-        plan.append((CAT_TIME, [(hot[i % len(hot)], TRIAL_CLASSES[i % 5], 3, "Hot Lap") for i in range(per)]))
-        if tg:
-            plan.append((CAT_TOPGEAR, [(tg, TRIAL_CLASSES[i % 5], 1, "Power Lap") for i in range(per)]))
-        plan.append((CAT_WEEKLY, [(hot[(week + 5 + i) % len(hot)], TRIAL_CLASSES[(week + i) % 5], 3, "Weekly")
-                                  for i in range(min(per, 3))]))
+    week = int(st.store.clock() // (7 * 86400))
+    active = sorted((t for t in g.tracks.values() if t["Active"]), key=lambda t: t["id"])
+    hot = [t for t in (_track_named(g, m) for m in HOT_LAP_TRACKS) if t] or active
+    drift = [t for t in (_track_named(g, m) for m in DRIFT_TRACKS) if t] or hot
+    tday = [g.tracks[x] for x in getattr(g, "trackday_tracks", []) if x in g.tracks] or hot
+    tg = _track_named(g, TOPGEAR_TRACK) or hot[0]
+    spec = [g.cars[x] for x in getattr(g, "spec_cars", []) if x in g.cars] or \
+        sorted(g.sellable_cars(), key=lambda c: c["Id"])[:per]
+    autox = [a for a in getattr(g, "autocross", []) if a["track"] in g.tracks]
+    L = CLASS_LETTER
+    out = {c: [] for c in range(7)}
+    for i in range(per):
+        cls = TRIAL_CLASSES[i % 5]
+        t = hot[i % len(hot)]
+        out[CAT_TIME].append(_trial_entry(st, CAT_TIME, i, t, cls, 3, f"{L[cls]} Class Hot Lap",
+            f"{t['MediaName']}, 3 laps in a {L[cls]} class car. Beat your rival's time.", "time"))
+        car = spec[(week + i) % len(spec)]
+        t = hot[(i + 3) % len(hot)]
+        out[CAT_SPEC].append(_trial_entry(st, CAT_SPEC, i, t, car["ClassID"], 3, "Spec Car Hot Lap",
+            f"{t['MediaName']}, 3 laps in a stock {car.get('MediaName') or 'spec car'}. Everyone drives the same car.",
+            "spec", specCar=car["Id"]))
+        t = tday[i % len(tday)]
+        out[CAT_TRAFFIC].append(_trial_entry(st, CAT_TRAFFIC, i, t, cls, 1, f"{L[cls]} Class Traffic Lap",
+            f"{t['MediaName']}, 1 lap through traffic in a {L[cls]} class car. Beat your rival's time.", "traffic"))
+        t = drift[i % len(drift)]
+        out[CAT_DRIFT].append(_trial_entry(st, CAT_DRIFT, i, t, cls, 1, f"{L[cls]} Class Drift",
+            f"{t['MediaName']}, 1 lap in a rear-wheel-drive {L[cls]} class car. Beat your rival's drift score.",
+            "drift"))
+        out[CAT_TOPGEAR].append(_trial_entry(st, CAT_TOPGEAR, i, tg, cls, 1, f"{L[cls]} Class Power Lap",
+            f"{tg['MediaName']}, 1 lap in a {L[cls]} class car. Beat your rival's time.", "time"))
+        if i < 3:
+            t = hot[(week + 5 + i) % len(hot)]
+            wc = TRIAL_CLASSES[(week + i) % 5]
+            out[CAT_WEEKLY].append(_trial_entry(st, CAT_WEEKLY, i, t, wc, 3, f"Weekly: {L[wc]} Class Hot Lap",
+                f"{t['MediaName']}, 3 laps in a {L[wc]} class car. Changes every week.", "time"))
+        if autox:
+            a = autox[(i * 5) % len(autox)]
+            t = g.tracks[a["track"]]
+            out[CAT_AUTOX].append(_trial_entry(st, CAT_AUTOX, i, t, a["cls"], a["laps"] or 1,
+                f"{L.get(a['cls'], '?')} Class Autocross",
+                f"{t['MediaName']} cone course in a {L.get(a['cls'], '?')} class car. Missed gates add time.",
+                "autocross", layout=a["layout"], easy=a["easy"], pro=a["pro"]))
     cats, entries = [], []
-    for c, items in plan:
-        if c >= ncat:
+    for c in range(min(ncat, 7)):
+        if not out[c]:
             continue
         cats.append({"category": c, "startIndex": len(entries)})
-        for i, (t, cls, laps, kind) in enumerate(items):
-            tid = 1000 + c * 100 + i + 1               # new range: older boards (1..699) were set up differently
-            letter = CLASS_LETTER[cls]
-            entries.append({
-                "id": tid, "scoreType": 0, "name": f"{letter} Class {kind}",
-                "description": f"{t['MediaName']}, {laps} lap{'s' if laps > 1 else ''} in a {letter} class car. "
-                               f"Beat your rival's time.", "notRegisteredMessage": "",
-                "trackId": t["id"], "trackName": t["MediaName"], "hopperId": tid, "gameOptionsIndex": 0,
-                "startDate": xtsw.iso(now - 86400),
-                "endDate": xtsw.iso(now + 86400 * (7 if kind == "Weekly" else 365)),
-                "userRegistered": True, "featured": c == CAT_WEEKLY or i == 0, "active": True,
-                "laps": laps, "carClass": cls})
+        entries += out[c]
     return cats, entries
 
 
@@ -1017,20 +1083,47 @@ def _trial(ctx, board):
     return next((x for x in _trials(ctx)[1] if x["id"] == board), None)
 
 
+def _bigger(ctx, board):
+    e = _trial(ctx, board)
+    return bool(e and e["bigger"])
+
+
+def _options_xml(e):
+    """Race options for a trial, in the game's own XML vocabulary (see the files named above)."""
+    if e["kind"] == "spec":
+        lock = '<CarRestrictions ModelId="%d" AllowUpgrades="0"/>' % e["specCar"]
+    elif e["kind"] == "drift":
+        lock = '<CarRestrictions CarClassId="%d" DriveTypeId="%d"/>' % (e["carClass"], RWD)
+    else:
+        lock = '<CarRestrictions CarClassId="%d"/>' % e["carClass"]
+    if os.environ.get("FM4_TRIAL_CLASS_LOCK", "1") == "0":
+        lock = ""
+    bucket = "<Bucket>%s</Bucket>" % lock
+    if e["kind"] == "traffic":                         # Time Attack Advanced: player bucket + AI traffic bucket
+        return ('<GameOptions GameTypePreset="0" TrackId="%d" NumPlayerBuckets="2"><Buckets>%s<Bucket Name=""/>'
+                '</Buckets>%s<EndConditionOptions Type="NumLaps" NumLaps="%d"/><ScoringOptions Type="TimeBased" '
+                'TargetScoreEnabled="1" BiggerIsBetter="0"/>%s</GameOptions>'
+                % (e["trackId"], bucket, TRAFFIC_FIELD, e["laps"], HUD_SOLO))
+    if e["kind"] == "autocross":
+        return ('<GameOptions GameTypePreset="0" TrackId="%d" CollObjLayoutId="%d"><Buckets>%s</Buckets>'
+                '<EndConditionOptions Type="Autocross"/><ScoringOptions Type="TimeBased" TargetScoreEnabled="1" '
+                'BiggerIsBetter="0"/>%s</GameOptions>' % (e["trackId"], e["layout"], bucket, HUD_SOLO))
+    scoring = ('<ScoringOptions Type="Drift" BiggerIsBetter="1"/>' if e["kind"] == "drift"
+               else '<ScoringOptions Type="TimeBased" BiggerIsBetter="0"/>')
+    return ('<GameOptions GameTypePreset="0" TrackId="%d"><Buckets>%s</Buckets><EndConditionOptions Type="NumLaps" '
+            'NumLaps="%d"/>%s%s</GameOptions>' % (e["trackId"], bucket, e["laps"], scoring, HUD_SOLO))
+
+
 @handler("Hopper", "GetGameOptions")
 @guarded
 def game_options(ctx, body):
-    """The race set-up for a trial: its track and laps, lower time wins, and (FM4_TRIAL_CLASS_LOCK, on by default)
-    its car class. CarRestrictions / RestrictionCarClassId are names from the game's own option parser; how it
-    reads them is not verified, so FM4_TRIAL_CLASS_LOCK=0 leaves them out."""
+    """The race set-up for a trial (track, laps, scoring, car restriction); see _options_xml.
+    FM4_TRIAL_CLASS_LOCK=0 leaves the car restriction out."""
     r = dec("Hopper", "GetGameOptions", body)
     e = _trial(ctx, r["hopperId"])
     if e is None and ctx.state.gamedb:
         e = _trials(ctx)[1][0]
-    track, laps = (e["trackId"], e["laps"]) if e else (0, 3)
-    lock = ""
-    if e and os.environ.get("FM4_TRIAL_CLASS_LOCK", "1") != "0":
-        lock = '<CarRestrictions RestrictionCarClassId="%d"/>' % e["carClass"]
-    xml = ('<GameOptions GameTypePreset="0" TrackId="%d"><EndConditionOptions Type="NumLaps" NumLaps="%d"/>'
-           '<ScoringOptions Type="TimeBased" BiggerIsBetter="0"/>%s</GameOptions>' % (track, laps, lock)).encode()
-    return enc("Hopper", "GetGameOptions", {"gameOptionsXml": xml[:r["cchOptionXmlMax"] or 0x8000]})
+    xml = _options_xml(e) if e else ('<GameOptions GameTypePreset="0" TrackId="0"><EndConditionOptions '
+                                     'Type="NumLaps" NumLaps="3"/><ScoringOptions Type="TimeBased" '
+                                     'BiggerIsBetter="0"/></GameOptions>')
+    return enc("Hopper", "GetGameOptions", {"gameOptionsXml": xml.encode()[:r["cchOptionXmlMax"] or 0x8000]})

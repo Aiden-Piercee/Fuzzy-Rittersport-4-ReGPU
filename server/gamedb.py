@@ -18,6 +18,20 @@ class GameDb:
             "SELECT MaxPerformanceIndex, MaxDisplayPerformanceIndex FROM CarClasses ORDER BY Id")]
         self.tracks = {r["id"]: dict(r) for r in g.execute(
             "SELECT id, ShortDisplayName, MediaName, Length, Active, IsReverse, EnvironmentId FROM Tracks")}
+        # Career data reused for Rivals: autocross cone layouts with their target times, showroom spec cars,
+        # and the Track Day circuits. Missing tables (small test databases) just leave these empty.
+        def rows(q):
+            try:
+                return [dict(r) for r in g.execute(q)]
+            except sqlite3.Error:
+                return []
+        self.autocross = rows(
+            "SELECT e.TargetClass AS cls, r.TrackId AS track, r.NumLaps AS laps, s.CollObjLayoutId AS layout,"
+            " s.TargetScore_Easy AS easy, s.TargetScore_Pro AS pro FROM Events e JOIN Races r ON r.EventId=e.Id"
+            " JOIN RacesSpecial s ON s.RaceId=r.Id WHERE e.CareerTypeId=7 ORDER BY e.Id, r.Id")
+        self.spec_cars = [r["CarID"] for r in rows("SELECT CarID FROM EventShowroomChallenges ORDER BY EventID")]
+        self.trackday_tracks = sorted({r["TrackId"] for r in rows(
+            "SELECT r.TrackId FROM Races r JOIN Events e ON e.Id=r.EventId WHERE e.CareerTypeId=11")})
         g.close()
         shutil.rmtree(tmp, ignore_errors=True)
 
