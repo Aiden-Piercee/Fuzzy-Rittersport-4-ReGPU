@@ -16,7 +16,7 @@ def mini_gamedb():
     CREATE TABLE CarClasses(Id INT, MaxPerformanceIndex REAL, MaxDisplayPerformanceIndex REAL);
     CREATE TABLE Tracks(id INT, ShortDisplayName TEXT, MediaName TEXT, Length INT, Active INT, IsReverse INT, EnvironmentId INT);
     INSERT INTO CarClasses VALUES(0,0.157,200),(1,0.2224,275),(2,0.2825,350),(3,0.347,425);
-    INSERT INTO Tracks VALUES(0,'a','LagunaSeca',3602,1,0,1),(1,'b','Tsukuba',2045,1,0,2);
+    INSERT INTO Tracks VALUES(0,'a','LagunaSeca',3602,1,0,1),(1,'b','Tsukuba',2045,1,0,2),(223,'c','TopGear',2285,1,0,9);
     """)
     for i in range(30):
         c.execute("INSERT INTO Data_Car VALUES(?,?,?,?,?,?,?,1,0,0,300,300,12,0.5,1,1,5,5,5,5,5)",
@@ -206,17 +206,20 @@ class Scores(Base):
         r = c.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "pivotId": -1, "maxResults": 10})[3]
         self.assertEqual(r["available"], 6)
         scores = [x["score"] for x in r["rows"]]
-        self.assertEqual(scores, sorted(scores)); self.assertTrue(150 < scores[0] < 600)   # board 3 is time trial 3: a 3-lap race
+        self.assertEqual(scores, sorted(scores)); self.assertTrue(60 < scores[0] < 200)   # board 3 is not a time trial: one lap
         again = c.call("Scoreboard", "GetRows", {"type": 0, "gameScoreboardId": 3, "trackId": 0, "pivotId": -1, "maxResults": 10})[3]
         self.assertEqual([x["score"] for x in again["rows"]], scores)    # stable, not re-invented
-        tt = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 2, "maxTimeTrialResults": 10})[3]
-        self.assertEqual([c["category"] for c in tt["timeTrialCategories"]], [0, 1])
-        self.assertEqual(len(tt["timeTrials"]), 10)
-        self.assertEqual([c["startIndex"] for c in tt["timeTrialCategories"]], [0, 5])
+        tt = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 7, "maxTimeTrialResults": 150})[3]
+        # only the categories the server can set up: 0 hot lap, 4 Top Gear, 5 weekly (game's category order)
+        self.assertEqual([c["category"] for c in tt["timeTrialCategories"]], [0, 4, 5])
+        self.assertEqual([c["startIndex"] for c in tt["timeTrialCategories"]], [0, 5, 10])
         self.assertTrue(all(x["active"] and x["userRegistered"] for x in tt["timeTrials"]))
-        self.assertEqual(len({x["id"] for x in tt["timeTrials"]}), 10)
-        tt7 = c.call("Scoreboard", "GetTimeTrials", {"maxTimeTrialCategories": 7, "maxTimeTrialResults": 150})[3]
-        self.assertEqual(len(tt7["timeTrialCategories"]), 7)
+        self.assertEqual(len({x["id"] for x in tt["timeTrials"]}), 13)
+        tgl = tt["timeTrials"][5]
+        self.assertEqual((tgl["trackName"], tgl["name"]), ("TopGear", "D Class Power Lap"))
+        rt = c.call("Scoreboard", "GetRival", {"gameScoreboardId": tgl["id"], "rivalXuid": 0})[3]["rival"]
+        self.assertEqual((rt["bounty"], rt["scoreData"]["carClassId"]), (1500, 2))        # class D rival, class bounty
+        self.assertTrue(rt["scoreData"]["score"] > 2285 / 13.9 * 0.99)                   # easy first target, one lap
         rv = c.call("Scoreboard", "GetRival", {"gameScoreboardId": 7, "rivalXuid": 0})
         self.assertEqual((rv[0], rv[3]["rival"]["scoreData"]["ghostFileId"]), (0, -1))
         self.assertTrue(rv[3]["rival"]["scoreData"]["score"] > 0)
@@ -225,6 +228,7 @@ class Scores(Base):
         go = c.call("Hopper", "GetGameOptions", {"hopperId": tt1["hopperId"], "roundNum": 0, "cchOptionXmlMax": 0x8000})[3]["gameOptionsXml"]
         self.assertIn(b'TrackId="%d"' % tt1["trackId"], go)
         self.assertIn(b'NumLaps="3"', go)
+        self.assertIn(b'RestrictionCarClassId="2"', go)
 
 
 class SeededAuctions(unittest.TestCase):

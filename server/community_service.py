@@ -9,7 +9,7 @@ the seller collects through Storefront.RetrieveOnlineCredit.
 
 Licence: AGPL-3.0-or-later.
 """
-import hashlib, json, random, struct, threading, uuid
+import hashlib, json, os, random, struct, threading, uuid
 import xtsw, layouts
 import clan_service
 from fm4_live_server import handler, ServiceError
@@ -744,19 +744,32 @@ def score_row(ctx, s, position, rank):
             "usedAutoShifting": bool(s["flags"] & 16), "usedClutch": bool(s["flags"] & 32),
             "isClean": bool(s["clean"]), "ghostFileId": s["ghost"] or -1,
             "clanData": {"clanId": cl["clanId"], "clanTag": cl["clanTag"], "clanName": name["name"] if name else ""},
-            "bounty": 0}
+            "bounty": _get(s, "bounty", 0)}
+
+
+def _get(s, k, default):
+    try:
+        return s[k]
+    except (KeyError, IndexError):
+        return default
 
 
 def _trial_track(ctx, board):
     """Time-trial boards use the trial id as their board id (seen in play: board 402 = trial 402)."""
-    if not ctx.state.gamedb:
-        return None
-    _, entries = _trials(ctx, 7, 5)
-    e = next((x for x in entries if x["id"] == board), None)
+    e = _trial(ctx, board)
     return e["trackId"] if e else None
 
 
-TRIAL_LAPS = 3      # Hopper.GetGameOptions sets 3 laps; a time-trial score is the whole race time
+def _class_cars(ctx, cls):
+    cars = ctx.state.gamedb.sellable_cars() if ctx.state.gamedb else []
+    return [c for c in cars if c["ClassID"] == cls] or cars
+
+
+def _trial_pace(ctx, e):
+    """A believable race time for a trial: its laps at its class's average speed (slower on the Top Gear track)."""
+    length = (ctx.state.gamedb.tracks.get(e["trackId"]) or {}).get("Length") or 3000
+    speed = CLASS_SPEED.get(e["carClass"], 36.0) * (0.8 if e["trackName"] == TOPGEAR_TRACK else 1.0)
+    return e["laps"] * length / speed
 
 
 def _seed_board(ctx, board, track):
@@ -767,7 +780,8 @@ def _seed_board(ctx, board, track):
     if not (st.seed_scores and st.gamedb):
         return
     db = _db(ctx)
-    tt = _trial_track(ctx, board)
+    e = _trial(ctx, board)
+    tt = e["trackId"] if e else None
     if tt is not None:
         track = tt
         # rows seeded before boards were tied to their trial's track: drop and reseed them
@@ -780,10 +794,14 @@ def _seed_board(ctx, board, track):
     import seed
     rng = random.Random(board * 100003 + track)       # same board always gets the same rows
     length = (st.gamedb.tracks.get(track) or {}).get("Length") or 3000
-    laps = TRIAL_LAPS if tt is not None else 1
     real = db.execute("SELECT MIN(score) m FROM scores WHERE board=? AND seeded=0", (board,)).fetchone()["m"]
-    base = real * 0.98 if real else laps * length / rng.uniform(30, 42)   # 108-151 km/h average
-    cars = st.gamedb.sellable_cars()
+    if real:
+        base = real * 0.98
+    elif e:
+        base = _trial_pace(ctx, e)                    # the trial's laps at its class's pace
+    else:
+        base = length / rng.uniform(30, 42)           # one lap at 108-151 km/h average
+    cars = _class_cars(ctx, e["carClass"]) if e else st.gamedb.sellable_cars()
     for i in range(st.seed_scores):
         xuid, tag = seed.Seeder.fake_user(i)
         st.store.user(xuid, tag)
@@ -821,11 +839,11 @@ def _rows(ctx, board, track, start, count, club=False):
 
 
 def _first_target(ctx, board):
-    """A rival time for a board nobody has driven yet: deliberately easy to beat (3 laps at 50 km/h on the time
-    trial's track), so the first real race wins and its score and ghost become what later rivals are built on."""
-    track = _trial_track(ctx, board)
-    length = (ctx.state.gamedb.tracks.get(track) or {}).get("Length", 0) if track is not None else 0
-    return round(TRIAL_LAPS * length / 13.9, 3) if length else 600.0
+    """A rival time for a board nobody has driven yet: deliberately easy to beat (the trial's laps at 50 km/h),
+    so the first real race wins and its score and ghost become what later rivals are built on."""
+    e = _trial(ctx, board)
+    length = (ctx.state.gamedb.tracks.get(e["trackId"]) or {}).get("Length", 0) if e else 0
+    return round(e["laps"] * length / 13.9, 3) if length else 600.0
 
 
 def _stand_in(ctx, board, around=None):
@@ -838,14 +856,15 @@ def _stand_in(ctx, board, around=None):
     if around is None:
         around = _first_target(ctx, board)
     score = round(around * rng.uniform(1.0, 1.04), 3)
+    e = _trial(ctx, board)
     s = {"owner": xuid, "score": score, "submitted": ctx.state.store.clock() - 7200, "car": 0, "class": 0, "pi": 0,
-         "flags": 0, "clean": 1, "ghost": 0}
+         "flags": 0, "clean": 1, "ghost": 0, "bounty": CLASS_BOUNTY.get(e["carClass"], 0) if e else 0}
     g = _stored_ghost(ctx, board)
     if g:                                              # drive against the real ghost, a little slower
         s.update(score=round(g["score"] * rng.uniform(1.0, 1.04), 3), car=g["car"], pi=g["pi"], ghost=g["ghost"],
                  **{"class": g["class"]})
         return s
-    cars = ctx.state.gamedb.sellable_cars() if ctx.state.gamedb else []
+    cars = _class_cars(ctx, e["carClass"]) if e else (ctx.state.gamedb.sellable_cars() if ctx.state.gamedb else [])
     if cars:
         c = rng.choice(cars)
         s.update(car=c["Id"], **{"class": c["ClassID"]}, pi=c["PerformanceIndex"])
@@ -909,7 +928,8 @@ def get_rival(ctx, body):
         mine = db.execute("SELECT MIN(score) m FROM scores WHERE owner=? AND board=? AND seeded=0",
                           (x, board)).fetchone()["m"]
         s = _stand_in(ctx, board, mine)
-    return enc("Scoreboard", "GetRival", {"rival": {"scoreData": score_row(ctx, s, 1, 1), "bounty": 0}})
+    return enc("Scoreboard", "GetRival", {"rival": {"scoreData": score_row(ctx, s, 1, 1),
+                                                     "bounty": _get(s, "bounty", 0)}})
 
 
 @handler("Scoreboard", "NotifyRival")
@@ -926,44 +946,91 @@ def time_trials(ctx, body):
     st = ctx.state
     if not (st.seed_scores and st.gamedb):
         return enc("Scoreboard", "GetTimeTrials", {})
-    # What categories 1-6 mean is not in the descriptors or the database: every requested category gets
-    # its own run of active trials (different tracks per category), sorted by category as the game expects.
+    # Categories follow the game's own order (see CAT_* above), sorted by category as the game expects.
     ncat = max(1, min(r["maxTimeTrialCategories"] or 1, 7))
     per = max(1, min(5, (r["maxTimeTrialResults"] or 5) // ncat))
     cats, entries = _trials(ctx, ncat, per)
     return enc("Scoreboard", "GetTimeTrials", {"timeTrialCategories": cats, "timeTrials": entries})
 
 
-def _trials(ctx, ncat, per):
+# Rivals (time trials). The game's own category order (its IDS_Category_* table): 0 Time (hot lap), 1 TimeSpec,
+# 2 Time_Traffic, 3 Drift, 4 TopGear, 5 Weekly, 6 Autocross. Only the categories the server can set up properly
+# are listed: Drift, Autocross, Traffic and spec-car trials need race options we have not decoded yet.
+# FM4_ALL_TRIAL_CATEGORIES=1 lists all seven again (each as a plain hot lap), for testing the menu.
+CAT_TIME, CAT_TOPGEAR, CAT_WEEKLY = 0, 4, 5
+TRIAL_CLASSES = (2, 3, 4, 5, 6)                       # D, C, B, A, S (CarClasses ids)
+CLASS_LETTER = {0: "F", 1: "E", 2: "D", 3: "C", 4: "B", 5: "A", 6: "S", 7: "R3", 8: "R2", 9: "R1", 10: "X"}
+CLASS_SPEED = {2: 31.0, 3: 34.0, 4: 37.0, 5: 41.0, 6: 45.0}   # m/s race average for invented times, by class
+CLASS_BOUNTY = {2: 1500, 3: 2500, 4: 4000, 5: 6000, 6: 9000}  # CR for beating an invented rival (unverified use)
+HOT_LAP_TRACKS = ("RoadAtlanta", "Suzuka", "LagunaSeca", "Silverstone", "Catalunya", "Sebring", "MapleValley",
+                  "Mugello", "Hockenheim", "Alps", "RoadAmerica", "NurburgringF1")
+TOPGEAR_TRACK = "TopGear"
+
+
+def _track_named(g, media):
+    return next((t for t in sorted(g.tracks.values(), key=lambda t: t["id"])
+                 if t["Active"] and t["MediaName"] == media), None)
+
+
+def _trials(ctx, ncat=7, per=5):
+    """The trial list. Board id = trial id = hopperId, so every later call can find its trial again."""
     st = ctx.state
-    tracks = sorted((t for t in st.gamedb.tracks.values() if t["Active"]), key=lambda t: t["id"])
+    g = st.gamedb
     now = st.store.clock()
+    week = int(now // (7 * 86400))
+    hot = [t for t in (_track_named(g, m) for m in HOT_LAP_TRACKS) if t] or \
+        sorted((t for t in g.tracks.values() if t["Active"]), key=lambda t: t["id"])
+    tg = _track_named(g, TOPGEAR_TRACK)
+    plan = []                                          # (category, [(track, class, laps, kind)])
+    if os.environ.get("FM4_ALL_TRIAL_CATEGORIES") == "1":
+        for c in range(ncat):
+            plan.append((c, [(hot[(c * 5 + i) % len(hot)], TRIAL_CLASSES[i % 5], 3, "Hot Lap") for i in range(per)]))
+    else:
+        plan.append((CAT_TIME, [(hot[i % len(hot)], TRIAL_CLASSES[i % 5], 3, "Hot Lap") for i in range(per)]))
+        if tg:
+            plan.append((CAT_TOPGEAR, [(tg, TRIAL_CLASSES[i % 5], 1, "Power Lap") for i in range(per)]))
+        plan.append((CAT_WEEKLY, [(hot[(week + 5 + i) % len(hot)], TRIAL_CLASSES[(week + i) % 5], 3, "Weekly")
+                                  for i in range(min(per, 3))]))
     cats, entries = [], []
-    for c in range(ncat):
+    for c, items in plan:
+        if c >= ncat:
+            continue
         cats.append({"category": c, "startIndex": len(entries)})
-        for i in range(per):
-            t = tracks[(c * 7 + i) % len(tracks)]
-            tid = c * 100 + i + 1
+        for i, (t, cls, laps, kind) in enumerate(items):
+            tid = 1000 + c * 100 + i + 1               # new range: older boards (1..699) were set up differently
+            letter = CLASS_LETTER[cls]
             entries.append({
-                "id": tid, "scoreType": 0, "name": t["MediaName"],
-                "description": f"Fastest lap at {t['MediaName']}", "notRegisteredMessage": "",
+                "id": tid, "scoreType": 0, "name": f"{letter} Class {kind}",
+                "description": f"{t['MediaName']}, {laps} lap{'s' if laps > 1 else ''} in a {letter} class car. "
+                               f"Beat your rival's time.", "notRegisteredMessage": "",
                 "trackId": t["id"], "trackName": t["MediaName"], "hopperId": tid, "gameOptionsIndex": 0,
-                "startDate": xtsw.iso(now - 86400), "endDate": xtsw.iso(now + 86400 * 365),
-                "userRegistered": True, "featured": i == 0, "active": True})
+                "startDate": xtsw.iso(now - 86400),
+                "endDate": xtsw.iso(now + 86400 * (7 if kind == "Weekly" else 365)),
+                "userRegistered": True, "featured": c == CAT_WEEKLY or i == 0, "active": True,
+                "laps": laps, "carClass": cls})
     return cats, entries
+
+
+def _trial(ctx, board):
+    if not ctx.state.gamedb:
+        return None
+    return next((x for x in _trials(ctx)[1] if x["id"] == board), None)
 
 
 @handler("Hopper", "GetGameOptions")
 @guarded
 def game_options(ctx, body):
-    """The race set-up for a time trial: its track, 3 laps, lower time wins. The hopperId the game sends is the
-    id the trial was listed with; an unknown id gets the first trial's track."""
+    """The race set-up for a trial: its track and laps, lower time wins, and (FM4_TRIAL_CLASS_LOCK, on by default)
+    its car class. CarRestrictions / RestrictionCarClassId are names from the game's own option parser; how it
+    reads them is not verified, so FM4_TRIAL_CLASS_LOCK=0 leaves them out."""
     r = dec("Hopper", "GetGameOptions", body)
-    track = 0
-    if ctx.state.gamedb:
-        _, entries = _trials(ctx, 7, 5)
-        e = next((x for x in entries if x["id"] == r["hopperId"]), entries[0] if entries else None)
-        track = e["trackId"] if e else 0
-    xml = ('<GameOptions GameTypePreset="0" TrackId="%d"><EndConditionOptions Type="NumLaps" NumLaps="3"/>'
-           '<ScoringOptions Type="TimeBased" BiggerIsBetter="0"/></GameOptions>' % track).encode()
+    e = _trial(ctx, r["hopperId"])
+    if e is None and ctx.state.gamedb:
+        e = _trials(ctx)[1][0]
+    track, laps = (e["trackId"], e["laps"]) if e else (0, 3)
+    lock = ""
+    if e and os.environ.get("FM4_TRIAL_CLASS_LOCK", "1") != "0":
+        lock = '<CarRestrictions RestrictionCarClassId="%d"/>' % e["carClass"]
+    xml = ('<GameOptions GameTypePreset="0" TrackId="%d"><EndConditionOptions Type="NumLaps" NumLaps="%d"/>'
+           '<ScoringOptions Type="TimeBased" BiggerIsBetter="0"/>%s</GameOptions>' % (track, laps, lock)).encode()
     return enc("Hopper", "GetGameOptions", {"gameOptionsXml": xml[:r["cchOptionXmlMax"] or 0x8000]})
