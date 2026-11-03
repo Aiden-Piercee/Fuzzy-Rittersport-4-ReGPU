@@ -6,14 +6,14 @@ Working (tested by hand in the game):
 - Tune upload to the Storefront works end to end (`35ef5eb`). The game sends it under the service name `StorefrontTuning`,
   which the server now routes; the tune-name check (`632d482`, 2026-11-02) is answered by the game side.
 - Rivals: all seven tabs open, built from the game's own race modes (`6a9fc29`), with the class and car lock, rivals matched to the
-  event's class, and a bounty (`e8ed584`). Each tab lists 12 events and the list rotates weekly (`72ed7ee`). Rival times are seeded on
-  the event's real track and a first rival you can beat (`35ef5eb`).
+  event's class, and a bounty (`e8ed584`). Rival times are seeded on the event's real track and a first rival you can beat (`35ef5eb`).
 - Car Club: create, leave and create again (see 2026-11-02: `7e3b5b9`, `c7bb78a`, `f7933f9`).
 - Server tests run on Windows: timestamps before 1970 no longer fail to format (`a0a6c61`).
 - Online guide: `docs/online.md` (`a4d3aab`).
 - Diagnosis: the winnings formula is logged under `FM4_TRACE_XAM` (`015a3c2`).
 
 Not verified yet:
+- Rivals tabs with 12 events each, rotating weekly (`72ed7ee`): built, not tested in the game yet.
 - Winnings and the Bounty Bonus after beating a Rival: a race with the new trace has not been finished yet, so the payout is unconfirmed.
 - Ghost upload after a win: the game has not been seen to send its ghost file yet, so racing your own ghost is untested.
 
