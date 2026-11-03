@@ -344,6 +344,36 @@ void DumpWriter()
     }
 }
 
+// How an XMA2 packet links to the next one: its frames run back to back from the header's first-frame offset, each
+// starting with a 15-bit length (in bits, itself included), and the last frame usually runs on into the next packet.
+// The next packet of the same stream then starts with a first-frame offset equal to the bits that ran on. A packet
+// that does not satisfy that is not the next one of the stream, whatever address or offset it was read from.
+unsigned FirstFrameOffset(const uint8_t* p)
+{
+    return ((uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3]) >> 11) & 0x7FFF;
+}
+
+// The bits of the packet's last frame that run on into the next packet, or -1 if the packet cannot be walked.
+int SpillBits(const uint8_t* p)
+{
+    constexpr unsigned dataBits = kPacketBits - 32;
+    const unsigned frames = (uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3]) >> 26;
+    unsigned pos = FirstFrameOffset(p), end = 0, n = 0;
+    auto bit = [&](unsigned at) { return (p[4 + (at >> 3)] >> (7 - (at & 7))) & 1; };
+    while (n < frames && pos + 15 <= dataBits)
+    {
+        unsigned len = 0;
+        for (int i = 0; i < 15; i++)
+            len = len << 1 | unsigned(bit(pos + i));
+        if (!len)
+            break;
+        pos += len, end = pos, n++;
+    }
+    if (!end)
+        return -1;
+    return end > dataBits ? int(end - dataBits) : 0;
+}
+
 struct Decoder
 {
     AVCodecContext* av = nullptr;
@@ -703,7 +733,14 @@ bool Step(uint32_t ctx)
         static LiveSwitch noGuard("FM2_NO_XMA_SEEK_GUARD");
         if (!noGuard && d.lastBuffer >= 0 && d.holdsTail && !d.flush)
         {
-            const bool contiguous = (int(current) == d.lastBuffer && packet == d.lastPacket + 1) || (d.lastPacket + 1 >= d.lastCount && packet == 0);
+            // The packets themselves decide when they can be read: the title restarts a context with another sound's
+            // packets (often packet 1 of it) in the same input buffers at the same offsets, which no address or index shows.
+            const uint8_t* thisPacket = GuestPtr<uint8_t>(buffer + packet * kPacketBytes);
+            const FedPacket& before = d.ring[(d.ringNext - 1) % kRingPackets];
+            const int spill = d.ringCount ? SpillBits(before.data) : -1;
+            bool contiguous = (int(current) == d.lastBuffer && packet == d.lastPacket + 1) || (d.lastPacket + 1 >= d.lastCount && packet == 0);
+            if (spill >= 0)
+                contiguous = unsigned(spill) == FirstFrameOffset(thisPacket);
             if (!contiguous)
             {
                 d.flush = true;
