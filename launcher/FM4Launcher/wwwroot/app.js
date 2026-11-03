@@ -279,6 +279,12 @@ function renderUpdate() {
   $("v-installed").textContent = state && state.checks && !state.checks.exe ? "not installed" : (u && u.installed) || (state && state.version) || "-"
   $("v-latest").textContent = (u && u.latest) || "-"
   $("update-badge").hidden = !(u && u.available)
+  const banner = u && u.available
+  $("update-banner").hidden = !banner
+  if (banner) {
+    $("update-banner-text").textContent = `Version ${u.latest} is available (you have ${u.installed}).`
+    $("update-banner-go").disabled = !!(state && state.checks.running)
+  }
   const us = $("update-state")
   if (!u || !u.latest) { us.textContent = ""; us.className = "update-state" }
   else if (u.available) { us.textContent = `Version ${u.latest} is available.`; us.className = "update-state new" }
@@ -584,7 +590,7 @@ for (const b of document.querySelectorAll("[data-open]")) b.onclick = () => guar
 // window, and the settings fetched then would put the old choice back.
 window.addEventListener("focus", () => {
   if (saveTimer || ["SELECT", "INPUT"].includes(document.activeElement.tagName)) return
-  guarded(async () => { state = await call("state"); render() })
+  guarded(async () => { state = await call("state"); render(); renderUpdate() })
 })
 
 async function checkUpdates(quiet) {
@@ -597,7 +603,8 @@ async function checkUpdates(quiet) {
   }
 }
 $("update-check").onclick = () => checkUpdates(false)
-$("update-page").onclick = () => guarded(() => call("url", (update && update.page) || "https://github.com/Aiden-Piercee/Forza-Motorsport-4-ReGPU1/releases"))
+$("update-banner-go").onclick = () => $("tabs").querySelector("[data-tab=updates]").click()
+$("update-page").onclick = () => guarded(() => call("url", (update && update.page) || "https://github.com/Aiden-Piercee/Fuzzy-Rittersport-4-ReGPU/releases"))
 $("update-apply").onclick = () => guarded(async () => {
   if (!await confirmBox(`Install ${update.latest}?`, "The patch is downloaded from GitHub and installed over this install. Saves and settings are kept. The first start afterwards may rebuild the shader cache.", "Install")) return
   $("update-apply").disabled = true
