@@ -17,6 +17,10 @@
 //   9: output read offset 0-4
 #include <algorithm>
 #include <atomic>
+#include <array>
+#include <condition_variable>
+#include <cstdarg>
+#include <deque>
 #include <filesystem>
 #include <chrono>
 #include <cstring>
@@ -53,6 +57,35 @@ const bool g_traceXma = getenv("FM2_TRACE_XMA") != nullptr;
 // Counted always, logged every 5 s while they change (see ReportStats).
 std::atomic<uint64_t> g_decodeErrors{ 0 }, g_guardFlushes{ 0 }, g_packetsDecoded{ 0 };
 std::atomic<int> g_traceBudget{ 200 }; // FM2_TRACE_XMA lines for guard flushes and decode errors
+
+// DIAGNOSTIC (always on, cheap): which decoders FFmpeg complains about, what was fed them just before, and how the
+// title's contexts change identity. Counted in the 5 s line; the first few offenders are written to files.
+std::atomic<uint64_t> g_errorPackets{ 0 }, g_dumps{ 0 }, g_bufferChanges{ 0 }, g_rateChanges{ 0 }, g_offsetWrites{ 0 };
+std::atomic<uint64_t> g_regKicks{ 0 }, g_regLocks{ 0 }, g_regClears{ 0 };
+std::atomic<int> g_idBudget{ 300 }; // lines for identity changes and clears
+constexpr uint32_t kRingPackets = 16, kMaxDumps = 40;
+thread_local bool t_errorSeen = false; // FFmpeg logged an error on this thread since it was last cleared
+
+// FFmpeg's messages: flags the error for the packet being decoded, and prints at most 20 lines a second.
+void XmaLogCallback(void* avcl, int level, const char* fmt, va_list vl)
+{
+    if (level > AV_LOG_ERROR)
+        return;
+    char text[256];
+    va_list copy;
+    va_copy(copy, vl);
+    vsnprintf(text, sizeof text, fmt, copy);
+    va_end(copy);
+    if (!strstr(text, "timestamps"))
+        t_errorSeen = true;
+    static std::atomic<int64_t> second{ 0 };
+    static std::atomic<int> printed{ 0 };
+    const int64_t now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    if (second.exchange(now) != now)
+        printed = 0;
+    if (printed++ < 20)
+        av_log_default_callback(avcl, level, fmt, vl);
+}
 
 uint32_t Field(uint32_t ctx, int dword, int lo, int bits)
 {
@@ -245,6 +278,72 @@ void RefillCodecPool()
         }
 }
 
+// A packet as it was fed to a codec, with where it came from.
+struct FedPacket
+{
+    uint32_t bufferAddr = 0, packetIndex = 0, readOffset = 0;
+    uint8_t bufferIndex = 0, rateBits = 0, chBit = 0, fresh = 0; // fresh: the first packet of a new codec
+    uint8_t data[kPacketBytes];
+};
+
+struct FedInfo
+{
+    uint32_t ctx = 0, bufferAddr = 0, packetIndex = 0, readOffset = 0;
+    uint8_t bufferIndex = 0, rateBits = 0, chBit = 0;
+};
+
+struct DumpJob
+{
+    uint32_t seq = 0, ctx = 0, channels = 0, rate = 0;
+    std::vector<FedPacket> packets; // oldest first, the failing packet last
+};
+
+// Dump files are written by a low-priority thread of their own, never by the decoder or the mixer. FM2_XMA_DUMP_DIR=<dir>
+// turns them on: <seq>_<context>.bin (the packets, 2 KB each) and .txt (where each came from).
+std::mutex g_dumpMutex;
+std::condition_variable g_dumpCv;
+std::deque<DumpJob> g_dumpQueue;
+std::once_flag g_dumpStarted;
+
+void DumpWriter()
+{
+    SetThreadDescription(GetCurrentThread(), L"xma dump writer");
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    const char* dir = getenv("FM2_XMA_DUMP_DIR");
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    for (;;)
+    {
+        DumpJob job;
+        {
+            std::unique_lock lock(g_dumpMutex);
+            g_dumpCv.wait(lock, [] { return !g_dumpQueue.empty(); });
+            job = std::move(g_dumpQueue.front());
+            g_dumpQueue.pop_front();
+        }
+        char name[64];
+        snprintf(name, sizeof name, "%03u_%08X", job.seq, job.ctx);
+        const std::filesystem::path base = std::filesystem::path(dir) / name;
+        if (FILE* f = fopen((base.string() + ".bin").c_str(), "wb"))
+        {
+            for (const FedPacket& p : job.packets)
+                fwrite(p.data, 1, kPacketBytes, f);
+            fclose(f);
+        }
+        if (FILE* t = fopen((base.string() + ".txt").c_str(), "w"))
+        {
+            fprintf(t, "ctx=%08X ch=%u rate=%u packets=%zu (oldest first; the last one is where FFmpeg complained)\n", job.ctx, job.channels, job.rate, job.packets.size());
+            for (size_t i = 0; i < job.packets.size(); i++)
+            {
+                const FedPacket& p = job.packets[i];
+                fprintf(t, "i=%zu buf=%08X bi=%u pkt=%u off=%u ratebits=%u chbit=%u fresh=%u\n", i, p.bufferAddr, p.bufferIndex, p.packetIndex, p.readOffset, p.rateBits,
+                        p.chBit, p.fresh);
+            }
+            fclose(t);
+        }
+    }
+}
+
 struct Decoder
 {
     AVCodecContext* av = nullptr;
@@ -271,7 +370,16 @@ struct Decoder
     bool used = false; // packets were sent to this codec: only a fresh one is a real reset
     int lastBuffer = -1;
     uint32_t lastPacket = 0, lastCount = 0;
-    uint64_t decodeErrors = 0, guardFlushes = 0;
+    uint64_t decodeErrors = 0, guardFlushes = 0, errorPackets = 0;
+    // The last packets fed to the codec, newest last in ring order; dumped once when FFmpeg first complains.
+    std::array<FedPacket, kRingPackets> ring;
+    uint32_t ringNext = 0, ringCount = 0;
+    bool dumped = false;
+    // What the context looked like when the last packet was fed (identity changes are counted and logged).
+    uint32_t lastAddr[2] = {};
+    int lastRateBits = -1, lastChBit = -1;
+    uint32_t expectedOffset = 0;
+    bool haveExpected = false;
 
     void Close()
     {
@@ -357,9 +465,38 @@ struct Decoder
     }
 
     // Decodes one 2 KB packet and appends its samples.
-    bool Decode(const uint8_t* data)
+    bool Decode(const uint8_t* data, const FedInfo& info)
     {
         const bool wasFlush = flush;
+        t_errorSeen = false;
+        {
+            FedPacket& slot = ring[ringNext % kRingPackets];
+            slot.bufferAddr = info.bufferAddr, slot.packetIndex = info.packetIndex, slot.readOffset = info.readOffset;
+            slot.bufferIndex = info.bufferIndex, slot.rateBits = info.rateBits, slot.chBit = info.chBit, slot.fresh = !used;
+            memcpy(slot.data, data, kPacketBytes);
+            ringNext++;
+            ringCount = std::min(ringCount + 1, kRingPackets);
+        }
+        // After FFmpeg has been fed: counts a packet it complained about and queues the dump of the first one of this decoder.
+        auto noteErrors = [&] {
+            if (!t_errorSeen)
+                return;
+            t_errorSeen = false;
+            errorPackets++, g_errorPackets++;
+            if (dumped || !getenv("FM2_XMA_DUMP_DIR") || g_dumps >= kMaxDumps)
+                return;
+            dumped = true;
+            DumpJob job;
+            job.seq = uint32_t(++g_dumps), job.ctx = info.ctx, job.channels = channels, job.rate = rate;
+            for (uint32_t i = 0; i < ringCount; i++)
+                job.packets.push_back(ring[(ringNext - ringCount + i) % kRingPackets]);
+            std::call_once(g_dumpStarted, [] { std::thread(DumpWriter).detach(); });
+            {
+                std::lock_guard lock(g_dumpMutex);
+                g_dumpQueue.push_back(std::move(job));
+            }
+            g_dumpCv.notify_one();
+        };
         if (flush)
         {
             if (used)
@@ -376,6 +513,7 @@ struct Decoder
         av_packet_unref(packet);
         if (sent < 0)
         {
+            noteErrors();
             decodeErrors++, g_decodeErrors++;
             flush = true;
             lastBuffer = -1;
@@ -395,6 +533,7 @@ struct Decoder
             }
             av_frame_unref(frame);
         }
+        noteErrors();
         const bool failed = received != AVERROR(EAGAIN) && received != AVERROR_EOF;
         if (failed)
             decodeErrors++, g_decodeErrors++;
@@ -518,8 +657,33 @@ bool Step(uint32_t ctx)
     const uint32_t packets = current ? Field(ctx, 1, 0, 12) : Field(ctx, 0, 0, 12);
     const uint32_t buffer = ContextBuffer(LoadBE32(ctx + (5 + current) * 4));
     const uint32_t packet = Field(ctx, 2, 0, 26) / kPacketBits;
+    const uint32_t bufferAddr = LoadBE32(ctx + (5 + current) * 4), rateBits = Field(ctx, 1, 27, 2), chBit = Field(ctx, 1, 29, 1);
     if (packet < packets)
     {
+        // DIAGNOSTIC: the context changing identity under a running decoder.
+        {
+            const uint32_t offsetNow = Field(ctx, 2, 0, 26);
+            if (d.lastAddr[current] && d.lastAddr[current] != bufferAddr)
+            {
+                g_bufferChanges++;
+                if (g_idBudget.fetch_sub(1) > 0)
+                    Log("xma: id %08X: input buffer %u moved %08X -> %08X (%u packets)", ctx, current, d.lastAddr[current], bufferAddr, packets);
+            }
+            d.lastAddr[current] = bufferAddr;
+            if (d.lastRateBits >= 0 && (int(rateBits) != d.lastRateBits || int(chBit) != d.lastChBit))
+            {
+                g_rateChanges++;
+                if (g_idBudget.fetch_sub(1) > 0)
+                    Log("xma: id %08X: rate/channel bits %d/%d -> %u/%u", ctx, d.lastRateBits, d.lastChBit, rateBits, chBit);
+            }
+            d.lastRateBits = int(rateBits), d.lastChBit = int(chBit);
+            if (d.haveExpected && offsetNow != d.expectedOffset)
+            {
+                g_offsetWrites++;
+                if (g_idBudget.fetch_sub(1) > 0)
+                    Log("xma: id %08X: read offset written by the title: %u (expected %u), buffer %u packet %u", ctx, offsetNow, d.expectedOffset, current, packet);
+            }
+        }
         if (g_traceXma && d.seeked)
         {
             const uint32_t header = LoadBE32(buffer + packet * kPacketBytes), start = Field(ctx, 2, 0, 26) % kPacketBits;
@@ -551,7 +715,10 @@ bool Step(uint32_t ctx)
         }
         if (!d.Reset(ctx))
             return false;
-        const bool decoded = d.Decode(GuestPtr<uint8_t>(buffer + packet * kPacketBytes));
+        FedInfo info;
+        info.ctx = ctx, info.bufferAddr = bufferAddr, info.packetIndex = packet, info.readOffset = Field(ctx, 2, 0, 26);
+        info.bufferIndex = uint8_t(current), info.rateBits = uint8_t(rateBits), info.chBit = uint8_t(chBit);
+        const bool decoded = d.Decode(GuestPtr<uint8_t>(buffer + packet * kPacketBytes), info);
         if (decoded)
             d.lastBuffer = int(current), d.lastPacket = packet, d.lastCount = packets;
         else if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
@@ -568,6 +735,7 @@ bool Step(uint32_t ctx)
         if (loops != 255)
             SetField(ctx, 0, 12, 8, loops - 1);
         SetField(ctx, 2, 0, 26, Field(ctx, 3, 0, 26));
+        d.expectedOffset = Field(ctx, 2, 0, 26), d.haveExpected = true;
         d.flush = true;
         return true;
     }
@@ -580,6 +748,7 @@ bool Step(uint32_t ctx)
     }
     else
         SetField(ctx, 2, 0, 26, offset);
+    d.expectedOffset = Field(ctx, 2, 0, 26), d.haveExpected = true;
     return true;
 }
 
@@ -587,17 +756,21 @@ bool Step(uint32_t ctx)
 void ReportStats()
 {
     static auto last = Clock::now();
-    static uint64_t errors = 0, flushes = 0, packets = 0, reopens = 0, waits = 0;
+    static uint64_t errors = 0, flushes = 0, packets = 0, reopens = 0, waits = 0, errorPkts = 0, dumps = 0, bufs = 0, rates = 0, offs = 0, kicks = 0, locks = 0, clears = 0;
     const auto now = Clock::now();
     if (now - last < std::chrono::seconds(5))
         return;
     last = now;
-    const uint64_t e = g_decodeErrors, f = g_guardFlushes, p = g_packetsDecoded, r = g_codecReopens, w = g_poolWaits;
-    if (e != errors || f != flushes || r != reopens || w != waits)
-        Log("xma: 5 s: %llu decode errors, %llu discontinuity flushes, %llu codec reopens, %llu pool waits, %llu packets decoded",
+    const uint64_t e = g_decodeErrors, f = g_guardFlushes, p = g_packetsDecoded, r = g_codecReopens, w = g_poolWaits, ep = g_errorPackets, dm = g_dumps, bc = g_bufferChanges,
+                   rc = g_rateChanges, ow = g_offsetWrites, kk = g_regKicks, lk = g_regLocks, cl = g_regClears;
+    if (e != errors || f != flushes || r != reopens || w != waits || ep != errorPkts || bc != bufs || rc != rates || ow != offs || cl != clears)
+        Log("xma: 5 s: %llu decode errors, %llu discontinuity flushes, %llu codec reopens, %llu pool waits, %llu packets decoded; %llu packets FFmpeg complained about "
+            "(%llu dumps so far); contexts: %llu buffer moves, %llu rate/channel changes, %llu offset writes by the title; registers: %llu kicks, %llu locks, %llu clears",
             (unsigned long long)(e - errors), (unsigned long long)(f - flushes), (unsigned long long)(r - reopens), (unsigned long long)(w - waits),
-            (unsigned long long)(p - packets));
-    errors = e, flushes = f, packets = p, reopens = r, waits = w;
+            (unsigned long long)(p - packets), (unsigned long long)(ep - errorPkts), (unsigned long long)dm, (unsigned long long)(bc - bufs),
+            (unsigned long long)(rc - rates), (unsigned long long)(ow - offs), (unsigned long long)(kk - kicks), (unsigned long long)(lk - locks),
+            (unsigned long long)(cl - clears));
+    errors = e, flushes = f, packets = p, reopens = r, waits = w, errorPkts = ep, dumps = dm, bufs = bc, rates = rc, offs = ow, kicks = kk, locks = lk, clears = cl;
 }
 
 void DecoderLoop()
@@ -654,6 +827,7 @@ void StartDecoder()
 {
     std::call_once(g_started, [] {
         av_log_set_level(AV_LOG_ERROR);
+        av_log_set_callback(XmaLogCallback);
         std::thread(DecoderLoop).detach();
     });
 }
@@ -684,6 +858,7 @@ void XmaWriteRegister(uint32_t address, uint32_t value)
         // Kick: start (or continue) decoding these contexts, as XMAEnableContext does.
         StartDecoder();
         forEach(kRegKick, [](uint32_t c) {
+            g_regKicks++;
             g_enabled.insert(c);
             while (Step(c))
                 ;
@@ -693,10 +868,15 @@ void XmaWriteRegister(uint32_t address, uint32_t value)
     {
         // Lock: stop decoding them, as XMADisableContext does. Taking g_mutex above means no Step is
         // under way, so the title may edit them once this store returns.
-        forEach(kRegLock, [](uint32_t c) { g_enabled.erase(c); });
+        forEach(kRegLock, [](uint32_t c) { g_regLocks++, g_enabled.erase(c); });
     }
     else if (r >= kRegClear && r < kRegClear + 10)
-        forEach(kRegClear, [](uint32_t c) { ClearContext(c); });
+        forEach(kRegClear, [](uint32_t c) {
+            g_regClears++;
+            if (g_idBudget.fetch_sub(1) > 0)
+                Log("xma: id %08X: clear register", c);
+            ClearContext(c);
+        });
     else
         LOG_ONCE("xma: write %08X to APU register %03X", value, r);
 }
