@@ -16,6 +16,7 @@
 //   5: in0 address  6: in1 address  7: output address  8: work buffer
 //   9: output read offset 0-4
 #include <algorithm>
+#include <atomic>
 #include <filesystem>
 #include <chrono>
 #include <cstring>
@@ -48,6 +49,10 @@ constexpr uint32_t kBlockBytes = 256;
 constexpr uint32_t kPacketBytes = 2048;
 
 const bool g_traceXma = getenv("FM2_TRACE_XMA") != nullptr;
+
+// Counted always, logged every 5 s while they change (see ReportStats).
+std::atomic<uint64_t> g_decodeErrors{ 0 }, g_guardFlushes{ 0 }, g_packetsDecoded{ 0 };
+std::atomic<int> g_traceBudget{ 200 }; // FM2_TRACE_XMA lines for guard flushes and decode errors
 
 uint32_t Field(uint32_t ctx, int dword, int lo, int bits)
 {
@@ -144,6 +149,11 @@ struct Decoder
     bool holdsTail = false; // packets were decoded since the codec was last drained or reset
     bool seeked = false; // the title set the read offset since the last packet was decoded
     bool music = false;  // its last packet came from a music file (MusicPacket)
+    // Where the last packet that decoded came from: input buffer, packet index and the buffer's packet count
+    // (lastBuffer -1: none since the codec was opened or reset). Used to tell a read that follows from a jump.
+    int lastBuffer = -1;
+    uint32_t lastPacket = 0, lastCount = 0;
+    uint64_t decodeErrors = 0, guardFlushes = 0;
 
     void Close()
     {
@@ -174,6 +184,7 @@ struct Decoder
         frame = av_frame_alloc();
         channels = ch;
         rate = hz;
+        lastBuffer = -1;
         return true;
     }
 
@@ -213,7 +224,7 @@ struct Decoder
     }
 
     // Decodes one 2 KB packet and appends its samples.
-    void Decode(const uint8_t* data)
+    bool Decode(const uint8_t* data)
     {
         const bool wasFlush = flush;
         if (flush)
@@ -224,16 +235,19 @@ struct Decoder
         const size_t pcmBefore = pcm.size();
         packetsDecoded++;
         if (av_new_packet(packet, kPacketBytes) < 0)
-            return;
+            return false;
         memcpy(packet->data, data, kPacketBytes);
         const int sent = avcodec_send_packet(av, packet);
         av_packet_unref(packet);
         if (sent < 0)
         {
+            decodeErrors++, g_decodeErrors++;
             flush = true;
-            return;
+            lastBuffer = -1;
+            return false;
         }
-        while (avcodec_receive_frame(av, frame) == 0)
+        int received;
+        while ((received = avcodec_receive_frame(av, frame)) == 0)
         {
             const int n = frame->nb_samples, ch = std::min<int>(frame->ch_layout.nb_channels, int(channels));
             const size_t base = pcm.size();
@@ -246,6 +260,10 @@ struct Decoder
             }
             av_frame_unref(frame);
         }
+        const bool failed = received != AVERROR(EAGAIN) && received != AVERROR_EOF;
+        if (failed)
+            decodeErrors++, g_decodeErrors++;
+        g_packetsDecoded++;
         framesDecoded += (pcm.size() - pcmBefore) / channels;
         holdsTail = true;
         if (g_traceXma)
@@ -255,6 +273,7 @@ struct Decoder
                 peak = std::max(peak, std::abs(int(pcm[i])));
             Log("xma: decoded a packet: %zu frames (flush %d, peak %d)", (pcm.size() - pcmBefore) / channels, int(wasFlush), peak);
         }
+        return !failed;
     }
 };
 
@@ -377,7 +396,29 @@ bool Step(uint32_t ctx)
         d.music = MusicPacket(GuestPtr<uint8_t>(buffer + packet * kPacketBytes));
         if (d.music)
             LOG_ONCE("xma: %08X is music (the first stream recognised)", ctx);
-        d.Decode(GuestPtr<uint8_t>(buffer + packet * kPacketBytes));
+        // A frame can run on into the next packet, and the codec keeps the unfinished one until that packet
+        // arrives. The packet that follows is the next one of the same input buffer, or the first of a buffer
+        // after the last packet of the previous one. Anything else (a loop, a restart elsewhere in the stream)
+        // must not inherit the old tail: it would be joined to the new packet's start and decode as garbage.
+        // Reads that do follow (the pair restarts the title makes) keep the codec state. FM2_NO_XMA_SEEK_GUARD=1: off.
+        static LiveSwitch noGuard("FM2_NO_XMA_SEEK_GUARD");
+        if (!noGuard && d.lastBuffer >= 0 && d.holdsTail && !d.flush)
+        {
+            const bool contiguous = (int(current) == d.lastBuffer && packet == d.lastPacket + 1) || (d.lastPacket + 1 >= d.lastCount && packet == 0);
+            if (!contiguous)
+            {
+                d.flush = true;
+                d.guardFlushes++, g_guardFlushes++;
+                if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
+                    Log("xma: %08X discontinuity: buffer %u packet %u after buffer %d packet %u of %u (seeked %d): codec flushed", ctx, current, packet,
+                        d.lastBuffer, d.lastPacket, d.lastCount, int(d.seeked));
+            }
+        }
+        const bool decoded = d.Decode(GuestPtr<uint8_t>(buffer + packet * kPacketBytes));
+        if (decoded)
+            d.lastBuffer = int(current), d.lastPacket = packet, d.lastCount = packets;
+        else if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
+            Log("xma: %08X decode error: buffer %u packet %u of %u", ctx, current, packet, packets);
     }
 
     // Loop: when the packet holding the loop end is done and loops remain, continue from
@@ -405,6 +446,22 @@ bool Step(uint32_t ctx)
     return true;
 }
 
+// Once every 5 s while the counts changed: decode failures, guard flushes and packets decoded in that time.
+void ReportStats()
+{
+    static auto last = Clock::now();
+    static uint64_t errors = 0, flushes = 0, packets = 0;
+    const auto now = Clock::now();
+    if (now - last < std::chrono::seconds(5))
+        return;
+    last = now;
+    const uint64_t e = g_decodeErrors, f = g_guardFlushes, p = g_packetsDecoded;
+    if (e != errors || f != flushes)
+        Log("xma: 5 s: %llu decode errors, %llu discontinuity flushes, %llu packets decoded", (unsigned long long)(e - errors),
+            (unsigned long long)(f - flushes), (unsigned long long)(p - packets));
+    errors = e, flushes = f, packets = p;
+}
+
 void DecoderLoop()
 {
     SetThreadDescription(GetCurrentThread(), L"xma decoder");
@@ -420,6 +477,7 @@ void DecoderLoop()
         for (uint32_t ctx : g_enabled)
             while (Step(ctx))
                 ;
+        ReportStats();
     }
 }
 }
