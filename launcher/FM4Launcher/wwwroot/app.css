@@ -44,6 +44,7 @@ button:disabled { opacity: .45; cursor: default; }
 .logo { font: 800 17px/1.1 "Segoe UI Black", "Segoe UI", sans-serif; letter-spacing: 1.2px; white-space: nowrap; }
 .logo span { color: var(--accent); font-weight: 700; letter-spacing: .5px; }
 .tag { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.tag.warn { color: #e0a030; }
 .tabs { display: flex; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
 .tabs button { background: transparent; color: var(--muted); padding: 8px 22px; font-weight: 600; position: relative; }
 .tabs button:hover { color: var(--text); }

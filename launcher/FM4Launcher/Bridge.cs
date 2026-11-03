@@ -339,6 +339,7 @@ public sealed class Bridge
         {
             settings,
             version = Updater.InstalledVersion(),
+            launcherVersion = Updater.LauncherVersion(),
             paths = new { root = Paths.Root, user = Paths.User, gameDefault = Paths.GameDirDefault, gameDir = Paths.GameDir, updateDefault = Paths.TitleUpdateDirDefault },
             checks = new
             {

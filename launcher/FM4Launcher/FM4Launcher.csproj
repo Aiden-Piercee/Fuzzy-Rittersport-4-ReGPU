@@ -11,6 +11,9 @@
     <AssemblyName>FM4Launcher</AssemblyName>
     <RootNamespace>FM4Launcher</RootNamespace>
     <Product>Forza Motorsport 4 ReGPU</Product>
+    <!-- The launcher ships with the game and shares its version: src/version.h is the one place it is set. -->
+    <VersionHeader>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\src\version.h'))</VersionHeader>
+    <Version>$([System.Text.RegularExpressions.Regex]::Match('$(VersionHeader)', 'FM2_VERSION "([0-9.]+)"').Groups[1].Value)</Version>
     <ApplicationIcon>..\..\assets\fm4.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>

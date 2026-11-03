@@ -39,6 +39,16 @@ public static class Updater
         catch { return "0.0.0"; }
     }
 
+    /// <summary>The running launcher's own version (from src/version.h at build time). Differs from InstalledVersion()
+    /// when the launcher or fm4.exe is left over from another build.</summary>
+    public static string LauncherVersion()
+    {
+        var v = typeof(Updater).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion;
+        v = v?.Split('+')[0];
+        return string.IsNullOrWhiteSpace(v) ? "0.0.0" : v;
+    }
+
     public static async Task<Release> LatestAsync()
     {
         using var doc = JsonDocument.Parse(await Http.GetStringAsync($"https://api.github.com/repos/{Repo}/releases/latest"));

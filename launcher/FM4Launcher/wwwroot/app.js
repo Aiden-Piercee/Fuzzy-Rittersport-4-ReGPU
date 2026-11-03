@@ -172,7 +172,14 @@ function fill(select, items, value) {
 
 function render() {
   const s = state, set = s.settings, o = s.options
-  $("version").textContent = "Version " + s.version + " · native PC port"
+  // Game build = fm4.exe's version resource (src/version.h); launcher = this program. They ship together, so a
+  // difference means one of them is left over from another build: say so.
+  const gameV = s.checks.exe ? s.version : "not installed"
+  $("version").textContent = "Game " + gameV + " · Launcher " + s.launcherVersion + " · native PC port"
+  $("version").classList.toggle("warn", s.checks.exe && s.version !== s.launcherVersion)
+  $("version").dataset.tip = s.checks.exe && s.version !== s.launcherVersion
+    ? "The launcher and fm4.exe are from different builds. Update, or rebuild both from the same source."
+    : "The game build (fm4.exe) and the launcher. The game files from your disc are shown separately below."
 
   const chips = $("chips")
   chips.replaceChildren()
@@ -269,7 +276,7 @@ function render() {
 
 function renderUpdate() {
   const u = update
-  $("v-installed").textContent = (u && u.installed) || (state && state.version) || "-"
+  $("v-installed").textContent = state && state.checks && !state.checks.exe ? "not installed" : (u && u.installed) || (state && state.version) || "-"
   $("v-latest").textContent = (u && u.latest) || "-"
   $("update-badge").hidden = !(u && u.available)
   const us = $("update-state")
