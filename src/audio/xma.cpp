@@ -353,6 +353,13 @@ unsigned FirstFrameOffset(const uint8_t* p)
     return ((uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3]) >> 11) & 0x7FFF;
 }
 
+// A packet with no frame start: the first-frame offset is 0x7FFF and the frame count 0. It carries the middle of one frame that is
+// longer than a packet; alone, a codec reads the offset as "skip 32767 bits" and then drops the next packet it is given.
+bool NoFrameStart(const uint8_t* p)
+{
+    return FirstFrameOffset(p) == 0x7FFF && (p[0] >> 2) == 0;
+}
+
 // The bits of the packet's last frame that run on into the next packet, or -1 if the packet cannot be walked.
 int SpillBits(const uint8_t* p)
 {
@@ -410,6 +417,9 @@ struct Decoder
     int lastRateBits = -1, lastChBit = -1;
     uint32_t expectedOffset = 0;
     bool haveExpected = false;
+    // Bits of the last frame fed that are still to come in the packets after it (a no-frame-start packet takes a whole packet of them);
+    // -1 when unknown. The next packet must start its first frame exactly there.
+    int pendingBits = -1;
 
     void Close()
     {
@@ -434,6 +444,7 @@ struct Decoder
         rate = hz;
         used = false;
         lastBuffer = -1;
+        pendingBits = -1;
         return true;
     }
 
@@ -455,6 +466,7 @@ struct Decoder
         used = holdsTail = false;
         flush = false;
         lastBuffer = -1;
+        pendingBits = -1;
         g_codecReopens++;
         return true;
     }
@@ -736,11 +748,11 @@ bool Step(uint32_t ctx)
             // The packets themselves decide when they can be read: the title restarts a context with another sound's
             // packets (often packet 1 of it) in the same input buffers at the same offsets, which no address or index shows.
             const uint8_t* thisPacket = GuestPtr<uint8_t>(buffer + packet * kPacketBytes);
-            const FedPacket& before = d.ring[(d.ringNext - 1) % kRingPackets];
-            const int spill = d.ringCount ? SpillBits(before.data) : -1;
             bool contiguous = (int(current) == d.lastBuffer && packet == d.lastPacket + 1) || (d.lastPacket + 1 >= d.lastCount && packet == 0);
-            if (spill >= 0)
-                contiguous = unsigned(spill) == FirstFrameOffset(thisPacket);
+            if (d.pendingBits >= 0)
+                contiguous = NoFrameStart(thisPacket) ? d.pendingBits >= int(kPacketBits - 32) : unsigned(d.pendingBits) == FirstFrameOffset(thisPacket);
+            else if (NoFrameStart(thisPacket))
+                contiguous = false; // nothing to say the frame it carries began in the packets before
             if (!contiguous)
             {
                 d.flush = true;
@@ -755,11 +767,27 @@ bool Step(uint32_t ctx)
         FedInfo info;
         info.ctx = ctx, info.bufferAddr = bufferAddr, info.packetIndex = packet, info.readOffset = Field(ctx, 2, 0, 26);
         info.bufferIndex = uint8_t(current), info.rateBits = uint8_t(rateBits), info.chBit = uint8_t(chBit);
-        const bool decoded = d.Decode(GuestPtr<uint8_t>(buffer + packet * kPacketBytes), info);
-        if (decoded)
-            d.lastBuffer = int(current), d.lastPacket = packet, d.lastCount = packets;
-        else if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
-            Log("xma: %08X decode error: buffer %u packet %u of %u", ctx, current, packet, packets);
+        const uint8_t* fed = GuestPtr<uint8_t>(buffer + packet * kPacketBytes);
+        if (!noGuard && NoFrameStart(fed) && !d.used)
+        {
+            // A new codec has no frame for this packet to continue, and would carry its "skip 32767 bits" into the next packet.
+            d.pendingBits = -1;
+        }
+        else
+        {
+            const bool decoded = d.Decode(fed, info);
+            if (decoded)
+            {
+                d.lastBuffer = int(current), d.lastPacket = packet, d.lastCount = packets;
+                d.pendingBits = NoFrameStart(fed) ? (d.pendingBits >= int(kPacketBits - 32) ? d.pendingBits - int(kPacketBits - 32) : -1) : SpillBits(fed);
+            }
+            else
+            {
+                d.pendingBits = -1;
+                if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
+                    Log("xma: %08X decode error: buffer %u packet %u of %u", ctx, current, packet, packets);
+            }
+        }
     }
 
     // Loop: when the packet holding the loop end is done and loops remain, continue from
