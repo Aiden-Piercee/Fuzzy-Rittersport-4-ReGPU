@@ -417,6 +417,8 @@ struct Decoder
     // has reached the output ring (the hardware has no backlog, so the title takes "consumed"
     // to mean "delivered"); it would loop or stop a stream while the tail was still queued here.
     bool consumed[2] = {};
+    int seenValid = -1;      // the input valid bits at the last step
+    uint8_t ourClear = 0;    // bits this decoder cleared itself since then (not the title's doing)
     bool holdsTail = false; // packets were decoded since the codec was last drained or reset
     bool seeked = false; // the title set the read offset since the last packet was decoded
     bool music = false;  // its last packet came from a music file (MusicPacket)
@@ -679,6 +681,27 @@ bool Step(uint32_t ctx)
     static const uint32_t kRates[4] = { 24000, 32000, 44100, 48000 };
     const uint32_t channels = Field(ctx, 1, 29, 1) ? 2 : 1, rate = kRates[Field(ctx, 1, 27, 2)];
     Decoder& d = g_decoders[ctx];
+    {
+        // The title cleared both input valid bits: it ended or repurposed the stream. The console's decoder never holds
+        // more than its output ring, so nothing of the old stream is left to write; what this decoder still has queued
+        // would sound after the switch, through whatever the voice is playing next. FM2_NO_XMA_DROP_AHEAD=1: keep it.
+        static LiveSwitch noDrop("FM2_NO_XMA_DROP_AHEAD");
+        const int validNow = int(Field(ctx, 0, 20, 2));
+        const bool cancelled = d.seenValid > 0 && validNow == 0 && (d.seenValid & ~int(d.ourClear)) != 0;
+        d.seenValid = validNow, d.ourClear = 0;
+        if (cancelled && !noDrop)
+        {
+            if (const size_t ahead = d.pcm.size() - d.pcmRead)
+            {
+                d.pcm.resize(d.pcmRead);
+                g_aheadDropped += ahead;
+                CAP_EVENT(ctx, "drop_ahead", "samples=%zu;why=title_cancel", ahead);
+            }
+            d.consumed[0] = d.consumed[1] = false;
+            d.holdsTail = false;
+            d.flush = true;
+        }
+    }
     if (audiocap::On())
     {
         const int valid = int(Field(ctx, 0, 20, 2));
@@ -731,6 +754,7 @@ bool Step(uint32_t ctx)
         if (d.consumed[i])
         {
             d.consumed[i] = false;
+            d.ourClear |= uint8_t(1u << i);
             SetField(ctx, 0, 20 + i, 1, 0); // now the title may refill (or loop) it
         }
 
