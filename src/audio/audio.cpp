@@ -17,6 +17,7 @@
 
 #include "kernel/imports.h"
 #include "kernel/thread.h"
+#include "audio/capture.h"
 #include "live_switch.h"
 #include "log.h"
 
@@ -131,6 +132,8 @@ struct Output : IXAudio2VoiceCallback
             fwrite(out, 4, size_t(kFrameSamples) * kChannels, dump);
             fflush(dump);
         }
+        if (audiocap::On())
+            audiocap::Mix(out, kFrameSamples, kChannels); // (FM2_AUDIO_CAPTURE_DIR: written by a thread of its own)
         if (!play)
             return;
         XAUDIO2_BUFFER b{};
