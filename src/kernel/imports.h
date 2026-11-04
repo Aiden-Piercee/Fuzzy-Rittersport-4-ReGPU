@@ -17,8 +17,8 @@ void TraceImportReturn(const char* name, PPCContext& ctx);
 // FM4_TRACE_XAM=1 logs every XAM/XNotify/XUser/XMsg import with its arguments and result
 // (FM4_TRACE_XAM_LIMIT calls per name, default 300; trace_xam.cpp).
 extern bool g_traceXam;
-// FM4_TRACE_DNET=1 (hooks/fm4/dnet_trace.cpp): imports made while the network-manager singleton is being created.
-bool TraceDnetInside();
+// FM4_TRACE_DNET=1 (hooks/fm4/dnet_trace.cpp): imports made while the network-manager singleton is being created, and the NetDll start/cleanup calls.
+extern bool g_traceDnet;
 void TraceDnetImport(const char* name, PPCContext& ctx);
 // FM2_ONLINE=1: the network link is up and the profile reports as signed in to Live (imports_net.cpp).
 bool NetOnline();
@@ -35,7 +35,7 @@ void TraceXamEnd(const char* name, PPCContext& ctx);
         Impl_##name(ctx, base);                                     \
         if (g_traceXam)                                             \
             TraceXamEnd(#name, ctx);                                \
-        if (TraceDnetInside())                                      \
+        if (g_traceDnet)                                            \
             TraceDnetImport(#name, ctx);                            \
         TraceImportReturn(#name, ctx);                              \
     }                                                               \
