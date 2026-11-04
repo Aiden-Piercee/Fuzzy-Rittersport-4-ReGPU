@@ -56,7 +56,7 @@ constexpr uint32_t kPacketBytes = 2048;
 const bool g_traceXma = getenv("FM2_TRACE_XMA") != nullptr;
 
 // Counted always, logged every 5 s while they change (see ReportStats).
-std::atomic<uint64_t> g_decodeErrors{ 0 }, g_guardFlushes{ 0 }, g_packetsDecoded{ 0 };
+std::atomic<uint64_t> g_decodeErrors{ 0 }, g_guardFlushes{ 0 }, g_packetsDecoded{ 0 }, g_aheadDropped{ 0 };
 std::atomic<int> g_traceBudget{ 200 }; // FM2_TRACE_XMA lines for guard flushes and decode errors
 
 // DIAGNOSTIC (always on, cheap): which decoders FFmpeg complains about, what was fed them just before, and how the
@@ -812,6 +812,17 @@ bool Step(uint32_t ctx)
             {
                 d.flush = true;
                 d.guardFlushes++, g_guardFlushes++;
+                // The title restarted the context with another sound. The console's decoder never runs further ahead than
+                // its output ring, so nothing of the old sound is left to play once the new one begins; what this decoder
+                // still holds beyond the ring would sound after the restart, through the new sound's voice.
+                // FM2_NO_XMA_DROP_AHEAD=1: keep it.
+                static LiveSwitch noDrop("FM2_NO_XMA_DROP_AHEAD");
+                if (const size_t ahead = d.pcm.size() - d.pcmRead; !noDrop && ahead)
+                {
+                    d.pcm.resize(d.pcmRead);
+                    g_aheadDropped += ahead;
+                    CAP_EVENT(ctx, "drop_ahead", "samples=%zu", ahead);
+                }
                 CAP_EVENT(ctx, "reset_guard", "pending=%d;first=%u;no_frame_start=%d;bi=%u;pkt=%u;last_bi=%d;last_pkt=%u", d.pendingBits, FirstFrameOffset(thisPacket),
                           int(NoFrameStart(thisPacket)), current, packet, d.lastBuffer, d.lastPacket);
                 if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
@@ -881,7 +892,7 @@ bool Step(uint32_t ctx)
 void ReportStats()
 {
     static auto last = Clock::now();
-    static uint64_t errors = 0, flushes = 0, packets = 0, reopens = 0, waits = 0, errorPkts = 0, dumps = 0, bufs = 0, rates = 0, offs = 0, kicks = 0, locks = 0, clears = 0;
+    static uint64_t errors = 0, flushes = 0, packets = 0, reopens = 0, waits = 0, errorPkts = 0, dumps = 0, bufs = 0, rates = 0, offs = 0, kicks = 0, locks = 0, clears = 0, aheadSeen = 0;
     const auto now = Clock::now();
     if (now - last < std::chrono::seconds(5))
         return;
@@ -895,6 +906,8 @@ void ReportStats()
             (unsigned long long)(p - packets), (unsigned long long)(ep - errorPkts), (unsigned long long)dm, (unsigned long long)(bc - bufs),
             (unsigned long long)(rc - rates), (unsigned long long)(ow - offs), (unsigned long long)(kk - kicks), (unsigned long long)(lk - locks),
             (unsigned long long)(cl - clears));
+    if (const uint64_t ad = g_aheadDropped; ad != aheadSeen)
+        Log("xma: 5 s: %llu decoded samples dropped unplayed at stream restarts", (unsigned long long)(ad - aheadSeen)), aheadSeen = ad;
     errors = e, flushes = f, packets = p, reopens = r, waits = w, errorPkts = ep, dumps = dm, bufs = bc, rates = rc, offs = ow, kicks = kk, locks = lk, clears = cl;
 }
 
