@@ -151,6 +151,14 @@ def get_payout(ctx, body):
     return enc("DailyCreditBonus", "GetPayout", {"amount": amount})
 
 
+@handler("Hopper", "UserRegister")
+def hopper_register(ctx, body):
+    # Matchmaking registration (hopperId, sessionId). The reply is how long the registration stays valid: the title
+    # registers again after that many seconds. The default empty reply says 0, which made the game call this every
+    # 65 ms for as long as the Race Online screen was open (2076 calls in one run).
+    return enc("Hopper", "UserRegister", {"nextRegisterSeconds": 30})
+
+
 @handler("User", "RetrieveOnlineCredits")
 def retrieve_online_credits(ctx, body):
     # Credits earned online, collected by the game after a daily-bonus poll. With FM4_GRANT_CREDITS=<amount> the
