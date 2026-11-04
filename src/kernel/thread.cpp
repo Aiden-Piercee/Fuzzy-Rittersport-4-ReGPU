@@ -161,6 +161,19 @@ void InitGuestContext(PPCContext& ctx, GuestThread& thread)
     thread.ctx = &ctx;
 }
 
+void ApplyGuestThreadPriority(GuestThread& thread)
+{
+    static LiveSwitch noPriority("FM2_NO_THREAD_PRIORITY");
+    if (noPriority || !thread.hostHandle)
+        return;
+    // The console's priority increments (Win32 style): 15 and up time critical, 2-14 highest, 1 above normal,
+    // 0 normal, -1 below normal, -2 to -14 lowest, -15 and below idle.
+    const int p = thread.basePriority;
+    const int level = p >= 15 ? THREAD_PRIORITY_TIME_CRITICAL : p >= 2 ? THREAD_PRIORITY_HIGHEST : p == 1 ? THREAD_PRIORITY_ABOVE_NORMAL
+        : p == 0 ? THREAD_PRIORITY_NORMAL : p == -1 ? THREAD_PRIORITY_BELOW_NORMAL : p > -15 ? THREAD_PRIORITY_LOWEST : THREAD_PRIORITY_IDLE;
+    SetThreadPriority(thread.hostHandle, level);
+}
+
 namespace
 {
 std::shared_ptr<ThreadObject> StartThread(uint32_t entry, uint32_t param, uint32_t xapiStartup, uint32_t stackSize,
@@ -187,6 +200,9 @@ std::shared_ptr<ThreadObject> StartThread(uint32_t entry, uint32_t param, uint32
     if (!handle)
         Fatal("CreateThread failed (%lu)", GetLastError());
     object->thread->hostHandle = handle;
+    // A priority the title set before the host thread existed.
+    if (object->thread->basePriority != 0)
+        ApplyGuestThreadPriority(*object->thread);
 
     wchar_t wname[64];
     swprintf(wname, 64, L"guest %u %S", object->thread->id, name ? name : "");

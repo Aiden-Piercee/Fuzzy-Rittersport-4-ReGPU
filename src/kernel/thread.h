@@ -58,6 +58,7 @@ struct GuestThread
     uint32_t entry = 0;
     uint32_t param = 0;
     uint32_t xapiStartup = 0;
+    int basePriority = 0; // KeSetBasePriorityThread's increment (console scale: 15 time critical, 2 highest, 1 above normal)
     std::function<void(PPCContext&)> hostEntry; // host-driven thread (DPC-like)
     std::vector<uint32_t> tlsSlots;
     std::string name;
@@ -81,6 +82,9 @@ std::shared_ptr<ThreadObject> CreateGuestThread(uint32_t entry, uint32_t param, 
 // A guest-capable thread whose body is host code (for callbacks the
 // console's kernel would run: GPU interrupts, audio frames).
 std::shared_ptr<ThreadObject> CreateHostGuestThread(const char* name, std::function<void(PPCContext&)> body);
+
+// Applies a console base priority increment to the host thread (no-op without a host thread yet or with FM2_NO_THREAD_PRIORITY).
+void ApplyGuestThreadPriority(GuestThread& thread);
 
 void ResumeGuestThread(GuestThread& thread);
 int SuspendGuestThread(GuestThread& thread);

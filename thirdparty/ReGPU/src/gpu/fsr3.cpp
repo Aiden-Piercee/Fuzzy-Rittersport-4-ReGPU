@@ -8,6 +8,8 @@
 #include <ffx_api.h>
 #include <ffx_upscale.h>
 #include <dx12/ffx_api_dx12.h>
+#include <dxgi1_4.h>
+#include <wrl/client.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -50,7 +52,32 @@ bool Contains(const char* name, const char* text)
 // names' exact wording is the SDK's, so REGPU_FSR_VERSION can override the match.
 bool IsMlVersion(const char* name)
 {
-    return Contains(name, "FSR 4") || Contains(name, "FSR4") || Contains(name, "4.");
+    // (A bare version such as "4.1.2" starts with 4; "3.1.4" must not match.)
+    return Contains(name, "FSR 4") || Contains(name, "FSR4") || (name && name[0] == '4' && name[1] == '.');
+}
+
+// FSR 4 is the ML upscaler. The FidelityFX API lists it on RDNA 2/3 too (a slower fallback path in newer SDKs), where
+// it works but hung the device and crashed inside amdxc64.dll in some long runs. Until that is understood it is
+// opt-in: the "fsr4" upscaler setting runs FSR 3 unless REGPU_FSR4=1 is set. The adapter is logged either way.
+bool SupportsFsr4(ID3D12Device* device)
+{
+    static int cached = -1;
+    if (cached >= 0)
+        return cached != 0;
+    const char* v = std::getenv("REGPU_FSR4");
+    const bool on = v && *v == '1';
+    Microsoft::WRL::ComPtr<IDXGIFactory4> factory;
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+    if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))) && SUCCEEDED(factory->EnumAdapterByLuid(device->GetAdapterLuid(), IID_PPV_ARGS(&adapter))))
+    {
+        DXGI_ADAPTER_DESC1 d{};
+        adapter->GetDesc1(&d);
+        Log("fsr: adapter %04x:%04x, FSR 4 %s", d.VendorId, d.DeviceId, on ? "enabled (REGPU_FSR4=1)" : "off by default, using FSR 3 (REGPU_FSR4=1 to try it)");
+    }
+    else
+        Log("fsr: FSR 4 %s", on ? "enabled (REGPU_FSR4=1)" : "off by default, using FSR 3 (REGPU_FSR4=1 to try it)");
+    cached = on ? 1 : 0;
+    return on;
 }
 
 // The version id to ask for, or false to leave the choice to the SDK (which takes the newest one
@@ -89,6 +116,8 @@ bool PickVersion(ID3D12Device* device, bool ml, uint64_t& id)
             return true;
         }
     }
+    if (!ml && !(want && *want))
+        Log("fsr: no non-ML upscaler version listed; the SDK default may be FSR 4");
     return false;
 }
 
@@ -102,7 +131,7 @@ bool Fsr3Evaluate(ID3D12Device* device, ID3D12GraphicsCommandList* list, const D
 
 bool Fsr4Evaluate(ID3D12Device* device, ID3D12GraphicsCommandList* list, const DlssSetup& setup, const DlssFrame& frame, float sharpness)
 {
-    return FsrEvaluate(device, list, setup, frame, sharpness, true);
+    return FsrEvaluate(device, list, setup, frame, sharpness, SupportsFsr4(device));
 }
 
 namespace

@@ -16,6 +16,11 @@
 //   5: in0 address  6: in1 address  7: output address  8: work buffer
 //   9: output read offset 0-4
 #include <algorithm>
+#include <atomic>
+#include <array>
+#include <condition_variable>
+#include <cstdarg>
+#include <deque>
 #include <filesystem>
 #include <chrono>
 #include <cstring>
@@ -35,6 +40,7 @@ extern "C"
 }
 
 #include "kernel/imports.h"
+#include "audio/capture.h"
 #include "live_switch.h"
 #include "log.h"
 
@@ -49,9 +55,59 @@ constexpr uint32_t kPacketBytes = 2048;
 
 const bool g_traceXma = getenv("FM2_TRACE_XMA") != nullptr;
 
+// Counted always, logged every 5 s while they change (see ReportStats).
+std::atomic<uint64_t> g_decodeErrors{ 0 }, g_guardFlushes{ 0 }, g_packetsDecoded{ 0 }, g_aheadDropped{ 0 };
+std::atomic<int> g_traceBudget{ 200 }; // FM2_TRACE_XMA lines for guard flushes and decode errors
+
+// DIAGNOSTIC (always on, cheap): which decoders FFmpeg complains about, what was fed them just before, and how the
+// title's contexts change identity. Counted in the 5 s line; the first few offenders are written to files.
+std::atomic<uint64_t> g_errorPackets{ 0 }, g_dumps{ 0 }, g_bufferChanges{ 0 }, g_rateChanges{ 0 }, g_offsetWrites{ 0 };
+std::atomic<uint64_t> g_regKicks{ 0 }, g_regLocks{ 0 }, g_regClears{ 0 };
+std::atomic<int> g_idBudget{ 300 }; // lines for identity changes and clears
+constexpr uint32_t kRingPackets = 16, kMaxDumps = 40;
+thread_local bool t_errorSeen = false; // FFmpeg logged an error on this thread since it was last cleared
+
+// FFmpeg's messages: flags the error for the packet being decoded, and prints at most 20 lines a second.
+void XmaLogCallback(void* avcl, int level, const char* fmt, va_list vl)
+{
+    if (level > AV_LOG_ERROR)
+        return;
+    char text[256];
+    va_list copy;
+    va_copy(copy, vl);
+    vsnprintf(text, sizeof text, fmt, copy);
+    va_end(copy);
+    if (!strstr(text, "timestamps"))
+        t_errorSeen = true;
+    static std::atomic<int64_t> second{ 0 };
+    static std::atomic<int> printed{ 0 };
+    const int64_t now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    if (second.exchange(now) != now)
+        printed = 0;
+    if (printed++ < 20)
+        av_log_default_callback(avcl, level, fmt, vl);
+}
+
 uint32_t Field(uint32_t ctx, int dword, int lo, int bits)
 {
     return (LoadBE32(ctx + dword * 4) >> lo) & ((1u << bits) - 1);
+}
+
+// FM2_AUDIO_CAPTURE_DIR: a line in ctx_events.csv for this context (see audio/capture.h); a test of one bool when it is off.
+#define CAP_EVENT(ctx, event, ...)                                                          \
+    do                                                                                      \
+    {                                                                                       \
+        if (audiocap::On())                                                                 \
+            audiocap::Event((ctx), (event), Field((ctx), 0, 27, 5), __VA_ARGS__);           \
+    } while (0)
+
+// 64-bit FNV-1a, to name a packet in the capture without storing it.
+uint64_t CapHash(const uint8_t* p, size_t n)
+{
+    uint64_t h = 0xCBF29CE484222325ull;
+    for (size_t i = 0; i < n; i++)
+        h = (h ^ p[i]) * 0x100000001B3ull;
+    return h;
 }
 
 void SetField(uint32_t ctx, int dword, int lo, int bits, uint32_t value)
@@ -123,6 +179,226 @@ void SetRegister(uint32_t r, uint32_t value)
     *GuestPtr<uint32_t>(kApuBase + r * 4) = value;
 }
 
+AVCodecContext* OpenCodec(uint32_t ch, uint32_t hz)
+{
+    const AVCodec* codec = avcodec_find_decoder(AV_CODEC_ID_XMA2);
+    AVCodecContext* av = codec ? avcodec_alloc_context3(codec) : nullptr;
+    if (!av)
+        return nullptr;
+    av->sample_rate = int(hz);
+    av_channel_layout_default(&av->ch_layout, int(ch));
+    av->block_align = kPacketBytes;
+    // XMA2WAVEFORMATEX (34 bytes): one stream; FFmpeg reads the stream count from it.
+    av->extradata = static_cast<uint8_t*>(av_mallocz(34 + AV_INPUT_BUFFER_PADDING_SIZE));
+    av->extradata_size = 34;
+    av->extradata[0] = 1;
+    if (avcodec_open2(av, codec, nullptr) < 0)
+        avcodec_free_context(&av);
+    return av;
+}
+
+// Codecs are opened and freed only by the decoder thread, outside g_mutex. An XMA2 codec takes a few MB and 1-3 ms
+// to open (eight stream decoders and their transforms), and a stream that restarts (an engine sound starting,
+// a loop) gets a fresh one. Opened by whatever stepped the stream, that was the title's mixer thread
+// (XMAEnableContext decodes the first blocks) or the decoder thread holding g_mutex, which the mixer waits on: at
+// a race start the mixer can miss its 1024-sample deadline and the console's driver replays its last block, heard
+// as stretched, crusty sound. A stream that needs a codec when none is ready waits for the next pass (2 ms; the
+// hardware decodes in the background too), and the mixer polls it meanwhile. Each format keeps as many spares as
+// it has taken between two refills at its busiest, from 2 up to 40: memory only once a format has needed it.
+// FM2_XMA_NO_CODEC_POOL=1: opened in place.
+// (Ported from zer0ducksgiven's Forza-Motorsport-2-ReGPU, 7870b2b and c830cbc.)
+constexpr size_t kMinPooledCodecs = 2, kMaxPooledCodecs = 40;
+std::mutex g_poolMutex;
+std::map<std::pair<uint32_t, uint32_t>, std::vector<AVCodecContext*>> g_codecPool;
+std::map<std::pair<uint32_t, uint32_t>, size_t> g_codecsTaken, g_codecTarget; // taken since the last refill, spares kept
+std::map<std::pair<uint32_t, uint32_t>, std::set<uint32_t>> g_codecsWanted;   // contexts waiting for one
+std::vector<AVCodecContext*> g_retiredCodecs;
+std::atomic<uint64_t> g_poolWaits{ 0 }, g_codecReopens{ 0 }; // (counted in the 5 s line)
+
+bool NoCodecPool()
+{
+    static LiveSwitch noPool("FM2_XMA_NO_CODEC_POOL");
+    return noPool;
+}
+
+// Whether a codec for ch/hz can be taken now for context ctx. If not, the decoder thread opens one before its next
+// pass (one per waiting context: the title polls a waiting one thousands of times).
+bool CodecReady(uint32_t ctx, uint32_t ch, uint32_t hz)
+{
+    if (NoCodecPool())
+        return true;
+    std::lock_guard lock(g_poolMutex);
+    if (!g_codecPool[{ ch, hz }].empty())
+        return true;
+    g_codecsWanted[{ ch, hz }].insert(ctx);
+    g_poolWaits++;
+    return false;
+}
+
+AVCodecContext* TakeCodec(uint32_t ch, uint32_t hz)
+{
+    if (!NoCodecPool())
+    {
+        std::lock_guard lock(g_poolMutex);
+        auto& pool = g_codecPool[{ ch, hz }]; // (a new entry: the decoder thread keeps it filled)
+        g_codecsTaken[{ ch, hz }]++;
+        if (!pool.empty())
+        {
+            AVCodecContext* av = pool.back();
+            pool.pop_back();
+            return av;
+        }
+    }
+    return OpenCodec(ch, hz); // (with the pool: a first use, or a caller that didn't ask CodecReady)
+}
+
+void RetireCodec(AVCodecContext* av)
+{
+    if (!av)
+        return;
+    if (NoCodecPool())
+        return avcodec_free_context(&av);
+    std::lock_guard lock(g_poolMutex);
+    g_retiredCodecs.push_back(av);
+}
+
+// On the decoder thread, without g_mutex: frees used codecs, then opens codecs for the streams waiting and up to
+// each format's target of spares, all of them (a stream waiting for one is polled by the title's mixer thousands of
+// times a second at a race start).
+void RefillCodecPool()
+{
+    std::vector<AVCodecContext*> retired;
+    std::vector<std::pair<uint32_t, uint32_t>> wanted;
+    {
+        std::lock_guard lock(g_poolMutex);
+        retired.swap(g_retiredCodecs);
+        for (const auto& [key, pool] : g_codecPool)
+        {
+            size_t& target = g_codecTarget[key];
+            const size_t taken = std::min(g_codecsTaken[key], kMaxPooledCodecs);
+            if (taken > target && taken > kMinPooledCodecs)
+                Log("xma: keeping %zu spare codecs for %u ch %u Hz (%zu taken between refills)", taken, key.first, key.second, g_codecsTaken[key]);
+            target = std::max({ target, taken, kMinPooledCodecs });
+            g_codecsTaken[key] = 0;
+            const size_t waiting = g_codecsWanted.count(key) ? g_codecsWanted[key].size() : 0;
+            for (size_t i = pool.size(); i < std::max(target, kMinPooledCodecs) + waiting; i++)
+                wanted.push_back(key);
+        }
+        g_codecsWanted.clear();
+    }
+    for (AVCodecContext* av : retired)
+        avcodec_free_context(&av);
+    for (const auto& key : wanted)
+        if (AVCodecContext* av = OpenCodec(key.first, key.second))
+        {
+            std::lock_guard lock(g_poolMutex);
+            g_codecPool[key].push_back(av);
+        }
+}
+
+// A packet as it was fed to a codec, with where it came from.
+struct FedPacket
+{
+    uint32_t bufferAddr = 0, packetIndex = 0, readOffset = 0;
+    uint8_t bufferIndex = 0, rateBits = 0, chBit = 0, fresh = 0; // fresh: the first packet of a new codec
+    uint8_t data[kPacketBytes];
+};
+
+struct FedInfo
+{
+    uint32_t ctx = 0, bufferAddr = 0, packetIndex = 0, readOffset = 0;
+    uint8_t bufferIndex = 0, rateBits = 0, chBit = 0;
+};
+
+struct DumpJob
+{
+    uint32_t seq = 0, ctx = 0, channels = 0, rate = 0;
+    std::vector<FedPacket> packets; // oldest first, the failing packet last
+};
+
+// Dump files are written by a low-priority thread of their own, never by the decoder or the mixer. FM2_XMA_DUMP_DIR=<dir>
+// turns them on: <seq>_<context>.bin (the packets, 2 KB each) and .txt (where each came from).
+std::mutex g_dumpMutex;
+std::condition_variable g_dumpCv;
+std::deque<DumpJob> g_dumpQueue;
+std::once_flag g_dumpStarted;
+
+void DumpWriter()
+{
+    SetThreadDescription(GetCurrentThread(), L"xma dump writer");
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    const char* dir = getenv("FM2_XMA_DUMP_DIR");
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    for (;;)
+    {
+        DumpJob job;
+        {
+            std::unique_lock lock(g_dumpMutex);
+            g_dumpCv.wait(lock, [] { return !g_dumpQueue.empty(); });
+            job = std::move(g_dumpQueue.front());
+            g_dumpQueue.pop_front();
+        }
+        char name[64];
+        snprintf(name, sizeof name, "%03u_%08X", job.seq, job.ctx);
+        const std::filesystem::path base = std::filesystem::path(dir) / name;
+        if (FILE* f = fopen((base.string() + ".bin").c_str(), "wb"))
+        {
+            for (const FedPacket& p : job.packets)
+                fwrite(p.data, 1, kPacketBytes, f);
+            fclose(f);
+        }
+        if (FILE* t = fopen((base.string() + ".txt").c_str(), "w"))
+        {
+            fprintf(t, "ctx=%08X ch=%u rate=%u packets=%zu (oldest first; the last one is where FFmpeg complained)\n", job.ctx, job.channels, job.rate, job.packets.size());
+            for (size_t i = 0; i < job.packets.size(); i++)
+            {
+                const FedPacket& p = job.packets[i];
+                fprintf(t, "i=%zu buf=%08X bi=%u pkt=%u off=%u ratebits=%u chbit=%u fresh=%u\n", i, p.bufferAddr, p.bufferIndex, p.packetIndex, p.readOffset, p.rateBits,
+                        p.chBit, p.fresh);
+            }
+            fclose(t);
+        }
+    }
+}
+
+// How an XMA2 packet links to the next one: its frames run back to back from the header's first-frame offset, each
+// starting with a 15-bit length (in bits, itself included), and the last frame usually runs on into the next packet.
+// The next packet of the same stream then starts with a first-frame offset equal to the bits that ran on. A packet
+// that does not satisfy that is not the next one of the stream, whatever address or offset it was read from.
+unsigned FirstFrameOffset(const uint8_t* p)
+{
+    return ((uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3]) >> 11) & 0x7FFF;
+}
+
+// A packet with no frame start: the first-frame offset is 0x7FFF and the frame count 0. It carries the middle of one frame that is
+// longer than a packet; alone, a codec reads the offset as "skip 32767 bits" and then drops the next packet it is given.
+bool NoFrameStart(const uint8_t* p)
+{
+    return FirstFrameOffset(p) == 0x7FFF && (p[0] >> 2) == 0;
+}
+
+// The bits of the packet's last frame that run on into the next packet, or -1 if the packet cannot be walked.
+int SpillBits(const uint8_t* p)
+{
+    constexpr unsigned dataBits = kPacketBits - 32;
+    const unsigned frames = (uint32_t(p[0]) << 24 | uint32_t(p[1]) << 16 | uint32_t(p[2]) << 8 | p[3]) >> 26;
+    unsigned pos = FirstFrameOffset(p), end = 0, n = 0;
+    auto bit = [&](unsigned at) { return (p[4 + (at >> 3)] >> (7 - (at & 7))) & 1; };
+    while (n < frames && pos + 15 <= dataBits)
+    {
+        unsigned len = 0;
+        for (int i = 0; i < 15; i++)
+            len = len << 1 | unsigned(bit(pos + i));
+        if (!len)
+            break;
+        pos += len, end = pos, n++;
+    }
+    if (!end)
+        return -1;
+    return end > dataBits ? int(end - dataBits) : 0;
+}
+
 struct Decoder
 {
     AVCodecContext* av = nullptr;
@@ -141,39 +417,80 @@ struct Decoder
     // has reached the output ring (the hardware has no backlog, so the title takes "consumed"
     // to mean "delivered"); it would loop or stop a stream while the tail was still queued here.
     bool consumed[2] = {};
+    int seenValid = -1;      // the input valid bits at the last step
+    uint8_t ourClear = 0;    // bits this decoder cleared itself since then (not the title's doing)
     bool holdsTail = false; // packets were decoded since the codec was last drained or reset
     bool seeked = false; // the title set the read offset since the last packet was decoded
     bool music = false;  // its last packet came from a music file (MusicPacket)
+    // Where the last packet that decoded came from: input buffer, packet index and the buffer's packet count
+    // (lastBuffer -1: none since the codec was opened or reset). Used to tell a read that follows from a jump.
+    bool used = false; // packets were sent to this codec: only a fresh one is a real reset
+    int lastBuffer = -1;
+    uint32_t lastPacket = 0, lastCount = 0;
+    uint64_t decodeErrors = 0, guardFlushes = 0, errorPackets = 0;
+    // The last packets fed to the codec, newest last in ring order; dumped once when FFmpeg first complains.
+    std::array<FedPacket, kRingPackets> ring;
+    uint32_t ringNext = 0, ringCount = 0;
+    bool dumped = false;
+    // What the context looked like when the last packet was fed (identity changes are counted and logged).
+    uint32_t lastAddr[2] = {};
+    int lastRateBits = -1, lastChBit = -1;
+    uint32_t expectedOffset = 0;
+    bool haveExpected = false;
+    // Bits of the last frame fed that are still to come in the packets after it (a no-frame-start packet takes a whole packet of them);
+    // -1 when unknown. The next packet must start its first frame exactly there.
+    int pendingBits = -1;
+    // (capture) what the context showed at the last step: the output ring read index and the input buffers valid bits
+    int capRead = -1, capValid = -1;
 
     void Close()
     {
-        avcodec_free_context(&av);
+        RetireCodec(av);
+        av = nullptr;
         av_packet_free(&packet);
         av_frame_free(&frame);
     }
 
+    // A codec from the pool (see CodecReady): opening one takes milliseconds, too long for the title's mixer
+    // thread, which steps streams through XMAEnableContext.
     bool Open(uint32_t ch, uint32_t hz)
     {
-        Close();
-        const AVCodec* codec = avcodec_find_decoder(AV_CODEC_ID_XMA2);
-        if (!codec || !(av = avcodec_alloc_context3(codec)))
+        RetireCodec(av);
+        if (!(av = TakeCodec(ch, hz)))
             return false;
-        av->sample_rate = int(hz);
-        av_channel_layout_default(&av->ch_layout, int(ch));
-        av->block_align = kPacketBytes;
-        // XMA2WAVEFORMATEX (34 bytes): one stream; FFmpeg reads the stream count from it.
-        av->extradata = static_cast<uint8_t*>(av_mallocz(34 + AV_INPUT_BUFFER_PADDING_SIZE));
-        av->extradata_size = 34;
-        av->extradata[0] = 1;
-        if (avcodec_open2(av, codec, nullptr) < 0)
-        {
-            avcodec_free_context(&av);
-            return false;
-        }
-        packet = av_packet_alloc();
-        frame = av_frame_alloc();
+        if (!packet)
+            packet = av_packet_alloc();
+        if (!frame)
+            frame = av_frame_alloc();
         channels = ch;
         rate = hz;
+        used = false;
+        lastBuffer = -1;
+        pendingBits = -1;
+        return true;
+    }
+
+    // A real reset: FFmpeg's XMA decoder has no flush callback, so avcodec_flush_buffers leaves its overlap, its
+    // sample FIFO and its end-of-stream state in place, and the leftover bits of the old position are joined to
+    // the next packet ("would have to skip N bits", "invalid number of fill bits", garbage frames). A restarted
+    // stream gets a new codec instead, once one is ready (false: wait for the next pass).
+    // FM2_XMA_FLUSH_ONLY=1: avcodec_flush_buffers, as before.
+    bool Reset(uint32_t ctx)
+    {
+        static LiveSwitch flushOnly("FM2_XMA_FLUSH_ONLY");
+        if (!flush || !used || flushOnly)
+            return true; // (nothing sent yet, or the old reset, done in Decode)
+        if (!CodecReady(ctx, channels, rate))
+            return false;
+        RetireCodec(av);
+        if (!(av = TakeCodec(channels, rate)))
+            return false;
+        used = holdsTail = false;
+        flush = false;
+        lastBuffer = -1;
+        pendingBits = -1;
+        g_codecReopens++;
+        CAP_EVENT(ctx, "codec_replaced", "ch=%u;rate=%u", channels, rate);
         return true;
     }
 
@@ -213,27 +530,64 @@ struct Decoder
     }
 
     // Decodes one 2 KB packet and appends its samples.
-    void Decode(const uint8_t* data)
+    bool Decode(const uint8_t* data, const FedInfo& info)
     {
         const bool wasFlush = flush;
+        t_errorSeen = false;
+        {
+            FedPacket& slot = ring[ringNext % kRingPackets];
+            slot.bufferAddr = info.bufferAddr, slot.packetIndex = info.packetIndex, slot.readOffset = info.readOffset;
+            slot.bufferIndex = info.bufferIndex, slot.rateBits = info.rateBits, slot.chBit = info.chBit, slot.fresh = !used;
+            memcpy(slot.data, data, kPacketBytes);
+            ringNext++;
+            ringCount = std::min(ringCount + 1, kRingPackets);
+        }
+        // After FFmpeg has been fed: counts a packet it complained about and queues the dump of the first one of this decoder.
+        auto noteErrors = [&] {
+            if (!t_errorSeen)
+                return;
+            t_errorSeen = false;
+            errorPackets++, g_errorPackets++;
+            if (dumped || !getenv("FM2_XMA_DUMP_DIR") || g_dumps >= kMaxDumps)
+                return;
+            dumped = true;
+            DumpJob job;
+            job.seq = uint32_t(++g_dumps), job.ctx = info.ctx, job.channels = channels, job.rate = rate;
+            for (uint32_t i = 0; i < ringCount; i++)
+                job.packets.push_back(ring[(ringNext - ringCount + i) % kRingPackets]);
+            std::call_once(g_dumpStarted, [] { std::thread(DumpWriter).detach(); });
+            {
+                std::lock_guard lock(g_dumpMutex);
+                g_dumpQueue.push_back(std::move(job));
+            }
+            g_dumpCv.notify_one();
+        };
         if (flush)
         {
-            avcodec_flush_buffers(av);
+            if (used)
+                avcodec_flush_buffers(av); // (Reset replaces the codec before this unless FM2_XMA_FLUSH_ONLY)
             flush = false;
         }
+        used = true;
         const size_t pcmBefore = pcm.size();
         packetsDecoded++;
         if (av_new_packet(packet, kPacketBytes) < 0)
-            return;
+            return false;
         memcpy(packet->data, data, kPacketBytes);
         const int sent = avcodec_send_packet(av, packet);
         av_packet_unref(packet);
         if (sent < 0)
         {
+            CAP_EVENT(info.ctx, "packet_failed", "hdr=%08X;hash=%016llX;buf=%08X;bi=%u;pkt=%u;off=%u", uint32_t(data[0]) << 24 | uint32_t(data[1]) << 16 | uint32_t(data[2]) << 8 | data[3],
+                      (unsigned long long)(audiocap::On() ? CapHash(data, kPacketBytes) : 0), info.bufferAddr, info.bufferIndex, info.packetIndex, info.readOffset);
+            noteErrors();
+            decodeErrors++, g_decodeErrors++;
             flush = true;
-            return;
+            lastBuffer = -1;
+            return false;
         }
-        while (avcodec_receive_frame(av, frame) == 0)
+        int received;
+        while ((received = avcodec_receive_frame(av, frame)) == 0)
         {
             const int n = frame->nb_samples, ch = std::min<int>(frame->ch_layout.nb_channels, int(channels));
             const size_t base = pcm.size();
@@ -246,6 +600,12 @@ struct Decoder
             }
             av_frame_unref(frame);
         }
+        const bool hadMessage = t_errorSeen;
+        noteErrors();
+        const bool failed = received != AVERROR(EAGAIN) && received != AVERROR_EOF;
+        if (failed)
+            decodeErrors++, g_decodeErrors++;
+        g_packetsDecoded++;
         framesDecoded += (pcm.size() - pcmBefore) / channels;
         holdsTail = true;
         if (g_traceXma)
@@ -255,6 +615,11 @@ struct Decoder
                 peak = std::max(peak, std::abs(int(pcm[i])));
             Log("xma: decoded a packet: %zu frames (flush %d, peak %d)", (pcm.size() - pcmBefore) / channels, int(wasFlush), peak);
         }
+        CAP_EVENT(info.ctx, "packet", "hdr=%08X;hash=%016llX;buf=%08X;bi=%u;pkt=%u;off=%u;samples_out=%zu;message=%d;fresh=%d;pending=%d",
+                  uint32_t(data[0]) << 24 | uint32_t(data[1]) << 16 | uint32_t(data[2]) << 8 | data[3],
+                  (unsigned long long)(audiocap::On() ? CapHash(data, kPacketBytes) : 0), info.bufferAddr, info.bufferIndex, info.packetIndex, info.readOffset,
+                  (pcm.size() - pcmBefore) / std::max<uint32_t>(channels, 1), int(hadMessage), int(ring[(ringNext - 1) % kRingPackets].fresh), pendingBits);
+        return !failed;
     }
 };
 
@@ -281,6 +646,13 @@ bool WriteBlock(uint32_t ctx, Decoder& d)
     const bool mute = d.music && DealerMutesMusic();
     for (size_t i = 0; i < perBlock; i++)
         out[i] = mute ? 0 : __builtin_bswap16(uint16_t(d.pcm[d.pcmRead + i]));
+    if (audiocap::On())
+    {
+        int16_t host[kBlockBytes / 2];
+        for (size_t i = 0; i < perBlock; i++)
+            host[i] = mute ? 0 : d.pcm[d.pcmRead + i];
+        audiocap::Pcm(ctx, host, perBlock);
+    }
     d.pcmRead += perBlock;
     d.framesWritten += perBlock / std::max<uint32_t>(d.channels, 1);
     if (d.pcmRead > (1u << 16))
@@ -309,9 +681,48 @@ bool Step(uint32_t ctx)
     static const uint32_t kRates[4] = { 24000, 32000, 44100, 48000 };
     const uint32_t channels = Field(ctx, 1, 29, 1) ? 2 : 1, rate = kRates[Field(ctx, 1, 27, 2)];
     Decoder& d = g_decoders[ctx];
-    if (!d.av || d.channels != channels || d.rate != rate)
-        if (!d.Open(channels, rate))
+    {
+        // The title cleared both input valid bits: it ended or repurposed the stream. The console's decoder never holds
+        // more than its output ring, so nothing of the old stream is left to write; what this decoder still has queued
+        // would sound after the switch, through whatever the voice is playing next. FM2_NO_XMA_DROP_AHEAD=1: keep it.
+        static LiveSwitch noDrop("FM2_NO_XMA_DROP_AHEAD");
+        const int validNow = int(Field(ctx, 0, 20, 2));
+        const bool cancelled = d.seenValid > 0 && validNow == 0 && (d.seenValid & ~int(d.ourClear)) != 0;
+        d.seenValid = validNow, d.ourClear = 0;
+        if (cancelled && !noDrop)
+        {
+            if (const size_t ahead = d.pcm.size() - d.pcmRead)
+            {
+                d.pcm.resize(d.pcmRead);
+                g_aheadDropped += ahead;
+                CAP_EVENT(ctx, "drop_ahead", "samples=%zu;why=title_cancel", ahead);
+            }
+            d.consumed[0] = d.consumed[1] = false;
+            d.holdsTail = false;
+            d.flush = true;
+        }
+    }
+    if (audiocap::On())
+    {
+        const int valid = int(Field(ctx, 0, 20, 2));
+        if (int(read) != d.capRead)
+        {
+            CAP_EVENT(ctx, "out_read", "read=%u;write=%u;blocks=%u", read, write, blocks);
+            d.capRead = int(read);
+        }
+        if (valid != d.capValid)
+        {
+            CAP_EVENT(ctx, "in_valid", "in0=%u;in1=%u;packets0=%u;packets1=%u;cur=%u", valid & 1, valid >> 1, Field(ctx, 0, 0, 12), Field(ctx, 1, 0, 12), Field(ctx, 4, 31, 1));
+            d.capValid = valid;
+        }
+    }
+    const bool opening = !d.av || d.channels != channels || d.rate != rate;
+    if (opening)
+        if (!CodecReady(ctx, channels, rate) || !d.Open(channels, rate))
             return false;
+    if (opening)
+        CAP_EVENT(ctx, "open", "ch=%u;rate=%u", channels, rate);
+
     if (WriteBlock(ctx, d))
         return true;
 
@@ -343,6 +754,7 @@ bool Step(uint32_t ctx)
         if (d.consumed[i])
         {
             d.consumed[i] = false;
+            d.ourClear |= uint8_t(1u << i);
             SetField(ctx, 0, 20 + i, 1, 0); // now the title may refill (or loop) it
         }
 
@@ -364,8 +776,35 @@ bool Step(uint32_t ctx)
     const uint32_t packets = current ? Field(ctx, 1, 0, 12) : Field(ctx, 0, 0, 12);
     const uint32_t buffer = ContextBuffer(LoadBE32(ctx + (5 + current) * 4));
     const uint32_t packet = Field(ctx, 2, 0, 26) / kPacketBits;
+    const uint32_t bufferAddr = LoadBE32(ctx + (5 + current) * 4), rateBits = Field(ctx, 1, 27, 2), chBit = Field(ctx, 1, 29, 1);
     if (packet < packets)
     {
+        // DIAGNOSTIC: the context changing identity under a running decoder.
+        {
+            const uint32_t offsetNow = Field(ctx, 2, 0, 26);
+            if (d.lastAddr[current] && d.lastAddr[current] != bufferAddr)
+            {
+                g_bufferChanges++;
+                CAP_EVENT(ctx, "buffer_moved", "bi=%u;from=%08X;to=%08X;packets=%u", current, d.lastAddr[current], bufferAddr, packets);
+                if (g_idBudget.fetch_sub(1) > 0)
+                    Log("xma: id %08X: input buffer %u moved %08X -> %08X (%u packets)", ctx, current, d.lastAddr[current], bufferAddr, packets);
+            }
+            d.lastAddr[current] = bufferAddr;
+            if (d.lastRateBits >= 0 && (int(rateBits) != d.lastRateBits || int(chBit) != d.lastChBit))
+            {
+                g_rateChanges++;
+                if (g_idBudget.fetch_sub(1) > 0)
+                    Log("xma: id %08X: rate/channel bits %d/%d -> %u/%u", ctx, d.lastRateBits, d.lastChBit, rateBits, chBit);
+            }
+            d.lastRateBits = int(rateBits), d.lastChBit = int(chBit);
+            if (d.haveExpected && offsetNow != d.expectedOffset)
+            {
+                g_offsetWrites++;
+                CAP_EVENT(ctx, "title_offset_write", "offset=%u;expected=%u;bi=%u;pkt=%u", offsetNow, d.expectedOffset, current, packet);
+                if (g_idBudget.fetch_sub(1) > 0)
+                    Log("xma: id %08X: read offset written by the title: %u (expected %u), buffer %u packet %u", ctx, offsetNow, d.expectedOffset, current, packet);
+            }
+        }
         if (g_traceXma && d.seeked)
         {
             const uint32_t header = LoadBE32(buffer + packet * kPacketBytes), start = Field(ctx, 2, 0, 26) % kPacketBits;
@@ -377,7 +816,72 @@ bool Step(uint32_t ctx)
         d.music = MusicPacket(GuestPtr<uint8_t>(buffer + packet * kPacketBytes));
         if (d.music)
             LOG_ONCE("xma: %08X is music (the first stream recognised)", ctx);
-        d.Decode(GuestPtr<uint8_t>(buffer + packet * kPacketBytes));
+        // A frame can run on into the next packet, and the codec keeps the unfinished one until that packet
+        // arrives. The packet that follows is the next one of the same input buffer, or the first of a buffer
+        // after the last packet of the previous one. Anything else (a loop, a restart elsewhere in the stream)
+        // must not inherit the old tail: it would be joined to the new packet's start and decode as garbage.
+        // Reads that do follow (the pair restarts the title makes) keep the codec state. FM2_NO_XMA_SEEK_GUARD=1: off.
+        static LiveSwitch noGuard("FM2_NO_XMA_SEEK_GUARD");
+        if (!noGuard && d.lastBuffer >= 0 && d.holdsTail && !d.flush)
+        {
+            // The packets themselves decide when they can be read: the title restarts a context with another sound's
+            // packets (often packet 1 of it) in the same input buffers at the same offsets, which no address or index shows.
+            const uint8_t* thisPacket = GuestPtr<uint8_t>(buffer + packet * kPacketBytes);
+            bool contiguous = (int(current) == d.lastBuffer && packet == d.lastPacket + 1) || (d.lastPacket + 1 >= d.lastCount && packet == 0);
+            if (d.pendingBits >= 0)
+                contiguous = NoFrameStart(thisPacket) ? d.pendingBits >= int(kPacketBits - 32) : unsigned(d.pendingBits) == FirstFrameOffset(thisPacket);
+            else if (NoFrameStart(thisPacket))
+                contiguous = false; // nothing to say the frame it carries began in the packets before
+            if (!contiguous)
+            {
+                d.flush = true;
+                d.guardFlushes++, g_guardFlushes++;
+                // The title restarted the context with another sound. The console's decoder never runs further ahead than
+                // its output ring, so nothing of the old sound is left to play once the new one begins; what this decoder
+                // still holds beyond the ring would sound after the restart, through the new sound's voice.
+                // FM2_NO_XMA_DROP_AHEAD=1: keep it.
+                static LiveSwitch noDrop("FM2_NO_XMA_DROP_AHEAD");
+                if (const size_t ahead = d.pcm.size() - d.pcmRead; !noDrop && ahead)
+                {
+                    d.pcm.resize(d.pcmRead);
+                    g_aheadDropped += ahead;
+                    CAP_EVENT(ctx, "drop_ahead", "samples=%zu", ahead);
+                }
+                CAP_EVENT(ctx, "reset_guard", "pending=%d;first=%u;no_frame_start=%d;bi=%u;pkt=%u;last_bi=%d;last_pkt=%u", d.pendingBits, FirstFrameOffset(thisPacket),
+                          int(NoFrameStart(thisPacket)), current, packet, d.lastBuffer, d.lastPacket);
+                if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
+                    Log("xma: %08X discontinuity: buffer %u packet %u after buffer %d packet %u of %u (seeked %d): codec flushed", ctx, current, packet,
+                        d.lastBuffer, d.lastPacket, d.lastCount, int(d.seeked));
+            }
+        }
+        if (!d.Reset(ctx))
+            return false;
+        FedInfo info;
+        info.ctx = ctx, info.bufferAddr = bufferAddr, info.packetIndex = packet, info.readOffset = Field(ctx, 2, 0, 26);
+        info.bufferIndex = uint8_t(current), info.rateBits = uint8_t(rateBits), info.chBit = uint8_t(chBit);
+        const uint8_t* fed = GuestPtr<uint8_t>(buffer + packet * kPacketBytes);
+        if (!noGuard && NoFrameStart(fed) && !d.used)
+        {
+            // A new codec has no frame for this packet to continue, and would carry its "skip 32767 bits" into the next packet.
+            d.pendingBits = -1;
+            CAP_EVENT(ctx, "skip_no_frame_start", "buf=%08X;bi=%u;pkt=%u;hash=%016llX", bufferAddr, current, packet,
+                      (unsigned long long)(audiocap::On() ? CapHash(fed, kPacketBytes) : 0));
+        }
+        else
+        {
+            const bool decoded = d.Decode(fed, info);
+            if (decoded)
+            {
+                d.lastBuffer = int(current), d.lastPacket = packet, d.lastCount = packets;
+                d.pendingBits = NoFrameStart(fed) ? (d.pendingBits >= int(kPacketBits - 32) ? d.pendingBits - int(kPacketBits - 32) : -1) : SpillBits(fed);
+            }
+            else
+            {
+                d.pendingBits = -1;
+                if (g_traceXma && g_traceBudget.fetch_sub(1) > 0)
+                    Log("xma: %08X decode error: buffer %u packet %u of %u", ctx, current, packet, packets);
+            }
+        }
     }
 
     // Loop: when the packet holding the loop end is done and loops remain, continue from
@@ -390,7 +894,9 @@ bool Step(uint32_t ctx)
         if (loops != 255)
             SetField(ctx, 0, 12, 8, loops - 1);
         SetField(ctx, 2, 0, 26, Field(ctx, 3, 0, 26));
+        d.expectedOffset = Field(ctx, 2, 0, 26), d.haveExpected = true;
         d.flush = true;
+        CAP_EVENT(ctx, "loop", "end_packet=%u;loop_start=%u;loops_left=%u", packet, Field(ctx, 3, 0, 26), loops);
         return true;
     }
     const uint32_t offset = (packet + 1) * kPacketBits + 32;
@@ -402,7 +908,31 @@ bool Step(uint32_t ctx)
     }
     else
         SetField(ctx, 2, 0, 26, offset);
+    d.expectedOffset = Field(ctx, 2, 0, 26), d.haveExpected = true;
     return true;
+}
+
+// Once every 5 s while the counts changed: decode failures, guard flushes and packets decoded in that time.
+void ReportStats()
+{
+    static auto last = Clock::now();
+    static uint64_t errors = 0, flushes = 0, packets = 0, reopens = 0, waits = 0, errorPkts = 0, dumps = 0, bufs = 0, rates = 0, offs = 0, kicks = 0, locks = 0, clears = 0, aheadSeen = 0;
+    const auto now = Clock::now();
+    if (now - last < std::chrono::seconds(5))
+        return;
+    last = now;
+    const uint64_t e = g_decodeErrors, f = g_guardFlushes, p = g_packetsDecoded, r = g_codecReopens, w = g_poolWaits, ep = g_errorPackets, dm = g_dumps, bc = g_bufferChanges,
+                   rc = g_rateChanges, ow = g_offsetWrites, kk = g_regKicks, lk = g_regLocks, cl = g_regClears;
+    if (e != errors || f != flushes || r != reopens || w != waits || ep != errorPkts || bc != bufs || rc != rates || ow != offs || cl != clears)
+        Log("xma: 5 s: %llu decode errors, %llu discontinuity flushes, %llu codec reopens, %llu pool waits, %llu packets decoded; %llu packets FFmpeg complained about "
+            "(%llu dumps so far); contexts: %llu buffer moves, %llu rate/channel changes, %llu offset writes by the title; registers: %llu kicks, %llu locks, %llu clears",
+            (unsigned long long)(e - errors), (unsigned long long)(f - flushes), (unsigned long long)(r - reopens), (unsigned long long)(w - waits),
+            (unsigned long long)(p - packets), (unsigned long long)(ep - errorPkts), (unsigned long long)dm, (unsigned long long)(bc - bufs),
+            (unsigned long long)(rc - rates), (unsigned long long)(ow - offs), (unsigned long long)(kk - kicks), (unsigned long long)(lk - locks),
+            (unsigned long long)(cl - clears));
+    if (const uint64_t ad = g_aheadDropped; ad != aheadSeen)
+        Log("xma: 5 s: %llu decoded samples dropped unplayed at stream restarts", (unsigned long long)(ad - aheadSeen)), aheadSeen = ad;
+    errors = e, flushes = f, packets = p, reopens = r, waits = w, errorPkts = ep, dumps = dm, bufs = bc, rates = rc, offs = ow, kicks = kk, locks = lk, clears = cl;
 }
 
 void DecoderLoop()
@@ -416,10 +946,12 @@ void DecoderLoop()
     {
         next += std::chrono::milliseconds(2);
         std::this_thread::sleep_until(next);
+        RefillCodecPool();
         std::lock_guard lock(g_mutex);
         for (uint32_t ctx : g_enabled)
             while (Step(ctx))
                 ;
+        ReportStats();
     }
 }
 }
@@ -449,6 +981,7 @@ void ClearContext(uint32_t ctx)
     SetField(ctx, 1, 31, 1, 0);  // output buffer not valid
     SetField(ctx, 2, 0, 26, 32); // read offset: past the first packet's header
     SetField(ctx, 9, 0, 5, 0);   // output read offset
+    CAP_EVENT(ctx, "clear", "dword0=%08X;dword1=%08X;dword2=%08X", LoadBE32(ctx), LoadBE32(ctx + 4), LoadBE32(ctx + 8));
     SetField(ctx, 0, 27, 5, 0);  // output write offset
     ResetDecoder(ctx);
 }
@@ -457,6 +990,7 @@ void StartDecoder()
 {
     std::call_once(g_started, [] {
         av_log_set_level(AV_LOG_ERROR);
+        av_log_set_callback(XmaLogCallback);
         std::thread(DecoderLoop).detach();
     });
 }
@@ -487,6 +1021,7 @@ void XmaWriteRegister(uint32_t address, uint32_t value)
         // Kick: start (or continue) decoding these contexts, as XMAEnableContext does.
         StartDecoder();
         forEach(kRegKick, [](uint32_t c) {
+            g_regKicks++;
             g_enabled.insert(c);
             while (Step(c))
                 ;
@@ -496,10 +1031,15 @@ void XmaWriteRegister(uint32_t address, uint32_t value)
     {
         // Lock: stop decoding them, as XMADisableContext does. Taking g_mutex above means no Step is
         // under way, so the title may edit them once this store returns.
-        forEach(kRegLock, [](uint32_t c) { g_enabled.erase(c); });
+        forEach(kRegLock, [](uint32_t c) { g_regLocks++, g_enabled.erase(c); });
     }
     else if (r >= kRegClear && r < kRegClear + 10)
-        forEach(kRegClear, [](uint32_t c) { ClearContext(c); });
+        forEach(kRegClear, [](uint32_t c) {
+            g_regClears++;
+            if (g_idBudget.fetch_sub(1) > 0)
+                Log("xma: id %08X: clear register", c);
+            ClearContext(c);
+        });
     else
         LOG_ONCE("xma: write %08X to APU register %03X", value, r);
 }
