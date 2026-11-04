@@ -181,9 +181,27 @@ GUEST_EXPORT(NetDll_XNetStartup)
 GUEST_EXPORT(NetDll_XNetCleanup) { Return(ctx, 0); }
 GUEST_EXPORT(NetDll_WSAStartup)
 {
-    // (caller, version, WSADATA*): the guest never reads the structure.
+    // (caller, version, WSADATA*): the title reads wVersion back and fails its network stack init (and destroys the
+    // network manager the later session code copies) unless it is the version it asked for. The console's WSADATA:
+    // { u16 wVersion, wHighVersion; char szDescription[257]; char szSystemStatus[129]; u16 iMaxSockets, iMaxUdpDg;
+    // char* lpVendorInfo } (400 bytes with its padding), big-endian.
     if (g_online)
+    {
         EnsureWsa();
+        if (const uint32_t data = ctx.r5.u32)
+        {
+            constexpr uint16_t kHighVersion = 0x0202;
+            const uint16_t requested = uint16_t(ctx.r4.u32);
+            const uint16_t version = requested <= kHighVersion ? requested : kHighVersion;
+            uint8_t* d = GuestPtr<uint8_t>(data);
+            memset(d, 0, 400);
+            d[0] = uint8_t(version >> 8);
+            d[1] = uint8_t(version);
+            d[2] = uint8_t(kHighVersion >> 8);
+            d[3] = uint8_t(kHighVersion);
+            memcpy(d + 4, "WinSock 2.0", 12); // szDescription
+        }
+    }
     Return(ctx, 0);
 }
 GUEST_EXPORT(NetDll_WSACleanup) { Return(ctx, 0); }
