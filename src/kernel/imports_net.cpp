@@ -14,12 +14,17 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+#include <chrono>
+#include <condition_variable>
 #include <cstring>
 #include <mutex>
 #include <random>
+#include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "kernel/imports.h"
+#include "kernel/objects.h"
 #include "live_switch.h"
 #include "log.h"
 
@@ -157,6 +162,199 @@ uint32_t LoadRaw32(uint32_t guest)
     uint32_t v;
     memcpy(&v, GuestPtr<uint8_t>(guest), 4);
     return v;
+}
+
+// Overlapped datagram receives ---------------------------------------------------------------
+//
+// The title's network worker calls WSARecvFrom with an overlapped and expects WSA_IO_PENDING (997) when no datagram
+// is waiting, then waits on the overlapped's event and collects the result with WSAGetOverlappedResult. A blocking
+// host recvfrom there parks the worker (and everything that waits on it, the main thread included) for good. A
+// call with an overlapped now answers at once when a datagram is ready, else it is queued and a host thread
+// completes it when the socket turns readable: the guest buffer, from address, byte counts and overlapped are
+// written, then the overlapped's event is signalled. The guest overlapped is { u32 Internal; u32 InternalHigh;
+// u32 Offset; u32 OffsetHigh; u32 hEvent } (hEvent at +0x10); an XOVERLAPPED-style event at +0x0C is honoured too.
+constexpr int kWsaIoPending = 997;
+constexpr int kWsaOperationAborted = 995;
+constexpr uint32_t kStatusPending = 0x103;
+
+struct PendingRecv
+{
+    uint32_t handle;
+    uint32_t buffer, length;
+    uint32_t received; // DWORD* for the byte count
+    uint32_t from, fromLen;
+    uint32_t overlapped;
+};
+struct OverlappedState
+{
+    bool done = false;
+    uint32_t bytes = 0;
+    int error = 0;
+};
+
+std::mutex g_ioMutex;
+std::condition_variable g_ioCv;
+std::vector<PendingRecv> g_pending;
+std::unordered_map<uint32_t, OverlappedState> g_overlapped; // by guest overlapped address
+bool g_ioThreadUp = false;
+
+void SignalOverlappedEvent(uint32_t overlapped)
+{
+    for (const uint32_t offset : { 0x10u, 0x0Cu })
+    {
+        const uint32_t event = LoadBE32(overlapped + offset);
+        if (!event)
+            continue;
+        auto object = GetHandle(event);
+        if (!object || object->kind != KernelObject::Kind::Event)
+            continue;
+        {
+            std::lock_guard lock(g_objectMutex);
+            static_cast<EventObject&>(*object).signaled = true;
+            SyncGuestSignalState(*object);
+        }
+        SignalObjectsChanged();
+        return;
+    }
+}
+
+// Records the outcome in the guest overlapped and the host table, then signals the event.
+void CompleteGuestOverlapped(uint32_t overlapped, uint32_t bytes, int error)
+{
+    if (!overlapped)
+        return;
+    StoreBE32(overlapped + 0x00, error ? uint32_t(0xC0000000 | error) : 0u);
+    StoreBE32(overlapped + 0x04, bytes);
+    {
+        std::lock_guard lock(g_ioMutex);
+        OverlappedState& st = g_overlapped[overlapped];
+        st.done = true;
+        st.bytes = bytes;
+        st.error = error;
+    }
+    SignalOverlappedEvent(overlapped);
+}
+
+void MarkOverlappedPending(uint32_t overlapped)
+{
+    StoreBE32(overlapped + 0x00, kStatusPending);
+    StoreBE32(overlapped + 0x04, 0);
+    std::lock_guard lock(g_ioMutex);
+    g_overlapped[overlapped] = OverlappedState{};
+}
+
+// Reads one datagram that is known to be ready into the guest request. Returns the byte count, or -1 with the host error.
+int ReceiveInto(SOCKET s, const PendingRecv& r)
+{
+    sockaddr_in from{};
+    int fromLen = sizeof from;
+    const int n = recvfrom(s, GuestPtr<char>(r.buffer), int(r.length), 0, reinterpret_cast<sockaddr*>(&from), &fromLen);
+    if (n < 0)
+        return -1;
+    if (r.received)
+        StoreBE32(r.received, uint32_t(n));
+    if (r.from)
+    {
+        FromHost(r.from, from);
+        if (r.fromLen)
+            StoreBE32(r.fromLen, 16);
+    }
+    return n;
+}
+
+void IoThreadMain()
+{
+    for (;;)
+    {
+        std::vector<PendingRecv> snapshot;
+        {
+            std::unique_lock lock(g_ioMutex);
+            if (g_pending.empty())
+                g_ioCv.wait_for(lock, std::chrono::milliseconds(100));
+            snapshot = g_pending;
+        }
+        if (snapshot.empty())
+            continue;
+        fd_set readable;
+        FD_ZERO(&readable);
+        int count = 0;
+        for (const PendingRecv& r : snapshot)
+            if (const SOCKET s = Host(r.handle); s != INVALID_SOCKET && count < FD_SETSIZE)
+            {
+                FD_SET(s, &readable);
+                count++;
+            }
+        if (!count)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+        timeval timeout{ 0, 20000 };
+        if (select(0, &readable, nullptr, nullptr, &timeout) <= 0)
+            continue;
+        for (const PendingRecv& r : snapshot)
+        {
+            const SOCKET s = Host(r.handle);
+            if (s == INVALID_SOCKET || !FD_ISSET(s, &readable))
+                continue;
+            {
+                // Still queued? (closesocket may have cancelled it.)
+                std::lock_guard lock(g_ioMutex);
+                bool found = false;
+                for (size_t i = 0; i < g_pending.size(); i++)
+                    if (g_pending[i].overlapped == r.overlapped && g_pending[i].handle == r.handle)
+                    {
+                        g_pending.erase(g_pending.begin() + i);
+                        found = true;
+                        break;
+                    }
+                if (!found)
+                    continue;
+            }
+            const int n = ReceiveInto(s, r);
+            if (g_traceDnet)
+                Log("dnet: ws recv completed: socket %u overlapped %08X bytes %d", r.handle, r.overlapped, n);
+            CompleteGuestOverlapped(r.overlapped, n < 0 ? 0u : uint32_t(n), n < 0 ? WSAGetLastError() : 0);
+        }
+    }
+}
+
+void QueueReceive(const PendingRecv& r)
+{
+    MarkOverlappedPending(r.overlapped);
+    {
+        std::lock_guard lock(g_ioMutex);
+        g_pending.push_back(r);
+        if (!g_ioThreadUp)
+        {
+            g_ioThreadUp = true;
+            std::thread(IoThreadMain).detach();
+        }
+    }
+    g_ioCv.notify_all();
+}
+
+// Completes every receive still queued on a socket that is being closed.
+void CancelReceives(uint32_t handle)
+{
+    std::vector<PendingRecv> cancelled;
+    {
+        std::lock_guard lock(g_ioMutex);
+        for (size_t i = 0; i < g_pending.size();)
+            if (g_pending[i].handle == handle)
+            {
+                cancelled.push_back(g_pending[i]);
+                g_pending.erase(g_pending.begin() + i);
+            }
+            else
+                i++;
+    }
+    for (const PendingRecv& r : cancelled)
+    {
+        if (g_traceDnet)
+            Log("dnet: ws recv cancelled: socket %u overlapped %08X", r.handle, r.overlapped);
+        CompleteGuestOverlapped(r.overlapped, 0, kWsaOperationAborted);
+    }
 }
 } // namespace
 
@@ -372,6 +570,7 @@ GUEST_EXPORT(NetDll_closesocket)
         Fail(ctx, WSAENOTSOCK);
         return;
     }
+    CancelReceives(h);
     {
         std::lock_guard lock(g_mutex);
         g_sockets[h - 1] = INVALID_SOCKET;
@@ -537,8 +736,9 @@ GUEST_EXPORT(NetDll_select)
     Return(ctx, uint32_t(r));
 }
 
-// Datagrams: WSABUF is { u32 len; u32 buf }. The calls complete synchronously; an overlapped
-// argument is accepted and its completion routine is not run.
+// Datagrams: WSABUF is { u32 len; u32 buf }. Sends complete at once (an overlapped argument gets its result and event
+// set on the spot, its completion routine is not run). Receives with an overlapped may stay queued (see above); without
+// one they block the calling thread like the plain call.
 GUEST_EXPORT(NetDll_WSASendTo)
 {
     // (caller, s, WSABUF*, count, sent*, flags, to*, tolen, overlapped, completion)
@@ -556,6 +756,8 @@ GUEST_EXPORT(NetDll_WSASendTo)
         total += uint32_t(n);
     }
     StoreIfNonNull(ctx.r7.u32, total);
+    if (const uint32_t overlapped = StackArg(ctx, 8))
+        CompleteGuestOverlapped(overlapped, total, 0);
     Return(ctx, 0);
 }
 
@@ -565,16 +767,74 @@ GUEST_EXPORT(NetDll_WSARecvFrom)
     SOCKET s = Host(ctx.r4.u32);
     if (s == INVALID_SOCKET) { Fail(ctx, WSAENOTSOCK); return; }
     const uint32_t b = ctx.r5.u32;
-    sockaddr_in from{};
-    int fromLen = sizeof from;
-    const int n = recvfrom(s, GuestPtr<char>(LoadBE32(b + 4)), int(LoadBE32(b)), 0,
-                           reinterpret_cast<sockaddr*>(&from), &fromLen);
-    if (n < 0) { Fail(ctx); return; }
-    StoreIfNonNull(ctx.r7.u32, uint32_t(n));
-    if (ctx.r9.u32)
+    const uint32_t overlapped = StackArg(ctx, 8);
+    PendingRecv r{ ctx.r4.u32, LoadBE32(b + 4), LoadBE32(b), ctx.r7.u32, ctx.r9.u32, ctx.r10.u32, overlapped };
+    if (!overlapped)
     {
-        FromHost(ctx.r9.u32, from);
-        StoreIfNonNull(ctx.r10.u32, 16);
+        const int n = ReceiveInto(s, r);
+        if (n < 0) { Fail(ctx); return; }
+        Return(ctx, 0);
+        return;
     }
-    Return(ctx, 0);
+    fd_set readable;
+    FD_ZERO(&readable);
+    FD_SET(s, &readable);
+    timeval none{ 0, 0 };
+    if (select(0, &readable, nullptr, nullptr, &none) > 0)
+    {
+        const int n = ReceiveInto(s, r);
+        if (n < 0) { Fail(ctx); return; }
+        CompleteGuestOverlapped(overlapped, uint32_t(n), 0);
+        Return(ctx, 0);
+        return;
+    }
+    if (g_traceDnet)
+        Log("dnet: ws recv queued: socket %u overlapped %08X buffer %08X len %u (lr %08llX)", r.handle, overlapped, r.buffer, r.length,
+            (unsigned long long)ctx.lr);
+    QueueReceive(r);
+    Fail(ctx, kWsaIoPending);
+}
+
+GUEST_EXPORT(NetDll_WSAGetOverlappedResult)
+{
+    // (caller, s, overlapped, bytes*, wait, flags*) -> BOOL
+    const uint32_t overlapped = ctx.r5.u32;
+    OverlappedState st;
+    bool known = false;
+    for (;;)
+    {
+        {
+            std::lock_guard lock(g_ioMutex);
+            auto it = g_overlapped.find(overlapped);
+            known = it != g_overlapped.end();
+            if (known)
+                st = it->second;
+        }
+        if (!known || st.done || !ctx.r7.u32)
+            break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // wait = TRUE: until the receive completes
+    }
+    if (!known)
+    {
+        // Not an operation we queued: its result was written by the call that completed it.
+        StoreIfNonNull(ctx.r6.u32, LoadBE32(overlapped + 4));
+        StoreIfNonNull(ctx.r8.u32, 0);
+        Return(ctx, 1);
+        return;
+    }
+    if (!st.done)
+    {
+        t_lastError = kWsaIoPending; // WSA_IO_INCOMPLETE
+        Return(ctx, 0);
+        return;
+    }
+    StoreIfNonNull(ctx.r6.u32, st.bytes);
+    StoreIfNonNull(ctx.r8.u32, 0);
+    if (st.error)
+    {
+        t_lastError = st.error;
+        Return(ctx, 0);
+        return;
+    }
+    Return(ctx, 1);
 }
