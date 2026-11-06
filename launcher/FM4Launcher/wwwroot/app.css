@@ -268,6 +268,55 @@ textarea { resize: vertical; min-height: 120px; }
 #drop[hidden] { display: none; }
 @media (max-width: 760px) { .tiles { grid-template-columns: 1fr; } }
 
+/* wheel stuff (wheel.js) */
+.grid-wheel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); }
+.grid-wheel > .stack > .panel { flex: 1 1 0; }
+.grid-wheel > .stack > .panel.whole { flex: 0 0 auto; }
+.wh-status { font-size: 11.5px; color: var(--muted); }
+.wh-status.on { color: var(--ok); }
+.wh-status.on::before { content: "● "; }
+.buttons-row.wrap { flex-wrap: wrap; }
+.item .meta.wh-use { color: #b6f0c8; }
+#wh-devices { flex: 0 1 auto; }
+#wh-live-name { min-width: 0; margin-left: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grid-wheel .panel-head h2 { white-space: nowrap; }
+.wh-sub { margin: 14px 0 8px; font-size: 11.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.wh-sub:first-child { margin-top: 0; }
+.wh-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; margin-top: 10px; }
+.segmented.seg3 { grid-template-columns: 1fr 1fr 1fr; }
+.segmented + .toggle-row, .segmented + .field { margin-top: 10px; }
+.field > span b { color: var(--text); font-weight: 600; margin-left: 4px; }
+input[type=range] { padding: 0; accent-color: var(--accent); background: transparent; border: 0; }
+.wh-warn { color: var(--warn); font-size: 12.5px; background: #2a2214; border: 1px solid #5a4620; border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.wh-rows { display: flex; flex-direction: column; gap: 6px; }
+.wh-row { display: flex; align-items: center; gap: 6px; background: var(--panel-2); border: 1px solid transparent; border-radius: 8px; padding: 7px 10px; }
+.wh-row .main { flex: 1; min-width: 0; }
+.wh-row .title { font-weight: 600; font-size: 13px; }
+.wh-row .meta { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wh-row .meta.warn { color: var(--warn); }
+.wh-row .wh-def { color: #5d6372; }
+.wh-row.binding { border-color: var(--accent-2); }
+.wh-row.binding .meta { color: var(--accent-2); font-weight: 600; }
+.wh-row.dim .title { color: var(--muted); }
+.wh-row .ghost.small { flex: none; }
+.wh-axes { display: flex; flex-direction: column; gap: 6px; }
+.wh-axis { display: grid; grid-template-columns: 92px 1fr 54px; align-items: center; gap: 8px; font-size: 12px; }
+.wh-axis-name { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wh-axis-v { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.wh-bar { position: relative; height: 10px; border-radius: 99px; background: var(--panel-2); overflow: hidden; }
+.wh-bar i { position: absolute; top: 0; bottom: 0; left: 0; width: 0; background: var(--accent-2); border-radius: 99px; }
+.wh-bar.centred::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: #3a404c; }
+.wh-bar.accent i { background: var(--accent); }
+.wh-label { margin: 12px 0 6px; color: var(--muted); font-size: 12px; }
+.wh-buttons, .wh-hats, .wh-padbtns { display: flex; flex-wrap: wrap; gap: 4px; }
+.wh-btn, .wh-hat { min-width: 26px; height: 22px; padding: 0 5px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); font-size: 11px; display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.wh-btn.wide { min-width: 38px; }
+.wh-btn.on, .wh-hat.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.wh-gearbox { display: flex; align-items: center; gap: 12px; margin: 12px 0 10px; }
+.wh-gear { width: 46px; height: 46px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; }
+.wh-gear-sub { color: var(--muted); font-size: 12px; }
+#wh-game .wh-axis { margin-bottom: 6px; }
+
 .tile-path { width: 100%; min-width: 0; text-overflow: ellipsis; font-size: 12px; padding: 5px 8px; }
 #page-play { grid-template-rows: auto minmax(0, 1fr); }
 .tiles-panel { min-height: min-content; }

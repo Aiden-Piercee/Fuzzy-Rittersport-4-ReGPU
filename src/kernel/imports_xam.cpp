@@ -8,6 +8,7 @@
 #include <fstream>
 #include <vector>
 
+#include "input/wheel/wheel_system.h"
 #include "kernel/imports.h"
 #include "kernel/runtime.h"
 #include "kernel/thread.h"
@@ -416,8 +417,10 @@ GUEST_EXPORT(XamShowKeyboardUI)
 
 // Input ----------------------------------------------------------------------------------
 
-// Guest users 0-3 are host XInput pads 0-3. User 0 also takes the keyboard
-// (merged with pad 0 if one is connected), so the game is playable without
+// Racing wheels come first: guest users 0..n-1 are the n wheels DirectInput finds (the wheel, the
+// first player's, is user 0; src/input/wheel), each presented as an Xbox 360 Wireless Racing Wheel.
+// The other guest users are host XInput pads 0-3 in order. User 0 also takes the keyboard
+// (merged with pad 0 or the wheel if one is connected), so the game is playable without
 // a controller:
 //   W / S        throttle / brake (right / left trigger)
 //   A / D        steer (left stick)
@@ -449,7 +452,22 @@ bool GameWindowHasFocus()
     return pid == GetCurrentProcessId();
 }
 
-void AddKeyboard(PadState& s)
+// The racing wheels, started on first use with the wheel_* settings (settings.ini).
+wheel::System& WheelInput()
+{
+    static wheel::System& sys = [] () -> wheel::System& {
+        wheel::SetLog([](const char* line) { Log("%s", line); });
+        wheel::System& s = wheel::System::Get();
+        s.Start(wheel::Config::From([](const char* key) { return GetSettings().Extra(key); }));
+        s.SetFocusCheck(true);
+        return s;
+    }();
+    return sys;
+}
+
+// onWheel: user 0 is a racing wheel, whose right stick and left stick Y carry the gear, the clutch
+// and the handbrake, so the keyboard's camera keys stay off it.
+void AddKeyboard(PadState& s, bool onWheel)
 {
     if (!GameWindowHasFocus())
         return;
@@ -473,18 +491,40 @@ void AddKeyboard(PadState& s)
         s.leftTrigger = 255;
     if (Key('A') != Key('D'))
         s.lx = Key('A') ? -32767 : 32767;
+    if (onWheel)
+        return;
     if (Key('J') != Key('L'))
         s.rx = Key('J') ? -32767 : 32767;
     if (Key('I') != Key('K'))
         s.ry = Key('K') ? -32767 : 32767;
 }
 
-// Returns false if nothing is connected for this user.
-bool ReadPad(uint32_t user, PadState& s)
+// The host XInput pad of a guest user that is no wheel (-1: none).
+int XInputIndex(uint32_t user)
+{
+    const int i = int(user) - WheelInput().Wheels();
+    return i >= 0 && i < XUSER_MAX_COUNT ? i : -1;
+}
+
+// Returns false if nothing is connected for this user. gameRead: the game reads the state (not its
+// capabilities or vibration), which moves a wheel's H-pattern gear request on.
+bool ReadPad(uint32_t user, PadState& s, bool gameRead = true)
 {
     bool connected = false;
+    const bool isWheel = user < XUSER_MAX_COUNT && int(user) < WheelInput().Wheels();
     XINPUT_STATE x{};
-    if (user < XUSER_MAX_COUNT && XInputGetState(user, &x) == ERROR_SUCCESS)
+    if (wheel::Pad p; isWheel && WheelInput().Read(int(user), p, gameRead, GameWindowHasFocus()))
+    {
+        connected = true;
+        s.buttons = p.buttons;
+        s.leftTrigger = p.lt;
+        s.rightTrigger = p.rt;
+        s.lx = p.lx;
+        s.ly = p.ly;
+        s.rx = p.rx;
+        s.ry = p.ry;
+    }
+    else if (const int pad = isWheel ? -1 : XInputIndex(user); pad >= 0 && XInputGetState(DWORD(pad), &x) == ERROR_SUCCESS)
     {
         connected = true;
         s.buttons = x.Gamepad.wButtons; // same bit layout as the 360
@@ -498,7 +538,7 @@ bool ReadPad(uint32_t user, PadState& s)
     if (user == 0)
     {
         connected = true;
-        AddKeyboard(s);
+        AddKeyboard(s, isWheel);
         static LiveSwitch autoStart("FM2_AUTOSTART");
         static const auto start = Clock::now();
         // FM2_INPUT_SCRIPT="7:START,10:A,14:RIGHT,...": press each button for
@@ -714,20 +754,63 @@ bool ReadPad(uint32_t user, PadState& s)
 }
 }
 
-GUEST_EXPORT(XamInputGetCapabilities)
+// The racing wheels for the force feedback calls (src/kernel/imports_ff.cpp).
+wheel::System& GameWheels() { return WheelInput(); }
+
+// XINPUT_CAPABILITIES for a user: type, subtype, flags (BE16), the gamepad's ranges (XINPUT_GAMEPAD at
+// +4), the motors (+16). XamInputGetCapabilities and XamInputGetCapabilitiesEx.
+static uint32_t InputCapabilities(uint32_t user, uint32_t caps)
 {
-    // (user, flags, XINPUT_CAPABILITIES*)
-    PadState s;
-    if (!ReadPad(ctx.r3.u32, s))
+    // A racing wheel answers as the Xbox 360 Wireless Racing Wheel (src/input/wheel/wheel_logic.h):
+    // SubType 2; force feedback when the wheel has it, so the game drives it through the XInputdFF
+    // calls (imports_ff.cpp); thumb_lx 900 for the game's full-range steering (else the 270 degree
+    // mode); thumb_rx the H-pattern shifter's forward gears in its high byte. wheel_report_ffb=0 hides
+    // the force feedback.
+    if (int topGear = 0; user < XUSER_MAX_COUNT && int(user) < WheelInput().Wheels() && WheelInput().Caps(int(user), topGear))
     {
-        Return(ctx, X_ERROR_DEVICE_NOT_CONNECTED);
-        return;
+        const bool ffb = WheelInput().HasForceFeedback(int(user)) && GetSettings().Extra("wheel_report_ffb") != "0";
+        memset(GuestPtr(caps), 0, 0x14);
+        *GuestPtr<uint8_t>(caps + 0) = 1; // XINPUT_DEVTYPE_GAMEPAD
+        *GuestPtr<uint8_t>(caps + 1) = 2; // XINPUT_DEVSUBTYPE_WHEEL
+        *GuestPtr<uint16_t>(caps + 2) = __builtin_bswap16(uint16_t(0x0002 | (ffb ? 0x0001 : 0))); // wireless (| FFB)
+        *GuestPtr<uint16_t>(caps + 4) = __builtin_bswap16(0xF3FF);
+        *GuestPtr<uint8_t>(caps + 6) = 0xFF;
+        *GuestPtr<uint8_t>(caps + 7) = 0xFF;
+        *GuestPtr<uint16_t>(caps + 8) = __builtin_bswap16(uint16_t(WheelInput().GetConfig().steering900 ? 900 : 0x7FFF));
+        *GuestPtr<uint16_t>(caps + 12) = __builtin_bswap16(uint16_t(topGear << 8));
+        *GuestPtr<uint16_t>(caps + 16) = 0xFFFF;
+        *GuestPtr<uint16_t>(caps + 18) = 0xFFFF;
+        return X_ERROR_SUCCESS;
     }
-    const uint32_t caps = ctx.r5.u32;
+    PadState s;
+    if (!ReadPad(user, s, false))
+        return X_ERROR_DEVICE_NOT_CONNECTED;
     memset(GuestPtr(caps), 0, 0x14);
     *GuestPtr<uint8_t>(caps + 0) = 1; // XINPUT_DEVTYPE_GAMEPAD
     *GuestPtr<uint8_t>(caps + 1) = 1; // XINPUT_DEVSUBTYPE_GAMEPAD
-    Return(ctx, X_ERROR_SUCCESS);
+    return X_ERROR_SUCCESS;
+}
+
+GUEST_EXPORT(XamInputGetCapabilities)
+{
+    // (user, flags, XINPUT_CAPABILITIES*)
+    Return(ctx, InputCapabilities(ctx.r3.u32, ctx.r5.u32));
+}
+
+GUEST_EXPORT(XamInputGetCapabilitiesEx)
+{
+    // (version, user, flags, XINPUT_CAPABILITIES*): as XamInputGetCapabilities.
+    Return(ctx, InputCapabilities(ctx.r4.u32, ctx.r6.u32));
+}
+
+GUEST_EXPORT(XamUserGetDeviceContext)
+{
+    // (user, unknown, context*): the handle the game passes to the XInputdFF calls (imports_ff.cpp),
+    // which play on every wheel whatever it is. Zero, and success for user 0 (and 0xFF), as Xenia
+    // answers and FH1 played its force feedback with.
+    StoreIfNonNull(ctx.r5.u32, 0);
+    const uint32_t user = ctx.r3.u32;
+    Return(ctx, !user || (user & 0xFF) == 0xFF ? X_ERROR_SUCCESS : X_ERROR_DEVICE_NOT_CONNECTED);
 }
 
 GUEST_EXPORT(XamInputGetState)
@@ -765,17 +848,18 @@ GUEST_EXPORT(XamInputSetState)
     // (user, flags, XINPUT_VIBRATION*): left and right motor speeds, big-endian.
     const uint32_t user = ctx.r3.u32;
     PadState s;
-    if (!ReadPad(user, s))
+    if (!ReadPad(user, s, false))
     {
         Return(ctx, X_ERROR_DEVICE_NOT_CONNECTED);
         return;
     }
-    if (ctx.r5.u32 && user < XUSER_MAX_COUNT)
+    // A racing wheel's rumble isn't played (no force feedback yet); a pad's goes to its XInput pad.
+    if (const int pad = XInputIndex(user); ctx.r5.u32 && pad >= 0 && int(user) >= WheelInput().Wheels())
     {
         XINPUT_VIBRATION v{};
         v.wLeftMotorSpeed = __builtin_bswap16(*GuestPtr<uint16_t>(ctx.r5.u32));
         v.wRightMotorSpeed = __builtin_bswap16(*GuestPtr<uint16_t>(ctx.r5.u32 + 2));
-        XInputSetState(user, &v); // ignored when no pad is connected
+        XInputSetState(DWORD(pad), &v); // ignored when no pad is connected
     }
     Return(ctx, X_ERROR_SUCCESS);
 }

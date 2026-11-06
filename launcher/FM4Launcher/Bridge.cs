@@ -75,6 +75,8 @@ public sealed class Bridge
     // Photino takes messages from any thread (an update's progress comes from a worker).
     void Post(object o) => _window.SendWebMessage(JsonSerializer.Serialize(o, Json));
     void Push(string name, object data) => Post(new { @event = name, data });
+    // A line of JSON from the wheel probe (Wheel.cs), passed on as it is.
+    void PushWheel(string json) => _window.SendWebMessage("{\"event\":\"wheel\",\"data\":" + json + "}");
 
     static readonly (string, string[])[] AnyFile = [("Xbox 360 content packages", ["*.*"])];
     static readonly (string, string[])[] ZipFilter = [("Profile zip", ["*.zip"])];
@@ -320,6 +322,21 @@ public sealed class Bridge
                     var applied = await Updater.DownloadAndApplyAsync(_latest, (p, text) => Push("progress", new { p, text }));
                     return new { applied.Files, applied.LauncherChanged, update = UpdateInfo(), state = State() };
                 }
+            // The Wheel stuff tab (Wheel.cs): the wheel_* settings, and the live view of the wheels while the tab is open.
+            case "wheel.settings": return Wheel.Load();
+            case "wheel.save":
+                Wheel.Save(a.Deserialize<Dictionary<string, string>>(Json) ?? []);
+                return Wheel.Load();
+            case "wheel.start":
+                Wheel.Start(PushWheel);
+                return null;
+            case "wheel.stop":
+                Wheel.Stop();
+                return null;
+            case "wheel.fftest":
+                if (Game.Running) throw new InvalidOperationException("Close the game first: it holds the wheel's force feedback while it runs.");
+                Wheel.TestForceFeedback();
+                return null;
             case "restart":
                 System.Diagnostics.Process.Start(Environment.ProcessPath!);
                 _window.Invoke(_window.Close);

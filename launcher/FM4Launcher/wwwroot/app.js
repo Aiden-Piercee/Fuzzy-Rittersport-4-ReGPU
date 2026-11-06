@@ -17,6 +17,7 @@ if (host) host.addEventListener("message", (e) => {
   if (m.event === "dragging") { veil.hidden = !m.data; if (!m.data) setHot(null); return }
   if (m.event === "over") return setHot(tileAt(m.data.x, m.data.y))
   if (m.event === "dropped-at") return droppedAt(m.data)
+  if (m.event === "wheel") return typeof wheelEvent === "function" && wheelEvent(m.data) // wheel.js
   const p = pending.get(m.id)
   if (!p) return
   pending.delete(m.id)
@@ -132,17 +133,21 @@ $("tabs").onclick = (e) => {
   const b = e.target.closest("button")
   if (!b) return
   for (const t of $("tabs").children) t.classList.toggle("on", t === b)
-  for (const p of ["play", "profiles", "graphics", "settings", "report", "updates", "about"]) $("page-" + p).hidden = p !== b.dataset.tab
+  for (const p of ["play", "profiles", "graphics", "wheel", "settings", "report", "updates", "about"]) $("page-" + p).hidden = p !== b.dataset.tab
   $("tabs").dataset.shown = b.dataset.tab
+  // The Wheel stuff tab's live view runs only while it is open (wheel.js).
+  if (b.dataset.tab === "wheel") wheelShow()
+  else wheelHide()
   if (b.dataset.tab === "profiles") loadProfiles()
   else if (b.dataset.tab === "report") loadReport()
-  else if (b.dataset.tab !== "play" && b.dataset.tab !== "graphics") refresh()
+  else if (b.dataset.tab !== "play" && b.dataset.tab !== "graphics" && b.dataset.tab !== "wheel") refresh()
 }
 
 // The title opens the About page (no tab of its own).
 $("brand").onclick = () => {
   for (const t of $("tabs").children) t.classList.remove("on")
-  for (const p of ["play", "profiles", "graphics", "settings", "report", "updates"]) $("page-" + p).hidden = true
+  for (const p of ["play", "profiles", "graphics", "wheel", "settings", "report", "updates"]) $("page-" + p).hidden = true
+  wheelHide()
   $("page-about").hidden = false
   $("tabs").dataset.shown = "about"
 }

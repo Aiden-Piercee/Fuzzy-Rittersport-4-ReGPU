@@ -112,6 +112,8 @@ target_compile_definitions(fm4 PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_
 target_compile_options(fm4 PRIVATE -gline-tables-only)
 target_link_options(fm4 PRIVATE /STACK:0x1000000 /DEBUG)
 target_link_libraries(fm4 PRIVATE dbghelp xaudio2 bcrypt winhttp)
+# Racing wheels, pedals, shifters and handbrakes (src/input/wheel, DirectInput).
+target_link_libraries(fm4 PRIVATE dinput8 dxguid)
 
 # XMA decoding through FFmpeg's xma2 decoder (LGPL, linked dynamically): a shared build
 # with include/, lib/ and bin/ in thirdparty/ffmpeg (see README).

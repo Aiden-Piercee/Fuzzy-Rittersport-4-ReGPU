@@ -2,6 +2,8 @@
 // host memory outside the guest's 4 GB, so module images and their tables cannot overlap.
 #include "indirect.h"
 
+#include <mutex>
+
 #include <windows.h>
 
 #include "ppc_hooks.h"
@@ -47,6 +49,34 @@ void IndirectInit()
     }
     g_indirectTable = table;
     Log("indirect calls: %zu functions in %zu images", mapped, g_recompiledModuleCount);
+}
+
+// Host functions the game calls by address sit in the last 4 KB of the table's range, above every
+// image (IndirectInit checks that none reaches it). The addresses are call targets only: nothing is
+// mapped or executed there.
+constexpr uint32_t kHostLow = kIndirectHigh - 0x1000;
+
+uint32_t IndirectAddHost(PPCHostFunc* func)
+{
+    static std::mutex mutex;
+    static uint32_t next = kHostLow;
+    std::lock_guard lock(mutex);
+    if (!g_indirectTable)
+        return 0;
+    for (size_t i = 0; i < g_recompiledModuleCount; i++)
+        if (g_recompiledModules[i].codeBase + g_recompiledModules[i].codeSize > kHostLow)
+            Fatal("indirect calls: %s reaches the host function slots at %08X", g_recompiledModules[i].guestPath, kHostLow);
+    PPCHostFunc** first = g_indirectTable + (kHostLow - kIndirectLow) / 4;
+    if (next == kHostLow && !VirtualAlloc(first, 0x1000 / 4 * sizeof(PPCHostFunc*), MEM_COMMIT, PAGE_READWRITE))
+        Fatal("indirect calls: committing the host function slots failed (error %lu)", GetLastError());
+    for (uint32_t a = kHostLow; a < next; a += 4)
+        if (g_indirectTable[(a - kIndirectLow) / 4] == func)
+            return a;
+    if (next >= kIndirectHigh)
+        return 0;
+    g_indirectTable[(next - kIndirectLow) / 4] = func;
+    next += 4;
+    return next - 4;
 }
 
 PPCHostFunc* IndirectFind(uint32_t address)

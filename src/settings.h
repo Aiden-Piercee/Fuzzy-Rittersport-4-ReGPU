@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <map>
 #include <string>
 
 // Player settings: Documents\fm2\settings.ini, edited by the launcher. Environment
@@ -30,6 +31,15 @@ struct Settings
     // The size the game renders at: the resolution, narrowed or shortened to the forced
     // aspect ratio (the rest of the screen is black bars).
     void RenderSize(uint32_t& w, uint32_t& h) const;
+
+    // Every other key of the file as it is (the launcher's own keys, the racing wheel's wheel_*
+    // keys, src/input/wheel/wheel_config.h); kept when the file is saved.
+    std::map<std::string, std::string> extra;
+    std::string Extra(const char* key) const
+    {
+        auto it = extra.find(key);
+        return it == extra.end() ? std::string() : it->second;
+    }
 };
 
 // Loaded on first use (after RuntimeInit has set the user directory).
