@@ -64,6 +64,7 @@ internal static class Program
         _ = new Bridge(window);
         _ = Reports.SendLastLogAsync(); // opted in: the last session's play-fm4.log
         window.WaitForClose();
+        Wheel.Stop(); // the Wheel stuff tab's live view
         return 0;
     }
 

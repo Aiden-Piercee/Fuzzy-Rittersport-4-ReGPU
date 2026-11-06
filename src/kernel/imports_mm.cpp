@@ -161,6 +161,13 @@ GUEST_EXPORT(XexGetModuleHandle)
         Return(ctx, X_STATUS_SUCCESS);
         return;
     }
+    // xboxkrnl.exe and xam.xex: for the exports the game looks up at run time (imports_ff.cpp).
+    if (uint32_t handle = 0; HostModuleHandle(name, &handle))
+    {
+        StoreBE32(ctx.r4.u32, handle);
+        Return(ctx, X_STATUS_SUCCESS);
+        return;
+    }
     Log("XexGetModuleHandle(\"%s\"): module not loaded", name.c_str());
     StoreBE32(ctx.r4.u32, 0);
     Return(ctx, X_STATUS_NO_SUCH_FILE);
@@ -240,6 +247,13 @@ GUEST_EXPORT(XexGetProcedureAddress)
     const LoadedModule* module = ModuleFromHandle(ctx.r3.u32);
     const uint32_t key = ctx.r4.u32;
     uint32_t address = 0;
+    // The kernel's and XAM's own exports by ordinal (imports_ff.cpp): a host function, or not found.
+    if (key < 0x10000 && HostProcedure(ctx.r3.u32, key, &address))
+    {
+        StoreIfNonNull(ctx.r5.u32, address);
+        Return(ctx, address ? X_STATUS_SUCCESS : X_STATUS_NOT_SUPPORTED);
+        return;
+    }
     if (module && (key < 0x10000 ? FindModuleExport(*module, key, nullptr, &address)
                                  : FindModuleExport(*module, 0, GuestPtr<char>(key), &address)))
     {

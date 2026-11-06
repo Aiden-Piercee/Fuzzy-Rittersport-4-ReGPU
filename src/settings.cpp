@@ -83,6 +83,8 @@ void Load()
             g_settings.quality = uint32_t(atoi(value.c_str()));
         else if (key == "sharpness")
             g_settings.sharpness = float(atof(value.c_str()));
+        else
+            g_settings.extra[key] = value;
     }
     // Overrides for testing.
     if (const char* v = getenv("FM2_PROFILE"))
@@ -187,4 +189,6 @@ void SaveSettings()
     out << "upscaler=" << UpscalerName(s.upscaler) << "\n";
     out << "upscale_quality=" << s.quality << "\n";
     out << "sharpness=" << s.sharpness << "\n";
+    for (const auto& [k, v] : s.extra) // the launcher's and the wheel's keys, as they were
+        out << k << "=" << v << "\n";
 }

@@ -84,7 +84,8 @@ public sealed class GameSettings
     public int Language { get; set; } = 1;
 
     // What fm4.exe reads (src/settings.cpp). FM2's later options (SMAA, anisotropy, render scale, vertex arena, the
-    // shader pop-up, music, wheel) have no counterpart in FM4's runtime yet, so they aren't offered.
+    // shader pop-up, music) have no counterpart in FM4's runtime yet, so they aren't offered. The racing wheel's
+    // wheel_* keys are the Wheel stuff tab's (Wheel.cs); Save keeps them like any other key it doesn't know.
     static readonly string[] Known = ["profile", "resolution", "aspect", "fullscreen", "vsync", "max_fps", "msaa", "smaa", "anisotropy", "fast_mode", "upscaler", "upscale_quality", "sharpness", "optimize_level", "debug_view", "perf_log", "game_folder", "title_update_folder", "enhance", "hide_shader_overlay", "language"];
 
     public static GameSettings Load()

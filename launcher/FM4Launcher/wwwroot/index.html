@@ -18,6 +18,7 @@
       <button data-tab="play" class="on">Play</button>
       <button data-tab="profiles">Profiles</button>
       <button data-tab="graphics">Graphics</button>
+      <button data-tab="wheel">Wheel stuff</button>
       <button data-tab="settings">Settings</button>
       <button data-tab="report">Report</button>
       <button data-tab="updates">Updates <span class="dot-badge" id="update-badge" hidden></span></button>
@@ -200,6 +201,121 @@
     </div>
   </main>
 
+  <!-- WHEEL STUFF (wheel.js, Wheel.cs): racing wheels, pedals, H-shifters and handbrakes, on one device or several -->
+  <main class="page grid-wheel" id="page-wheel" hidden>
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-head"><h2>Devices</h2><span class="wh-status" id="wh-status"></span></div>
+        <p class="hint">Every wheel, pedal set, shifter and handbrake the game sees. Pedals, a shifter and a handbrake on their own USB device are read together with the wheel. Click one to watch its inputs.</p>
+        <div class="list" id="wh-devices"></div>
+        <div class="buttons-row wrap">
+          <button class="ghost small" id="wh-use-wheel" data-tip="Makes the selected device the wheel: the first player's, the one the pedals, shifter and handbrake are read with.">Use as the wheel</button>
+          <button class="ghost small" id="wh-auto-wheel" data-tip="Lets the game pick the wheel: a device with force feedback first, then one Windows lists as a wheel.">Choose the wheel automatically</button>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Live view</h2><span class="count" id="wh-live-name"></span></div>
+        <div id="wh-live"><div class="empty">Pick a device above.</div></div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Bindings</h2><button class="ghost small" id="wh-reset-all" data-tip="Drops every binding and device choice on this page: the built-in and detected ones apply again.">Reset all</button></div>
+      <p class="hint">Press <b>Bind</b>, then turn, press or pull the control on <b>any</b> device. A pedal pressed on a pedal set makes that the pedal device, a gear put in on a shifter makes that the shifter device, a handbrake pulled on its own device makes that the handbrake device. Esc cancels.</p>
+      <div class="wh-warn" id="wh-conflicts" hidden></div>
+      <div class="wh-rows" id="wh-bindings"></div>
+    </section>
+
+    <div class="stack">
+      <section class="panel whole">
+        <div class="panel-head"><h2>What the game gets</h2></div>
+        <div id="wh-game"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Options</h2></div>
+        <h3 class="wh-sub">Steering</h3>
+        <div class="segmented" id="wh-steer-mode">
+          <button data-v="1" data-tip="The game's full-range wheel steering: the car's wheels follow your wheel's angle from the centre, over its whole rotation.">900° full range</button>
+          <button data-v="0" data-tip="The Xbox 360 wheel's 270 degree mode, with the game's steering filter.">270° mode</button>
+        </div>
+        <div class="wh-grid">
+          <label class="field" data-tip="Your wheel's rotation as set in its driver (lock to lock), in degrees."><span>Wheel rotation</span><input type="number" id="wh-rotation" min="90" max="2520" step="10"></label>
+          <label class="field" data-tip="The wheel travel (lock to lock) that gives the game's full steering. Lower than the rotation makes the steering quicker: 540 on a 900 degree wheel is about 1.7 times quicker."><span>Steering lock</span><input type="number" id="wh-lock" min="90" max="2520" step="10"></label>
+        </div>
+        <label class="field" data-tip="Movement around the centre that does nothing, in percent of the full steering."><span>Steering deadzone <b id="wh-deadzone-v"></b></span><input type="range" id="wh-deadzone" min="0" max="50" step="1"></label>
+        <label class="field" id="wh-offset-field" data-tip="Only in the 270 degree mode: any movement beyond a hair already gives this much of the full steering, against the game's inner steering deadzone."><span>Steering offset (270° mode) <b id="wh-offset-v"></b></span><input type="range" id="wh-offset" min="0" max="30" step="1"></label>
+        <div class="toggle-row"><div><div class="toggle-title">Invert steering</div><div class="toggle-sub">Swap left and right</div></div><button class="switch" data-flag="wheel_invert_steering" role="switch"></button></div>
+
+        <h3 class="wh-sub">Force feedback</h3>
+        <div class="toggle-row" data-tip="The game's own wheel forces: the steering force, the centring spring and damper, and its rumble as a light vibration. The wheel's own autocentre is off while the game drives them."><div><div class="toggle-title">Force feedback</div><div class="toggle-sub">The game's steering force, spring and rumble</div></div><button class="switch" data-flag="wheel_ffb" role="switch"></button></div>
+        <div class="field">
+          <span>Force feedback system (for comparing)</span>
+          <div class="segmented" id="wh-ffmode">
+            <button data-v="port" data-tip="This port's playback (from Forza Horizon 1: ReImagined): the game's steering force applied as it comes, the centring spring and damper, its rumble as a light vibration, minimum force.">This port</button>
+            <button data-v="fm2" data-tip="Forza Motorsport 2 ReGPU's playback, for comparing the feel: the steering force eased over 10 ms at 500 updates a second (smoother on direct drive wheels), fades in and out (window not in front, no updates), its own strength and centring (50 and 50 by default). FM2's fade when not driving isn't there: it hooks FM2's own code.">FM2 ReGPU</button>
+          </div>
+        </div>
+        <div id="wh-fm2-opts">
+          <label class="field" data-tip="FM2 ReGPU's strength (its wheel_strength), in percent of the wheel's full force."><span>Strength (FM2) <b id="wh-f2s-v"></b></span><input type="range" id="wh-f2s" min="0" max="100" step="1" data-int="wheel_fm2_strength"></label>
+          <label class="field" data-tip="FM2 ReGPU's centring spring and damper (its wheel_spring), in percent of its strength."><span>Centring strength (FM2) <b id="wh-f2c-v"></b></span><input type="range" id="wh-f2c" min="0" max="100" step="1" data-int="wheel_fm2_spring"></label>
+        </div>
+        <div id="wh-port-opts">
+        <label class="field" data-tip="Scales every force and the rumble, in percent of the wheel's full force."><span>Strength <b id="wh-ffs-v"></b></span><input type="range" id="wh-ffs" min="0" max="100" step="1" data-int="wheel_ffb_strength"></label>
+        <label class="field" data-tip="The centring spring and the damper, in percent of the strength above. The spring grows with speed; lower it if small turns feel heavy at speed, without weakening the steering force and road feel."><span>Centring strength <b id="wh-ffc-v"></b></span><input type="range" id="wh-ffc" min="0" max="100" step="1" data-int="wheel_ffb_spring_strength"></label>
+        </div>
+        <label class="field" data-tip="Steering forces weaker than this are scaled up (smoothly, up to 4 times near the centre), so a light car still has some weight; stronger ones play as the game sends them. Works with either force feedback system. 0 is off; try 10 to 30."><span>Minimum force <b id="wh-ffm-v"></b></span><input type="range" id="wh-ffm" min="0" max="100" step="1" data-int="wheel_ffb_min_strength"></label>
+        <div class="toggle-row" data-tip="The game's two rumble motors (road surface, kerbs, impacts, tyre slip on one; the engine on the other) played on the wheel's motor, from Forza Horizon 1: ReImagined. Works with either force feedback system, scaled by that system's strength."><div><div class="toggle-title">Rumble</div><div class="toggle-sub">With either force feedback system</div></div><button class="switch" data-flag="wheel_rumble" role="switch"></button></div>
+        <div id="wh-rumble-opts">
+        <div class="wh-grid">
+          <label class="field" data-tip="The game's road rumble (road surface, kerbs, impacts, tyre slip), in percent of the force feedback strength in use."><span>Road rumble <b id="wh-ffr-v"></b></span><input type="range" id="wh-ffr" min="0" max="100" step="1" data-int="wheel_rumble_road_strength"></label>
+          <label class="field" data-tip="The game's engine rumble, in percent of the force feedback strength in use. It runs at half or more whenever the car accelerates."><span>Engine rumble <b id="wh-ffe-v"></b></span><input type="range" id="wh-ffe" min="0" max="100" step="1" data-int="wheel_rumble_engine_strength"></label>
+        </div>
+        <div class="segmented" id="wh-rumble">
+          <button data-v="fine" data-tip="Each rumble motor as its own light, quick vibration (40 and 71 Hz): the road comes through while the engine hums.">Fine rumble</button>
+          <button data-v="classic" data-tip="One coarse 25 Hz vibration at the stronger motor's level, like the Xbox 360 wheel's rim motors.">Classic rumble</button>
+        </div>
+        </div>
+        <div class="toggle-row" data-tip="For a wheel that pulls away from the centre in corners instead of towards it. Use the test below: the wheel should turn right first."><div><div class="toggle-title">Reverse steering force</div><div class="toggle-sub">If the test turns left first</div></div><button class="switch" data-flag="wheel_ffb_reverse" role="switch"></button></div>
+        <div class="buttons-row wrap"><button class="ghost small" id="wh-fftest" data-tip="Turns the wheel to the right, then to the left, with the settings above (half the game's force times the strength). Hold the wheel lightly. Not while the game runs: it holds the wheel's force feedback then.">Test force feedback</button></div>
+        <div class="hint" id="wh-ff-status"></div>
+
+        <h3 class="wh-sub">Pedals</h3>
+        <div class="segmented" id="wh-pedals">
+          <button data-v="auto" data-tip="Throttle, brake and clutch each on an axis of their own.">Separate</button>
+          <button data-v="combined" data-tip="One axis: throttle one way, brake the other (a wheel driver's combined pedals mode).">Combined</button>
+        </div>
+        <div class="toggle-row" data-tip="The clutch pedal as the game's analog clutch (choose Manual with clutch in the game's difficulty options)."><div><div class="toggle-title">Clutch pedal</div><div class="toggle-sub">Used with Manual with clutch</div></div><button class="switch" data-flag="wheel_clutch" role="switch"></button></div>
+        <div class="toggle-row"><div><div class="toggle-title">Invert throttle</div></div><button class="switch" data-flag="wheel_invert_throttle" role="switch"></button></div>
+        <div class="toggle-row"><div><div class="toggle-title">Invert brake</div></div><button class="switch" data-flag="wheel_invert_brake" role="switch"></button></div>
+        <div class="toggle-row"><div><div class="toggle-title">Invert clutch</div></div><button class="switch" data-flag="wheel_invert_clutch" role="switch"></button></div>
+        <div class="wh-grid">
+          <label class="field" data-tip="1 is linear; above 1 softer at the start of the travel."><span>Throttle curve <b id="wh-tcurve-v"></b></span><input type="range" id="wh-tcurve" min="20" max="400" step="5"></label>
+          <label class="field" data-tip="1 is linear; above 1 softer at the start of the travel."><span>Brake curve <b id="wh-bcurve-v"></b></span><input type="range" id="wh-bcurve" min="20" max="400" step="5"></label>
+        </div>
+
+        <h3 class="wh-sub">Shifter</h3>
+        <div class="segmented seg3" id="wh-shifter">
+          <button data-v="off" data-tip="No shifter: the paddles shift.">Off</button>
+          <button data-v="h" data-tip="An H-pattern shifter selects the gear. Choose Manual (or Manual with clutch) shifting in the game.">H-pattern</button>
+          <button data-v="sequential" data-tip="A sequential shifter's up and down shift like the paddles.">Sequential</button>
+        </div>
+        <div class="toggle-row" data-tip="A new gear engages only with the clutch pressed past the threshold below; moved into a gear without it, the car stays in neutral."><div><div class="toggle-title">Realistic shifting</div><div class="toggle-sub">H-pattern: gears need the clutch</div></div><button class="switch" data-flag="wheel_shifter_clutch" role="switch"></button></div>
+        <label class="field" data-tip="How far the clutch must be pressed for a gear to engage with realistic shifting."><span>Clutch threshold <b id="wh-thr-v"></b></span><input type="range" id="wh-thr" min="10" max="100" step="5"></label>
+        <div class="toggle-row" data-tip="On (as on the Xbox): race starts put the car in the gear the lever sits in. Off: a gear engages only when the lever moves, so the paddles keep the gear they chose."><div><div class="toggle-title">Gear follows the lever's slot</div><div class="toggle-sub">H-pattern</div></div><button class="switch" data-flag="wheel_shifter_follow_slot" role="switch"></button></div>
+
+        <h3 class="wh-sub">Handbrake</h3>
+        <div class="toggle-row"><div><div class="toggle-title">Invert handbrake</div><div class="toggle-sub">For a handbrake found backwards</div></div><button class="switch" data-flag="wheel_invert_handbrake" role="switch"></button></div>
+
+        <h3 class="wh-sub">Devices</h3>
+        <label class="field" data-tip="Auto: devices Windows lists as wheels, or named like one (G29, T300, Fanatec, Moza, ...). On: every joystick that isn't a gamepad. Off: no wheel support."><span>Racing wheel support</span><select id="wh-mode"></select></label>
+        <label class="field" data-tip="Pedals on their own USB device, read with the wheel. Auto finds a known pedal set or one named like pedals; None reads the wheel's own pedals."><span>Pedal device</span><select id="wh-pedal-device"></select></label>
+        <label class="field" data-tip="A shifter on its own USB device (TH8A, ClubSport Shifter SQ, DS-8X, ...), read with the wheel."><span>Shifter device</span><select id="wh-shifter-device"></select></label>
+        <label class="field" data-tip="An analog handbrake on its own USB device, read with the wheel."><span>Handbrake device</span><select id="wh-handbrake-device"></select></label>
+        <p class="hint">Changes apply the next time the game starts.</p>
+      </section>
+    </div>
+  </main>
+
   <!-- PROFILES -->
   <main class="page grid2" id="page-profiles" hidden>
     <section class="panel">
@@ -349,5 +465,6 @@
   <div id="drop" hidden><div>Drop it on a tile: Game or DLC</div></div>
   <script src="host.js"></script>
   <script src="app.js"></script>
+  <script src="wheel.js"></script>
 </body>
 </html>

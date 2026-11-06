@@ -10,6 +10,7 @@ You need your own copy of the game, and it must be the **Game of the Year (GOTY)
 - Native Direct3D 12 renderer, windowed or borderless fullscreen, adjustable resolution.
 - Launcher Graphics page: MSAA (off, 2x, 4x), SMAA, 16x anisotropic filtering, FSR upscaling with sharpening, enhanced lighting, aspect ratio, frame cap and VSync.
 - Settings and DLC management from the launcher.
+- Racing wheels with the game's own force feedback, H-pattern shifter, clutch, analog handbrake and 900 / 270 degree steering, with pedals, shifter and handbrake on one device or several, set up in the launcher's Wheel stuff tab (tested on a Simagic Alpha EVO so far; [docs/WHEELS.md](docs/WHEELS.md)).
 - Bugs and glitches, included at no extra charge. They may still be in there; please report them (below).
 - Shader cache: the first start compiles shaders (one to four minutes); later starts load them from the cache.
 

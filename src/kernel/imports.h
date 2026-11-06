@@ -74,6 +74,12 @@ inline std::string ObjectAttributesName(uint32_t attributes, uint32_t* root = nu
     return GuestAnsiString(LoadBE32(attributes + 4));
 }
 
+// xboxkrnl.exe and xam.xex for XexGetModuleHandle and XexGetProcedureAddress (imports_ff.cpp): their
+// handle, and an export by ordinal (true when the handle is one of theirs; *address is 0 when the
+// ordinal isn't available).
+bool HostModuleHandle(const std::string& name, uint32_t* handle);
+bool HostProcedure(uint32_t handle, uint32_t ordinal, uint32_t* address);
+
 // XOVERLAPPED completion: result in InternalLow, then signal hEvent.
 void CompleteOverlapped(uint32_t overlapped, uint32_t result, uint32_t extendedError = 0, uint32_t length = 0);
 

@@ -1,8 +1,10 @@
+#include <cstring>
 #include <filesystem>
 #include <thread>
 
 #include <windows.h>
 
+#include "input/wheel/wheel_system.h"
 #include "kernel/runtime.h"
 #include "kernel/thread.h"
 #include "loader.h"
@@ -15,6 +17,10 @@ void D3DDebugLog();
 
 int main(int argc, char** argv)
 {
+    // The launcher's Wheel stuff tab: racing wheels, pedals, shifters and handbrakes as the game sees
+    // them (src/input/wheel/wheel_probe.cpp). Nothing of the game is loaded.
+    if (argc > 1 && strcmp(argv[1], "--wheel-probe") == 0)
+        return wheel::ProbeMain();
     CrashHandlerInit();
     std::filesystem::path gameDir = argc > 1 ? argv[1] : "game";
     Log("fm2: game folder %s", std::filesystem::absolute(gameDir).string().c_str());
